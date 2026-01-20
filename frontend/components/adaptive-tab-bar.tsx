@@ -87,10 +87,9 @@ export function AdaptiveTabBar({ state, descriptors, navigation }: BottomTabBarP
           >
             {options.tabBarIcon?.({ focused: isFocused, color, size: 24 })}
             <Text
-              style={[
-                styles.label,
-                { color },
-              ]}
+              size="2xs"
+              className="mt-0.5"
+              style={{ color }}
             >
               {label}
             </Text>

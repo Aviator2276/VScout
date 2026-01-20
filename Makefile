@@ -1,7 +1,21 @@
-.PHONY: run migrate makemigrations check shell
+.PHONY: init run migrate makemigrations check shell frontend backend
+
+init:
+	@echo "Installing backend dependencies..."
+	cd vibescout_backend && uv sync
+	@echo "Installing frontend dependencies..."
+	cd frontend && npm install
+	@echo "Dependencies installed successfully!"
+
+backend:
+	cd vibescout_backend && uv run python manage.py runserver
+
+frontend:
+	cd frontend && npx expo start -c --web
 
 run:
-	cd vibescout_backend && uv run python manage.py runserver
+	@echo "Starting backend and frontend concurrently..."
+	@make -j2 backend frontend
 
 migrate:
 	cd vibescout_backend && uv run python manage.py migrate
