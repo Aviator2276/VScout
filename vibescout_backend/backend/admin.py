@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Team, Competition, CompetitionResult
+from .models import Team, Competition, TeamInfo
 
 
 @admin.register(Team)
@@ -14,8 +14,8 @@ class CompetitionAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
 
-@admin.register(CompetitionResult)
-class CompetitionResultAdmin(admin.ModelAdmin):
-    list_display = ['team', 'ranking_points', 'win', 'lose', 'tie']
-    list_filter = ['team']
-    search_fields = ['team__number', 'team__name']
+@admin.register(TeamInfo)
+class TeamInfoAdmin(admin.ModelAdmin):
+    list_display = ['team', 'competition', 'ranking_points', 'win', 'lose', 'tie']
+    list_filter = ['competition', 'team']
+    search_fields = ['team__number', 'team__name', 'competition__name']
