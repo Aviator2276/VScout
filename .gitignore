@@ -224,3 +224,4 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 /vibescout_backend/backend/__pycache__
+*.pyc
