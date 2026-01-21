@@ -86,7 +86,7 @@ class TeamInfo(models.Model):
 
 class Match(models.Model):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='matches')
-    
+    match_number = models.IntegerField()
     blue_team_1 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_1_matches')
     blue_team_2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_2_matches')
     blue_team_3 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_3_matches')

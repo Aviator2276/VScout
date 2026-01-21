@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend
+.PHONY: init run migrate makemigrations check shell frontend backend import-tba
 
 init:
 	@echo "Installing backend dependencies..."
@@ -28,3 +28,6 @@ check:
 
 shell:
 	cd vibescout_backend && uv run python manage.py shell
+
+import-tba:
+	cd vibescout_backend && uv run python manage.py import_tba_events 2020gagai 2020gadal

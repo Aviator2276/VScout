@@ -28,6 +28,10 @@ class TeamInfoSchema(ModelSchema):
             'prescout_self_reported_accuracy', 'prescout_unload_time', 
             'prescout_range', 'prescout_climber', 'prescout_climber_auto',
             'prescout_self_reported_auto_shoot', 'prescout_additional_comments',
+            
+            
+            
+            
             'accuracy', 'avg_fuel_scored', 'avg_shuttle', 'avg_auto_fuel', 
             'avg_climb_points'
         ]
@@ -82,7 +86,6 @@ class TeamInfoUpdateSchema(Schema):
     avg_auto_fuel: Optional[float] = None
     avg_climb_points: Optional[float] = None
 
-
 class PrescouttingUpdateSchema(Schema):
     prescout_drivetrain: Optional[str] = None
     prescout_hopper_size: Optional[int] = None
@@ -110,7 +113,7 @@ class MatchSchema(ModelSchema):
     class Meta:
         model = Match
         fields = [
-            'id', 'competition', 'blue_team_1', 'blue_team_2', 'blue_team_3',
+            'id', 'competition', 'match_number', 'blue_team_1', 'blue_team_2', 'blue_team_3',
             'red_team_1', 'red_team_2', 'red_team_3', 'total_points',
             'total_blue_fuels', 'total_red_fuels', 'blue_1_auto_fuel',
             'blue_2_auto_fuel', 'blue_3_auto_fuel', 'red_1_auto_fuel',
@@ -124,6 +127,7 @@ class MatchSchema(ModelSchema):
 
 class MatchCreateSchema(Schema):
     competition_id: int
+    match_number: int
     blue_team_1_id: int
     blue_team_2_id: int
     blue_team_3_id: int
@@ -155,6 +159,7 @@ class MatchCreateSchema(Schema):
 
 
 class MatchUpdateSchema(Schema):
+    match_number: Optional[int] = None
     total_points: Optional[int] = None
     total_blue_fuels: Optional[int] = None
     total_red_fuels: Optional[int] = None

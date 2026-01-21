@@ -1,6 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 import tbapy
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from backend.models import Team, Competition, Match, TeamInfo
 
 
@@ -22,9 +25,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        env_path = Path(__file__).resolve().parent.parent.parent.parent.parent / '.env'
+        if env_path.exists():
+            load_dotenv(env_path)
+        
         api_key = options['api_key']
         if not api_key:
-            import os
             api_key = os.environ.get('TBA_API_KEY', '')
         
         if not api_key:
@@ -86,6 +92,8 @@ class Command(BaseCommand):
             ))
             return
         
+        match_number = match_data.get('match_number', 0)
+        
         blue_teams = [self.get_or_create_team(key) for key in blue_team_keys[:3]]
         red_teams = [self.get_or_create_team(key) for key in red_team_keys[:3]]
         
@@ -123,13 +131,14 @@ class Command(BaseCommand):
         
         match, created = Match.objects.update_or_create(
             competition=competition,
-            blue_team_1=blue_teams[0],
-            blue_team_2=blue_teams[1],
-            blue_team_3=blue_teams[2],
-            red_team_1=red_teams[0],
-            red_team_2=red_teams[1],
-            red_team_3=red_teams[2],
+            match_number=match_number,
             defaults={
+                'blue_team_1': blue_teams[0],
+                'blue_team_2': blue_teams[1],
+                'blue_team_3': blue_teams[2],
+                'red_team_1': red_teams[0],
+                'red_team_2': red_teams[1],
+                'red_team_3': red_teams[2],
                 'total_points': blue_score + red_score,
                 'total_blue_fuels': total_blue_fuels,
                 'total_red_fuels': total_red_fuels,
