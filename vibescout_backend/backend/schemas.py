@@ -9,28 +9,10 @@ class TeamSchema(ModelSchema):
         fields = ['id', 'number', 'name']
 
 
-class TeamCreateSchema(Schema):
-    number: int
-    name: str
-
-
-class TeamUpdateSchema(Schema):
-    number: Optional[int] = None
-    name: Optional[str] = None
-
-
 class CompetitionSchema(ModelSchema):
     class Meta:
         model = Competition
         fields = ['id', 'name']
-
-
-class CompetitionCreateSchema(Schema):
-    name: str
-
-
-class CompetitionUpdateSchema(Schema):
-    name: Optional[str] = None
 
 
 class TeamInfoSchema(ModelSchema):
