@@ -6,13 +6,13 @@ from .models import Team, Competition, TeamInfo, Match
 class TeamSchema(ModelSchema):
     class Meta:
         model = Team
-        fields = ['id', 'number', 'name']
+        fields = ['number', 'name']
 
 
 class CompetitionSchema(ModelSchema):
     class Meta:
         model = Competition
-        fields = ['id', 'name', 'code']
+        fields = ['name', 'code']
 
 
 class TeamInfoSchema(ModelSchema):
@@ -22,16 +22,12 @@ class TeamInfoSchema(ModelSchema):
     class Meta:
         model = TeamInfo
         fields = [
-            'id', 'ranking_points', 'tie', 'win', 'lose', 'team', 'competition',
+            'ranking_points', 'tie', 'win', 'lose', 'team', 'competition',
             'picture', 'prescout_drivetrain', 'prescout_hopper_size', 
             'prescout_intake_type', 'prescout_rotate_yaw', 'prescout_rotate_pitch',
             'prescout_self_reported_accuracy', 'prescout_unload_time', 
             'prescout_range', 'prescout_climber', 'prescout_climber_auto',
             'prescout_self_reported_auto_shoot', 'prescout_additional_comments',
-            
-            
-            
-            
             'accuracy', 'avg_fuel_scored', 'avg_shuttle', 'avg_auto_fuel', 
             'avg_climb_points'
         ]
@@ -113,7 +109,7 @@ class MatchSchema(ModelSchema):
     class Meta:
         model = Match
         fields = [
-            'id', 'competition', 'match_number', 'blue_team_1', 'blue_team_2', 'blue_team_3',
+            'competition', 'match_number', 'blue_team_1', 'blue_team_2', 'blue_team_3',
             'red_team_1', 'red_team_2', 'red_team_3', 'total_points',
             'total_blue_fuels', 'total_red_fuels', 'blue_1_auto_fuel',
             'blue_2_auto_fuel', 'blue_3_auto_fuel', 'red_1_auto_fuel',
