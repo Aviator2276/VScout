@@ -61,11 +61,23 @@ def get_competition_teams(request, code: str):
 
 @api.get("/competitions/{code}/matches", response=List[MatchSchema])
 def get_competition_matches_by_code(request, code: str):
+    from django.db.models import Case, When, IntegerField
+    
     competition = get_object_or_404(Competition, code=code)
+    
+    match_type_order = Case(
+        When(match_type='qualification', then=1),
+        When(match_type='quarterfinal', then=2),
+        When(match_type='semifinal', then=3),
+        When(match_type='final', then=4),
+        default=5,
+        output_field=IntegerField()
+    )
+    
     return Match.objects.select_related(
         'competition', 'blue_team_1', 'blue_team_2', 'blue_team_3',
         'red_team_1', 'red_team_2', 'red_team_3'
-    ).filter(competition=competition).order_by('match_number')
+    ).filter(competition=competition).order_by(match_type_order, 'match_number')
 
 @api.post("/shot-timings", response=ShotTimingSchema)
 def create_shot_timing(request, competition_code: str, match_number: int, team_number: int, payload: ShotTimingCreateSchema):

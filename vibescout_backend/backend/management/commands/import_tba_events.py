@@ -94,6 +94,27 @@ class Command(BaseCommand):
             return
         
         match_number = match_data.get('match_number', 0)
+        tba_key = match_data.get('key', '')
+        
+        # Determine match type from TBA comp_level
+        comp_level = match_data.get('comp_level', 'qm')
+        match_type_map = {
+            'qm': 'qualification',
+            'qf': 'quarterfinal',
+            'sf': 'semifinal',
+            'f': 'final',
+        }
+        match_type = match_type_map.get(comp_level, 'qualification')
+        
+        # Extract set_number from TBA key (e.g., qf1m1 -> set 1, qf2m1 -> set 2)
+        # For qualification matches, set_number is always 1
+        set_number = 1
+        if comp_level in ['qf', 'sf', 'f']:
+            import re
+            # Match pattern like 'qf1', 'sf2', 'f1' in the key
+            match_pattern = re.search(r'_(' + comp_level + r')(\d+)m', tba_key)
+            if match_pattern:
+                set_number = int(match_pattern.group(2))
         
         blue_teams = [self.get_or_create_team(key) for key in blue_team_keys[:3]]
         red_teams = [self.get_or_create_team(key) for key in red_team_keys[:3]]
@@ -141,6 +162,8 @@ class Command(BaseCommand):
         
         match, created = Match.objects.update_or_create(
             competition=competition,
+            match_type=match_type,
+            set_number=set_number,
             match_number=match_number,
             defaults={
                 'blue_team_1': blue_teams[0],

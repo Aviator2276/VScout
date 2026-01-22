@@ -93,8 +93,17 @@ class Match(models.Model):
         ('L3', 'Level 3'),
     ]
     
+    TYPE_CHOICES = [
+        ('qualification', 'Qualification'),
+        ('quarterfinal', 'Quarterfinal'),
+        ('semifinal', 'Semifinal'),
+        ('final', 'Final'),
+    ]
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='matches')
     match_number = models.IntegerField()
+    set_number = models.IntegerField(default=1)
+    has_played = models.BooleanField(default=False)
+    match_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='Qualification')
     blue_team_1 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_1_matches')
     blue_team_2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_2_matches')
     blue_team_3 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_3_matches')
