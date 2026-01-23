@@ -12,12 +12,14 @@ export class NoCompetitionCodeError extends Error {
 export async function getMatches(): Promise<Match[]> {
   try {
     const competitionCode = await getCompetitionCode();
-    
+
     if (!competitionCode) {
       throw new NoCompetitionCodeError();
     }
-    
-    return await apiRequest<Match[]>(`/api/competitions/${competitionCode}/matches`);
+
+    return await apiRequest<Match[]>(
+      `/api/competitions/${competitionCode}/matches`,
+    );
   } catch (error) {
     console.error('Failed to fetch matches:', error);
     throw error;

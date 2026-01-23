@@ -4,16 +4,16 @@ let db: SQLite.SQLiteDatabase | null = null;
 
 async function getDatabase() {
   if (db) return db;
-  
+
   db = await SQLite.openDatabaseAsync('vibescout.db');
-  
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
   `);
-  
+
   return db;
 }
 
@@ -26,7 +26,7 @@ export async function getSetting(key: string): Promise<string | null> {
     const database = await getDatabase();
     const result = await database.getFirstAsync<{ value: string }>(
       'SELECT value FROM settings WHERE key = ?',
-      [key]
+      [key],
     );
     return result?.value || null;
   } catch (error) {
@@ -40,7 +40,7 @@ export async function setSetting(key: string, value: string): Promise<void> {
     const database = await getDatabase();
     await database.runAsync(
       'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-      [key, value]
+      [key, value],
     );
   } catch (error) {
     console.error('Failed to set setting:', error);
@@ -68,7 +68,7 @@ export async function setName(name: string): Promise<void> {
 }
 
 export async function getCompetitionCode(): Promise<string | null> {
-  return await getSetting('competitionCode');
+  return process.env.COMPCODE || (await getSetting('competitionCode'));
 }
 
 export async function setCompetitionCode(code: string): Promise<void> {
