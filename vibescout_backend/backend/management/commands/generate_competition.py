@@ -370,99 +370,114 @@ class Command(BaseCommand):
             return match, winner, loser
         
         # Double Elimination Bracket Structure
-        # Upper Bracket: Quarterfinals (4 matches) - Set 1
-        self.stdout.write('\n--- Upper Bracket Quarterfinals (Set 1) ---')
+        # Upper Bracket: Quarterfinals (each pairing gets its own set number)
+        self.stdout.write('\n--- Upper Bracket Quarterfinals ---')
         upper_qf_winners = []
         lower_bracket = []
         
-        # QF1: Alliance 1 vs Alliance 8
-        match, winner, loser = create_playoff_match(alliances[0], alliances[7], 'quarterfinal', 1, 1)
+        # QF1: Alliance 1 vs Alliance 8 (Set 1) - In 2025 format, upper bracket QFs use 'semifinal' type
+        match, winner, loser = create_playoff_match(alliances[0], alliances[7], 'semifinal', 1, 1)
         self.stdout.write(f'QF1 (Set 1, Match 1): Alliance {alliances[0]["number"]} vs Alliance {alliances[7]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_qf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # QF2: Alliance 4 vs Alliance 5
-        match, winner, loser = create_playoff_match(alliances[3], alliances[4], 'quarterfinal', 1, 2)
-        self.stdout.write(f'QF2 (Set 1, Match 2): Alliance {alliances[3]["number"]} vs Alliance {alliances[4]["number"]} -> Winner: Alliance {winner["number"]}')
+        # QF2: Alliance 4 vs Alliance 5 (Set 2)
+        match, winner, loser = create_playoff_match(alliances[3], alliances[4], 'semifinal', 2, 1)
+        self.stdout.write(f'QF2 (Set 2, Match 1): Alliance {alliances[3]["number"]} vs Alliance {alliances[4]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_qf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # QF3: Alliance 2 vs Alliance 7
-        match, winner, loser = create_playoff_match(alliances[1], alliances[6], 'quarterfinal', 1, 3)
-        self.stdout.write(f'QF3 (Set 1, Match 3): Alliance {alliances[1]["number"]} vs Alliance {alliances[6]["number"]} -> Winner: Alliance {winner["number"]}')
+        # QF3: Alliance 2 vs Alliance 7 (Set 3)
+        match, winner, loser = create_playoff_match(alliances[1], alliances[6], 'semifinal', 3, 1)
+        self.stdout.write(f'QF3 (Set 3, Match 1): Alliance {alliances[1]["number"]} vs Alliance {alliances[6]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_qf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # QF4: Alliance 3 vs Alliance 6
-        match, winner, loser = create_playoff_match(alliances[2], alliances[5], 'quarterfinal', 1, 4)
-        self.stdout.write(f'QF4 (Set 1, Match 4): Alliance {alliances[2]["number"]} vs Alliance {alliances[5]["number"]} -> Winner: Alliance {winner["number"]}')
+        # QF4: Alliance 3 vs Alliance 6 (Set 4)
+        match, winner, loser = create_playoff_match(alliances[2], alliances[5], 'semifinal', 4, 1)
+        self.stdout.write(f'QF4 (Set 4, Match 1): Alliance {alliances[2]["number"]} vs Alliance {alliances[5]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_qf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # Upper Bracket: Semifinals (2 matches) - Set 1
-        self.stdout.write('\n--- Upper Bracket Semifinals (Set 1) ---')
+        # Upper Bracket: Semifinals (each pairing gets its own set number)
+        self.stdout.write('\n--- Upper Bracket Semifinals ---')
         upper_sf_winners = []
         
-        # SF1: QF1 winner vs QF2 winner
-        match, winner, loser = create_playoff_match(upper_qf_winners[0], upper_qf_winners[1], 'semifinal', 1, 5)
-        self.stdout.write(f'SF1 (Set 1, Match 5): Alliance {upper_qf_winners[0]["number"]} vs Alliance {upper_qf_winners[1]["number"]} -> Winner: Alliance {winner["number"]}')
+        # SF1: QF1 winner vs QF2 winner (Set 5)
+        match, winner, loser = create_playoff_match(upper_qf_winners[0], upper_qf_winners[1], 'semifinal', 5, 1)
+        self.stdout.write(f'SF1 (Set 5, Match 1): Alliance {upper_qf_winners[0]["number"]} vs Alliance {upper_qf_winners[1]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_sf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # SF2: QF3 winner vs QF4 winner
-        match, winner, loser = create_playoff_match(upper_qf_winners[2], upper_qf_winners[3], 'semifinal', 1, 6)
-        self.stdout.write(f'SF2 (Set 1, Match 6): Alliance {upper_qf_winners[2]["number"]} vs Alliance {upper_qf_winners[3]["number"]} -> Winner: Alliance {winner["number"]}')
+        # SF2: QF3 winner vs QF4 winner (Set 6)
+        match, winner, loser = create_playoff_match(upper_qf_winners[2], upper_qf_winners[3], 'semifinal', 6, 1)
+        self.stdout.write(f'SF2 (Set 6, Match 1): Alliance {upper_qf_winners[2]["number"]} vs Alliance {upper_qf_winners[3]["number"]} -> Winner: Alliance {winner["number"]}')
         upper_sf_winners.append(winner)
         lower_bracket.append(loser)
         
-        # Lower Bracket: Round 1 (2 matches) - Set 2
-        self.stdout.write('\n--- Lower Bracket Round 1 (Set 2) ---')
+        # Lower Bracket: Round 1 (each pairing gets its own set number)
+        self.stdout.write('\n--- Lower Bracket Round 1 ---')
         lower_r1_winners = []
         
-        # LB1: QF1 loser vs QF2 loser
-        match, winner, loser = create_playoff_match(lower_bracket[0], lower_bracket[1], 'quarterfinal', 2, 1)
-        self.stdout.write(f'LB1 (Set 2, Match 1): Alliance {lower_bracket[0]["number"]} vs Alliance {lower_bracket[1]["number"]} -> Winner: Alliance {winner["number"]}')
+        # LB1: QF1 loser vs QF2 loser (Set 7) - In 2025, lower bracket uses 'semifinal' type
+        match, winner, loser = create_playoff_match(lower_bracket[0], lower_bracket[1], 'semifinal', 7, 1)
+        self.stdout.write(f'LB1 (Set 7, Match 1): Alliance {lower_bracket[0]["number"]} vs Alliance {lower_bracket[1]["number"]} -> Winner: Alliance {winner["number"]}')
         lower_r1_winners.append(winner)
         
-        # LB2: QF3 loser vs QF4 loser
-        match, winner, loser = create_playoff_match(lower_bracket[2], lower_bracket[3], 'quarterfinal', 2, 2)
-        self.stdout.write(f'LB2 (Set 2, Match 2): Alliance {lower_bracket[2]["number"]} vs Alliance {lower_bracket[3]["number"]} -> Winner: Alliance {winner["number"]}')
+        # LB2: QF3 loser vs QF4 loser (Set 8)
+        match, winner, loser = create_playoff_match(lower_bracket[2], lower_bracket[3], 'semifinal', 8, 1)
+        self.stdout.write(f'LB2 (Set 8, Match 1): Alliance {lower_bracket[2]["number"]} vs Alliance {lower_bracket[3]["number"]} -> Winner: Alliance {winner["number"]}')
         lower_r1_winners.append(winner)
         
-        # Lower Bracket: Round 2 (2 matches) - LB winners vs Upper SF losers - Set 2
-        self.stdout.write('\n--- Lower Bracket Round 2 (Set 2) ---')
+        # Lower Bracket: Round 2 - LB winners vs Upper SF losers (each pairing gets its own set number)
+        self.stdout.write('\n--- Lower Bracket Round 2 ---')
         lower_r2_winners = []
         
-        # LB3: LB1 winner vs SF1 loser
-        match, winner, loser = create_playoff_match(lower_r1_winners[0], lower_bracket[4], 'semifinal', 2, 3)
-        self.stdout.write(f'LB3 (Set 2, Match 3): Alliance {lower_r1_winners[0]["number"]} vs Alliance {lower_bracket[4]["number"]} -> Winner: Alliance {winner["number"]}')
+        # LB3: LB1 winner vs SF1 loser (Set 9)
+        match, winner, loser = create_playoff_match(lower_r1_winners[0], lower_bracket[4], 'semifinal', 9, 1)
+        self.stdout.write(f'LB3 (Set 9, Match 1): Alliance {lower_r1_winners[0]["number"]} vs Alliance {lower_bracket[4]["number"]} -> Winner: Alliance {winner["number"]}')
         lower_r2_winners.append(winner)
         
-        # LB4: LB2 winner vs SF2 loser
-        match, winner, loser = create_playoff_match(lower_r1_winners[1], lower_bracket[5], 'semifinal', 2, 4)
-        self.stdout.write(f'LB4 (Set 2, Match 4): Alliance {lower_r1_winners[1]["number"]} vs Alliance {lower_bracket[5]["number"]} -> Winner: Alliance {winner["number"]}')
+        # LB4: LB2 winner vs SF2 loser (Set 10)
+        match, winner, loser = create_playoff_match(lower_r1_winners[1], lower_bracket[5], 'semifinal', 10, 1)
+        self.stdout.write(f'LB4 (Set 10, Match 1): Alliance {lower_r1_winners[1]["number"]} vs Alliance {lower_bracket[5]["number"]} -> Winner: Alliance {winner["number"]}')
         lower_r2_winners.append(winner)
         
-        # Lower Bracket: Finals (1 match) - Set 3
-        self.stdout.write('\n--- Lower Bracket Finals (Set 3) ---')
-        match, lower_finalist, loser = create_playoff_match(lower_r2_winners[0], lower_r2_winners[1], 'semifinal', 3, 1)
-        self.stdout.write(f'LBF (Set 3, Match 1): Alliance {lower_r2_winners[0]["number"]} vs Alliance {lower_r2_winners[1]["number"]} -> Winner: Alliance {lower_finalist["number"]}')
+        # Lower Bracket: Finals (Set 11)
+        self.stdout.write('\n--- Lower Bracket Finals ---')
+        match, lower_finalist, loser = create_playoff_match(lower_r2_winners[0], lower_r2_winners[1], 'semifinal', 11, 1)
+        self.stdout.write(f'LBF (Set 11, Match 1): Alliance {lower_r2_winners[0]["number"]} vs Alliance {lower_r2_winners[1]["number"]} -> Winner: Alliance {lower_finalist["number"]}')
         
-        # Upper Bracket: Finals (1 match) - Set 1
-        self.stdout.write('\n--- Upper Bracket Finals (Set 1) ---')
-        match, upper_finalist, upper_loser = create_playoff_match(upper_sf_winners[0], upper_sf_winners[1], 'final', 1, 7)
-        self.stdout.write(f'UBF (Set 1, Match 7): Alliance {upper_sf_winners[0]["number"]} vs Alliance {upper_sf_winners[1]["number"]} -> Winner: Alliance {upper_finalist["number"]}')
+        # Upper Bracket: Finals (Set 12) - In 2025, this is still 'semifinal' type
+        self.stdout.write('\n--- Upper Bracket Finals ---')
+        match, upper_finalist, upper_loser = create_playoff_match(upper_sf_winners[0], upper_sf_winners[1], 'semifinal', 12, 1)
+        self.stdout.write(f'UBF (Set 12, Match 1): Alliance {upper_sf_winners[0]["number"]} vs Alliance {upper_sf_winners[1]["number"]} -> Winner: Alliance {upper_finalist["number"]}')
         
-        # Grand Finals - Set 4
-        self.stdout.write('\n--- Grand Finals (Set 4) ---')
-        match, champion, runner_up = create_playoff_match(upper_finalist, lower_finalist, 'final', 4, 1)
-        self.stdout.write(f'GF1 (Set 4, Match 1): Alliance {upper_finalist["number"]} vs Alliance {lower_finalist["number"]} -> Winner: Alliance {champion["number"]}')
+        # Grand Finals (Set 13) - Best of 3 series
+        self.stdout.write('\n--- Grand Finals (Best of 3) ---')
+        upper_wins = 0
+        lower_wins = 0
+        champion = None
         
-        # If lower bracket finalist wins, play bracket reset match
-        if champion == lower_finalist:
-            self.stdout.write('\n--- Grand Finals Bracket Reset (Set 4) ---')
-            match, champion, runner_up = create_playoff_match(upper_finalist, lower_finalist, 'final', 4, 2)
-            self.stdout.write(f'GF2 (Set 4, Match 2): Alliance {upper_finalist["number"]} vs Alliance {lower_finalist["number"]} -> Winner: Alliance {champion["number"]}')
+        for match_num in range(1, 4):  # Up to 3 matches
+            match, winner, loser = create_playoff_match(upper_finalist, lower_finalist, 'final', 13, match_num)
+            
+            if winner == upper_finalist:
+                upper_wins += 1
+            else:
+                lower_wins += 1
+            
+            self.stdout.write(f'GF{match_num} (Set 13, Match {match_num}): Alliance {upper_finalist["number"]} vs Alliance {lower_finalist["number"]} -> Winner: Alliance {winner["number"]} (Score: {upper_wins}-{lower_wins})')
+            
+            # Check if we have a champion (first to 2 wins)
+            if upper_wins == 2:
+                champion = upper_finalist
+                runner_up = lower_finalist
+                break
+            elif lower_wins == 2:
+                champion = lower_finalist
+                runner_up = upper_finalist
+                break
         
         self.stdout.write(self.style.SUCCESS(f'\n🏆 CHAMPION: Alliance {champion["number"]} 🏆'))
         self.stdout.write(f'   Teams: {champion["teams"][0].number}, {champion["teams"][1].number}, {champion["teams"][2].number}')
