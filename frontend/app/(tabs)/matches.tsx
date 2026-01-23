@@ -49,10 +49,7 @@ export default function MatchesScreen() {
     } catch (error) {
       console.error('Failed to load matches:', error);
       if (error instanceof NoCompetitionCodeError) {
-        setError('No competition code set. Redirecting to onboarding...');
-        setTimeout(() => {
-          router.replace('/onboarding');
-        }, 2000);
+        setError('No competition code set. Please set on Home screen.');
       } else {
         setError('Failed to load matches');
       }

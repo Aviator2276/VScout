@@ -1,51 +1,8 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
-import { useEffect, useState } from 'react';
-import { getCompetitionCode } from '@/utils/storage';
 import '../global.css';
 
 export default function AppLayout() {
-  const [isReady, setIsReady] = useState(false);
-  const router = useRouter();
-  const segments = useSegments();
-
-  useEffect(() => {
-    checkOnboarding();
-  }, []);
-
-  useEffect(() => {
-    if (!isReady) return;
-
-    const inOnboarding = segments[0] === 'onboarding';
-
-    getCompetitionCode().then((code) => {
-      const hasValidCode = code && code.trim().length > 0;
-      
-      if (!hasValidCode && !inOnboarding) {
-        router.replace('/onboarding');
-      } else if (hasValidCode && inOnboarding) {
-        router.replace('/(tabs)');
-      }
-    });
-  }, [isReady, segments]);
-
-  async function checkOnboarding() {
-    try {
-      const code = await getCompetitionCode();
-      const hasValidCode = code && code.trim().length > 0;
-      
-      if (!hasValidCode) {
-        router.replace('/onboarding');
-      } else {
-        router.replace('/(tabs)');
-      }
-    } catch (error) {
-      console.error('Failed to check onboarding status:', error);
-    } finally {
-      setIsReady(true);
-    }
-  }
-
   return (
     <GluestackUIProvider mode="dark">
       <Stack screenOptions={{ headerShown: false }}>

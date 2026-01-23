@@ -6,7 +6,6 @@ import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
 import { Button, ButtonText } from '@/components/ui/button';
 import { VStack } from '@/components/ui/vstack';
 import { resetDatabase } from '@/utils/storage';
-import { useRouter } from 'expo-router';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -19,14 +18,12 @@ import {
 export default function RecordsScreen() {
   const [isResetting, setIsResetting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const router = useRouter();
 
   async function handleResetDatabase() {
     try {
       setIsResetting(true);
       await resetDatabase();
       setShowDialog(false);
-      router.replace('/onboarding');
     } catch (error) {
       console.error('Failed to reset database:', error);
       setIsResetting(false);
