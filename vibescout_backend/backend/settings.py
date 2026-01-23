@@ -31,7 +31,7 @@ SECRET_KEY = 'django-insecure-tsypkgno@k@b&jw*u(_ccsw4r712f_93w5kj)1y1p0mi7l(rlp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '8000--main--django-playground--aviator2277.chargingcourses.com']
 
 
 # Application definition
