@@ -11,9 +11,15 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from root .env file
+ROOT_DIR = BASE_DIR.parent
+load_dotenv(ROOT_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +31,7 @@ SECRET_KEY = 'django-insecure-tsypkgno@k@b&jw*u(_ccsw4r712f_93w5kj)1y1p0mi7l(rlp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '8000--main--django-playground--aviator2277.chargingcourses.com']
 
 
 # Application definition
@@ -37,12 +43,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'backend',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -116,3 +124,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# CORS Configuration
+# For development: Allow all origins
+# For production: Uncomment CORS_ALLOWED_ORIGINS and add your production domains
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'http://8000--main--django-playground--aviator2277.chargingcourses.com',
+        'https://8000--main--django-playground--aviator2277.chargingcourses.com',
+        'https://www.yourdomain.com',
+        # Add your production frontend URLs here
+    ]
+
+CORS_ALLOW_CREDENTIALS = True
