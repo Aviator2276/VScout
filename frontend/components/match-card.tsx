@@ -5,16 +5,7 @@ import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Match } from '@/types/match';
-import { Divider } from '@/components/ui/divider';
-import {
-  Table,
-  TableBody,
-  TableData,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './ui/table';
-import { Badge, BadgeText } from './ui/badge';
+import { Badge, BadgeText } from '@/components/ui/badge';
 
 interface MatchCardProps {
   match: Match;
@@ -22,7 +13,11 @@ interface MatchCardProps {
   searchQuery?: string;
 }
 
-export function MatchCard({ match, onScout, searchQuery = '' }: MatchCardProps) {
+export function MatchCard({
+  match,
+  onScout,
+  searchQuery = '',
+}: MatchCardProps) {
   const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
   const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
 
@@ -61,7 +56,11 @@ export function MatchCard({ match, onScout, searchQuery = '' }: MatchCardProps) 
                   size="lg"
                   variant="solid"
                   key={`blue-${index}`}
-                  className={isHighlighted ? "!bg-amber-600 font-medium flex-1" : "!bg-blue-600 font-medium flex-1"}
+                  className={
+                    isHighlighted
+                      ? '!bg-amber-600 font-medium flex-1'
+                      : '!bg-blue-600 font-medium flex-1'
+                  }
                 >
                   <BadgeText>{team.number}</BadgeText>
                 </Badge>
@@ -70,11 +69,15 @@ export function MatchCard({ match, onScout, searchQuery = '' }: MatchCardProps) 
             {redTeams.map((team, index) => {
               const isHighlighted = isTeamHighlighted(team.number);
               return (
-                <Badge 
+                <Badge
                   size="lg"
                   variant="solid"
-                  key={`red-${index}`} 
-                  className={isHighlighted ? "!bg-amber-600 font-medium flex-1" : "!bg-red-600 font-medium flex-1"}
+                  key={`red-${index}`}
+                  className={
+                    isHighlighted
+                      ? '!bg-amber-600 font-medium flex-1'
+                      : '!bg-red-600 font-medium flex-1'
+                  }
                 >
                   <BadgeText>{team.number}</BadgeText>
                 </Badge>

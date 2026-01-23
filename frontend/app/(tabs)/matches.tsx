@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { Icon, SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
+import { ScrollView } from 'react-native';
 
 export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -104,16 +105,15 @@ export default function MatchesScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="p-4">
+      <Box className="p-4 flex-1">
         <VStack space="md">
-          <HStack className="flex justify-between">
+          <HStack space="md" className="flex justify-between">
             <Heading size="3xl">Matches</Heading>
-            <Badge size="lg" variant="solid" action="info">
+            <Badge size="lg" variant="solid" action="info" className="h-8">
               <BadgeText>{competitionCode}</BadgeText>
             </Badge>
           </HStack>
-
-          <Input size="lg" className="mb-4 web:mt-8">
+          <Input size="lg" className="mb-4">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
             </InputSlot>
@@ -124,20 +124,19 @@ export default function MatchesScreen() {
             />
           </Input>
         </VStack>
-
         {loading ? (
-          <Center className="h-full">
+          <Center className="flex-1">
             <ActivityIndicator size="large" />
           </Center>
         ) : error ? (
-          <Center className="h-full">
+          <Center className="flex-1">
             <Text className="text-center text-error-500 p-4">{error}</Text>
           </Center>
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
-            className="web:!mt-20"
+            contentContainerStyle={{ paddingBottom: 100 }}
+            style={{ flex: 1 }}
           >
             {filteredMatches.length === 0 ? (
               <Text className="text-center text-typography-500 mt-8">
