@@ -105,7 +105,7 @@ export default function MatchesScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="p-4 flex-1">
+      <Box className="p-4 flex-1 max-w-2xl self-center w-full">
         <VStack space="md">
           <HStack space="md" className="flex justify-between">
             <Heading size="3xl">Matches</Heading>

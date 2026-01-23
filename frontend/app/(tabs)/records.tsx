@@ -35,14 +35,14 @@ export default function RecordsScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Center className="h-full">
+      <Center className="p-4 flex-1 max-w-2xl self-center w-full">
         <VStack space="lg" className="items-center">
-          <Heading size='3xl'>Records</Heading>
+          <Heading size="3xl">Records</Heading>
           <Text className="p-4">View your scouting records</Text>
-          
-          <Button 
-            size="lg" 
-            action="negative" 
+
+          <Button
+            size="lg"
+            action="negative"
             onPress={() => setShowDialog(true)}
             isDisabled={isResetting}
           >
@@ -59,7 +59,8 @@ export default function RecordsScreen() {
           </AlertDialogHeader>
           <AlertDialogBody>
             <Text>
-              Are you sure you want to delete all data? This will reset the app and show onboarding again.
+              Are you sure you want to delete all data? This will reset the app
+              and show onboarding again.
             </Text>
           </AlertDialogBody>
           <AlertDialogFooter>
@@ -76,7 +77,9 @@ export default function RecordsScreen() {
               onPress={handleResetDatabase}
               isDisabled={isResetting}
             >
-              <ButtonText>{isResetting ? 'Resetting...' : 'Delete All'}</ButtonText>
+              <ButtonText>
+                {isResetting ? 'Resetting...' : 'Delete All'}
+              </ButtonText>
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

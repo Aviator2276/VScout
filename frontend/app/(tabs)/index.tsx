@@ -8,7 +8,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 export default function HomeScreen() {
   return (
     <AdaptiveSafeArea>
-      <Center className="h-full">
+      <Center className="p-4 flex-1 max-w-2xl self-center w-full">
         <VStack space="lg" className="items-center">
           <Heading size="3xl">Home</Heading>
           <Text className="p-4">Welcome to VibeScout</Text>
