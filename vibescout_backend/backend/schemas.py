@@ -61,6 +61,7 @@ class MatchSchema(ModelSchema):
         model = Match
         fields = [
             'competition', 'match_number', 'set_number', 'match_type', 'has_played',
+            'predicted_match_time', 'start_match_time', 'end_match_time',
             'blue_team_1', 'blue_team_2', 'blue_team_3',
             'red_team_1', 'red_team_2', 'red_team_3', 'total_points',
             'total_blue_fuels', 'total_red_fuels', 'blue_1_auto_fuel',

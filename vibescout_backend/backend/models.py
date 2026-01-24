@@ -15,6 +15,12 @@ class Team(models.Model):
 class Competition(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True)
+    offset_stream_time_to_unix_timestamp_day_1 = models.IntegerField(default=0) # in seconds
+    offset_stream_time_to_unix_timestamp_day_2 = models.IntegerField(default=0) # in seconds
+    offset_stream_time_to_unix_timestamp_day_3 = models.IntegerField(default=0) # in seconds
+    stream_link_day_1 = models.CharField(max_length=255, blank=True, null=True)
+    stream_link_day_2 = models.CharField(max_length=255, blank=True, null=True)
+    stream_link_day_3 = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -110,6 +116,10 @@ class Match(models.Model):
     red_team_1 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='red_1_matches')
     red_team_2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='red_2_matches')
     red_team_3 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='red_3_matches')
+    
+    predicted_match_time = models.IntegerField(default=0) # Unix timestamp
+    start_match_time = models.IntegerField(default=0) # Unix timestamp
+    end_match_time = models.IntegerField(default=0) # Unix timestamp
     
     total_points = models.IntegerField(default=0)
     total_blue_fuels = models.IntegerField(default=0)

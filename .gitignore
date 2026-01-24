@@ -224,3 +224,6 @@ dmypy.json
 cython_debug/
 /vibescout_backend/backend/__pycache__
 *.pyc
+
+# match_videos
+match_videos
