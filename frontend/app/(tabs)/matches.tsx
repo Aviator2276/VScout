@@ -10,35 +10,22 @@ import { Center } from '@/components/ui/center';
 import { HStack } from '@/components/ui/hstack';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
-import { getCompetitionCode } from '@/utils/storage';
-import { useRouter } from 'expo-router';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
-import { Icon, SearchIcon } from '@/components/ui/icon';
+import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ScrollView } from 'react-native';
+import { useCompetitionCode } from '@/utils/CompetitionContext';
 
 export default function MatchesScreen() {
+  const { competitionCode } = useCompetitionCode();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [competitionCode, setCompetitionCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const router = useRouter();
 
   useEffect(() => {
     loadMatches();
-    loadCompetitionCode();
-  }, []);
-
-  async function loadCompetitionCode() {
-    try {
-      const code = await getCompetitionCode();
-      setCompetitionCode(code || 'N/A');
-    } catch (error) {
-      console.error('Failed to load competition code:', error);
-      setCompetitionCode('N/A');
-    }
-  }
+  }, [competitionCode]);
 
   async function loadMatches() {
     try {
@@ -89,7 +76,6 @@ export default function MatchesScreen() {
       });
     }
 
-    // Otherwise search by match number
     return matches.filter((match) =>
       match.match_number.toString().includes(query),
     );
@@ -107,7 +93,7 @@ export default function MatchesScreen() {
           <HStack space="md" className="flex justify-between">
             <Heading size="3xl">Matches</Heading>
             <Badge size="lg" variant="solid" action="info" className="h-8">
-              <BadgeText>{competitionCode}</BadgeText>
+              <BadgeText>{competitionCode || 'N/A'}</BadgeText>
             </Badge>
           </HStack>
           <Input size="lg" className="mb-4">

@@ -20,21 +20,19 @@ import {
 } from '@/components/ui/select';
 import { HStack } from '@/components/ui/hstack';
 import { useEffect, useState } from 'react';
-import { initDatabase, setCompetitionCode } from '@/utils/storage';
 import { getCompetitions, Competition } from '@/api/competitions';
 import { ChevronDownIcon } from '@/components/ui/icon';
+import { useCompetitionCode } from '@/utils/CompetitionContext';
 
 export default function HomeScreen() {
+  const { competitionCode, setCompetitionCode: setGlobalCompetitionCode } =
+    useCompetitionCode();
   const [isCompleting, setIsCompleting] = useState(false);
-  const [competitionCode, setCompetitionCodeState] = useState('');
+  const [localCompetitionCode, setLocalCompetitionCode] = useState('');
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loadingCompetitions, setLoadingCompetitions] = useState(true);
-  const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
-    initDatabase()
-      .then(() => setDbReady(true))
-      .catch((err) => console.error('Failed to init database:', err));
     loadCompetitions();
   }, []);
 
@@ -66,13 +64,14 @@ export default function HomeScreen() {
   async function handleComplete() {
     if (isCompleting) return;
 
-    if (!competitionCode) {
+    if (!localCompetitionCode) {
       return;
     }
 
     try {
       setIsCompleting(true);
-      await setCompetitionCode(competitionCode);
+      await setGlobalCompetitionCode(localCompetitionCode);
+      setIsCompleting(false);
     } catch (error) {
       console.error('Failed to save settings:', error);
       setIsCompleting(false);
@@ -91,8 +90,8 @@ export default function HomeScreen() {
             Competition
           </Text>
           <Select
-            selectedValue={competitionCode}
-            onValueChange={(value) => setCompetitionCodeState(value)}
+            selectedValue={localCompetitionCode}
+            onValueChange={(value) => setLocalCompetitionCode(value)}
           >
             <SelectTrigger size="lg">
               <SelectInput placeholder="Select competition" />
@@ -143,7 +142,7 @@ export default function HomeScreen() {
               size="lg"
               action="primary"
               onPress={handleComplete}
-              isDisabled={!competitionCode || !dbReady}
+              isDisabled={!localCompetitionCode}
             >
               <ButtonText>Set Comp Code</ButtonText>
             </Button>

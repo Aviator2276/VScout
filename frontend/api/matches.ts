@@ -1,6 +1,6 @@
 import { Match } from '@/types/match';
 import { apiRequest } from '@/config/api';
-import { getCompetitionCode } from '@/utils/storage';
+import { db } from '@/utils/db';
 
 export class NoCompetitionCodeError extends Error {
   constructor() {
@@ -11,7 +11,7 @@ export class NoCompetitionCodeError extends Error {
 
 export async function getMatches(): Promise<Match[]> {
   try {
-    const competitionCode = await getCompetitionCode();
+    const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
     if (!competitionCode) {
       throw new NoCompetitionCodeError();

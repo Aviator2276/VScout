@@ -5,7 +5,7 @@ import { Text } from '@/components/ui/text';
 import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
 import { Button, ButtonText } from '@/components/ui/button';
 import { VStack } from '@/components/ui/vstack';
-import { resetDatabase } from '@/utils/storage';
+import { db } from '@/utils/db';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -22,7 +22,15 @@ export default function RecordsScreen() {
   async function handleResetDatabase() {
     try {
       setIsResetting(true);
-      await resetDatabase();
+      await db
+        .delete()
+        .then(async () => {
+          console.log('Database successfully deleted');
+          await db.open();
+          console.log('Database reinitialized');
+          setIsResetting(false);
+        })
+        .catch((err) => console.log(err));
       setShowDialog(false);
     } catch (error) {
       console.error('Failed to reset database:', error);

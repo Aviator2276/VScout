@@ -56,8 +56,8 @@ export function MatchCard({
                   size="lg"
                   variant="solid"
                   key={`blue-${index}`}
-                  className={`font-medium flex-1 justify-center ${
-                    isHighlighted ? '!bg-amber-600' : '!bg-blue-600'
+                  className={`!bg-blue-600 font-medium flex-1 justify-center py-2 ${
+                    isHighlighted && '!border-amber-400 border-4 py-0'
                   }`}
                 >
                   <BadgeText>{team.number}</BadgeText>
@@ -71,8 +71,8 @@ export function MatchCard({
                   size="lg"
                   variant="solid"
                   key={`red-${index}`}
-                  className={`font-medium flex-1 justify-center ${
-                    isHighlighted ? '!bg-amber-600' : '!bg-red-600'
+                  className={`!bg-red-600 font-medium flex-1 justify-center py-2 ${
+                    isHighlighted && '!border-amber-400 border-4 py-0'
                   }`}
                 >
                   <BadgeText>{team.number}</BadgeText>
