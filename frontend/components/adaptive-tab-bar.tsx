@@ -42,9 +42,9 @@ export function AdaptiveTabBar({
             }
           : {
               flexDirection: 'row',
-              height: 60 + insets.bottom,
+              height: 70 + insets.bottom,
               width: '100%',
-              paddingTop: 10,
+              paddingTop: 0,
               paddingBottom: insets.bottom,
             }),
       }}

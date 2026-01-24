@@ -67,7 +67,7 @@ export default function MatchesScreen() {
 
     // Check if searching for team number (starts with @)
     if (query.startsWith('@')) {
-      const teamQuery = query.slice(1); // Remove @ symbol
+      const teamQuery = query.slice(1);
 
       if (!teamQuery) {
         return matches;
