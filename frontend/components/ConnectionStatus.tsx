@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Pressable } from 'react-native';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import {
+  Loader,
   LoaderCircle,
   LucideIcon,
+  Radio,
   Wifi,
   WifiHigh,
   WifiLow,
   WifiOff,
 } from 'lucide-react-native';
+import { Spinner } from './ui/spinner';
 
 interface ConnectionStatusProps {
   ping: number | null;
@@ -59,7 +62,7 @@ export function ConnectionStatus({
     }
 
     if (serverStatus === 'checking' || ping === null) {
-      return { action: 'muted', icon: LoaderCircle, label: 'Checking...' };
+      return { action: 'muted', icon: Radio, label: 'Checking...' };
     }
 
     // Ping thresholds (in milliseconds)
@@ -81,10 +84,16 @@ export function ConnectionStatus({
     <Pressable onPress={handlePress}>
       <Badge size={size} variant="solid" action={quality.action}>
         {showPing && ping !== null && <BadgeText>{ping} ms</BadgeText>}
-        <BadgeIcon
-          as={quality.icon}
-          className={`${showPing && ping !== null ? 'ml-1' : 'my-[0.1rem]'} ${isChecking ? 'animate-spin' : ''}`}
-        />
+        {isChecking ? (
+          <Spinner size="small" className="ml-1" color="grey" />
+        ) : (
+          <BadgeIcon
+            as={quality.icon}
+            className={
+              showPing && ping !== null ? 'ml-1 my-[0.1rem]' : 'my-[0.1rem]'
+            }
+          />
+        )}
       </Badge>
     </Pressable>
   );
