@@ -31,7 +31,7 @@ export default function MatchDetailScreen() {
       setError(null);
       const matches = await getMatches();
       const foundMatch = matches.find((m) => m.match_number.toString() === id);
-      
+
       if (foundMatch) {
         setMatch(foundMatch);
       } else {
@@ -77,7 +77,9 @@ export default function MatchDetailScreen() {
     return (
       <AdaptiveSafeArea>
         <Center className="flex-1 p-4">
-          <Text className="text-error-500 text-center mb-4">{error || 'Match not found'}</Text>
+          <Text className="text-error-500 text-center mb-4">
+            {error || 'Match not found'}
+          </Text>
           <Button onPress={() => router.back()}>
             <ButtonText>Go Back</ButtonText>
           </Button>
@@ -97,21 +99,33 @@ export default function MatchDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <ScrollView className="flex-1">
-        <Box className="p-4 max-w-2xl self-center w-full">
-          <VStack space="lg">
-            {/* Header */}
-            <HStack className="items-center justify-between">
-              <Button variant="link" onPress={() => router.back()}>
-                <ButtonText>← Back</ButtonText>
+      <Box className="p-4 max-w-2xl self-center w-full">
+        <VStack space="lg">
+          <HStack className="items-center justify-between">
+            <HStack className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-2"
+                onPress={() => router.back()}
+              >
+                <ButtonText>←</ButtonText>
               </Button>
-              <Badge size="lg" variant="solid" action={isMatchCompleted() ? 'success' : 'warning'}>
-                <BadgeText>{isMatchCompleted() ? 'Completed' : 'Upcoming'}</BadgeText>
-              </Badge>
+              <Heading size="2xl">Match Details</Heading>
             </HStack>
-
+            <Badge
+              size="lg"
+              variant="solid"
+              action={isMatchCompleted() ? 'success' : 'warning'}
+            >
+              <BadgeText>
+                {isMatchCompleted() ? 'Completed' : 'Upcoming'}
+              </BadgeText>
+            </Badge>
+          </HStack>
+          <ScrollView className="flex-1 pb-6">
             {/* Match Info */}
-            <Card variant="outline" className="p-4">
+            <Card variant="outline" className="p-4 mb-2">
               <VStack space="md">
                 <Heading size="2xl" className="capitalize">
                   {match.match_type} Match #{match.match_number}
@@ -119,7 +133,9 @@ export default function MatchDetailScreen() {
                 <VStack space="xs">
                   <HStack className="justify-between">
                     <Text className="text-typography-700">Competition:</Text>
-                    <Text className="font-semibold">{match.competition.name}</Text>
+                    <Text className="font-semibold">
+                      {match.competition.name}
+                    </Text>
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-700">Set Number:</Text>
@@ -127,45 +143,66 @@ export default function MatchDetailScreen() {
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-700">Start Time:</Text>
-                    <Text className="font-semibold">{formatMatchTime(match.start_match_time)}</Text>
+                    <Text className="font-semibold">
+                      {formatMatchTime(match.start_match_time)}
+                    </Text>
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-700">Duration:</Text>
                     <Text className="font-semibold">
-                      {formatDuration(match.start_match_time, match.end_match_time)}
+                      {formatDuration(
+                        match.start_match_time,
+                        match.end_match_time,
+                      )}
                     </Text>
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-700">Total Points:</Text>
-                    <Text className="font-semibold text-xl">{match.total_points}</Text>
+                    <Text className="font-semibold text-xl">
+                      {match.total_points}
+                    </Text>
                   </HStack>
                 </VStack>
               </VStack>
             </Card>
 
             {/* Teams */}
-            <Card variant="outline" className="p-4">
+            <Card variant="outline" className="p-4 mb-2">
               <VStack space="md">
                 <Heading size="lg">Teams</Heading>
-                
+
                 {/* Blue Alliance */}
                 <VStack space="xs">
-                  <Text className="font-semibold text-blue-500">Blue Alliance</Text>
+                  <Text className="font-semibold text-blue-500">
+                    Blue Alliance
+                  </Text>
                   {blueTeams.map((team, index) => (
-                    <HStack key={`blue-${index}`} className="items-center justify-between p-2 bg-blue-950/20 rounded">
+                    <HStack
+                      key={`blue-${index}`}
+                      className="items-center justify-between p-2 bg-blue-950/20 rounded"
+                    >
                       <Text className="font-medium">Team {team.number}</Text>
-                      <Text className="text-sm text-typography-600">{team.name}</Text>
+                      <Text className="text-sm text-typography-600">
+                        {team.name}
+                      </Text>
                     </HStack>
                   ))}
                 </VStack>
 
                 {/* Red Alliance */}
                 <VStack space="xs">
-                  <Text className="font-semibold text-red-500">Red Alliance</Text>
+                  <Text className="font-semibold text-red-500">
+                    Red Alliance
+                  </Text>
                   {redTeams.map((team, index) => (
-                    <HStack key={`red-${index}`} className="items-center justify-between p-2 bg-red-950/20 rounded">
+                    <HStack
+                      key={`red-${index}`}
+                      className="items-center justify-between p-2 bg-red-950/20 rounded"
+                    >
                       <Text className="font-medium">Team {team.number}</Text>
-                      <Text className="text-sm text-typography-600">{team.name}</Text>
+                      <Text className="text-sm text-typography-600">
+                        {team.name}
+                      </Text>
                     </HStack>
                   ))}
                 </VStack>
@@ -173,18 +210,26 @@ export default function MatchDetailScreen() {
             </Card>
 
             {/* Fuel Statistics */}
-            <Card variant="outline" className="p-4">
+            <Card variant="outline" className="p-4 mb-2">
               <VStack space="md">
                 <Heading size="lg">Fuel Statistics</Heading>
-                
+
                 <VStack space="sm">
                   <HStack className="justify-between">
-                    <Text className="text-typography-700">Total Blue Fuels:</Text>
-                    <Text className="font-semibold text-blue-500">{match.total_blue_fuels}</Text>
+                    <Text className="text-typography-700">
+                      Total Blue Fuels:
+                    </Text>
+                    <Text className="font-semibold text-blue-500">
+                      {match.total_blue_fuels}
+                    </Text>
                   </HStack>
                   <HStack className="justify-between">
-                    <Text className="text-typography-700">Total Red Fuels:</Text>
-                    <Text className="font-semibold text-red-500">{match.total_red_fuels}</Text>
+                    <Text className="text-typography-700">
+                      Total Red Fuels:
+                    </Text>
+                    <Text className="font-semibold text-red-500">
+                      {match.total_red_fuels}
+                    </Text>
                   </HStack>
                 </VStack>
 
@@ -278,49 +323,95 @@ export default function MatchDetailScreen() {
             </Card>
 
             {/* Climb Statistics */}
-            <Card variant="outline" className="p-4">
+            <Card variant="outline" className="p-4 mb-2">
               <VStack space="md">
                 <Heading size="lg">Climb Performance</Heading>
-                
+
                 <VStack space="xs">
-                  <Text className="font-semibold text-blue-500">Blue Alliance</Text>
+                  <Text className="font-semibold text-blue-500">
+                    Blue Alliance
+                  </Text>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {blueTeams[0].number}:</Text>
-                    <Badge variant="solid" action={match.blue_1_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {blueTeams[0].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.blue_1_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.blue_1_climb}</BadgeText>
                     </Badge>
                   </HStack>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {blueTeams[1].number}:</Text>
-                    <Badge variant="solid" action={match.blue_2_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {blueTeams[1].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.blue_2_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.blue_2_climb}</BadgeText>
                     </Badge>
                   </HStack>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {blueTeams[2].number}:</Text>
-                    <Badge variant="solid" action={match.blue_3_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {blueTeams[2].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.blue_3_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.blue_3_climb}</BadgeText>
                     </Badge>
                   </HStack>
                 </VStack>
 
                 <VStack space="xs">
-                  <Text className="font-semibold text-red-500">Red Alliance</Text>
+                  <Text className="font-semibold text-red-500">
+                    Red Alliance
+                  </Text>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {redTeams[0].number}:</Text>
-                    <Badge variant="solid" action={match.red_1_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {redTeams[0].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.red_1_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.red_1_climb}</BadgeText>
                     </Badge>
                   </HStack>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {redTeams[1].number}:</Text>
-                    <Badge variant="solid" action={match.red_2_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {redTeams[1].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.red_2_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.red_2_climb}</BadgeText>
                     </Badge>
                   </HStack>
                   <HStack className="justify-between">
-                    <Text className="text-sm text-typography-600">Team {redTeams[2].number}:</Text>
-                    <Badge variant="solid" action={match.red_3_climb !== 'None' ? 'success' : 'muted'}>
+                    <Text className="text-sm text-typography-600">
+                      Team {redTeams[2].number}:
+                    </Text>
+                    <Badge
+                      variant="solid"
+                      action={
+                        match.red_3_climb !== 'None' ? 'success' : 'muted'
+                      }
+                    >
                       <BadgeText>{match.red_3_climb}</BadgeText>
                     </Badge>
                   </HStack>
@@ -329,12 +420,12 @@ export default function MatchDetailScreen() {
             </Card>
 
             {/* Scout Button */}
-            <Button size="lg" action="primary" className="mb-8">
+            <Button size="lg" action="primary" className="">
               <ButtonText>Scout This Match</ButtonText>
             </Button>
-          </VStack>
-        </Box>
-      </ScrollView>
+          </ScrollView>
+        </VStack>
+      </Box>
     </AdaptiveSafeArea>
   );
 }

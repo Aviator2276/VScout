@@ -1,16 +1,26 @@
 import { Stack } from 'expo-router';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
-import { AppProvider } from '@/utils/AppContext';
+import { AppProvider, useApp } from '@/utils/AppContext';
 import '@/utils/db';
 import '../global.css';
 
+function ThemedApp() {
+  const { theme } = useApp();
+  
+  return (
+    <GluestackUIProvider mode={theme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </GluestackUIProvider>
+  );
+}
+
 export default function AppLayout() {
   return (
-    <GluestackUIProvider mode="dark">
+    <GluestackUIProvider mode="system">
       <AppProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        <ThemedApp />
       </AppProvider>
     </GluestackUIProvider>
   );

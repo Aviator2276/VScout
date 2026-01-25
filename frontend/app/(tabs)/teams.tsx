@@ -1,6 +1,5 @@
 import { Center } from '@/components/ui/center';
 import { Heading } from '@/components/ui/heading';
-import { Text } from '@/components/ui/text';
 import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
@@ -40,10 +39,6 @@ export default function ScoutingScreen() {
           </HStack>
         </VStack>
       </Box>
-      <Center className="p-4 flex-1 max-w-2xl self-center w-full">
-        <Heading size="3xl">Scouting</Heading>
-        <Text className="p-4">Scout teams and players</Text>
-      </Center>
     </AdaptiveSafeArea>
   );
 }

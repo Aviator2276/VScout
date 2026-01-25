@@ -2,7 +2,7 @@
   "expo": {
     "name": "frontend",
     "slug": "vibescout",
-    "version": "1.0.0",
+    "version": "alpha-1.0.0",
     "orientation": "default",
     "icon": "./assets/images/favicon.png",
     "scheme": "frontend",

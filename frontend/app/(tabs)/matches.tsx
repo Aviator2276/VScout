@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ActivityIndicator } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -13,7 +12,7 @@ import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
-import { ScrollView } from 'react-native';
+import { ScrollView, ActivityIndicator } from 'react-native';
 import { useApp } from '@/utils/AppContext';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 

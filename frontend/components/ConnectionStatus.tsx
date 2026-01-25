@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Pressable } from 'react-native';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import {
-  Loader,
-  LoaderCircle,
   LucideIcon,
   Radio,
   Wifi,
