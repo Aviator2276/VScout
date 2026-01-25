@@ -1,4 +1,4 @@
-import { apiRequest } from '@/config/api';
+import { apiRequest } from '@/utils/api';
 
 export interface Competition {
   name: string;

@@ -14,10 +14,17 @@ import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ScrollView } from 'react-native';
-import { useCompetitionCode } from '@/utils/CompetitionContext';
+import { useApp } from '@/utils/AppContext';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
 
 export default function MatchesScreen() {
-  const { competitionCode } = useCompetitionCode();
+  const {
+    competitionCode,
+    serverStatus,
+    ping,
+    isOnline,
+    checkServerConnection,
+  } = useApp();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,10 +98,21 @@ export default function MatchesScreen() {
       <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
         <VStack space="md">
           <HStack className="items-center justify-between">
-            <Heading size="3xl">Matches</Heading>
-            <Badge size="lg" variant="solid" action="info">
-              <BadgeText>{competitionCode || 'N/A'}</BadgeText>
-            </Badge>
+            <Heading size="2xl">Matches</Heading>
+            <HStack className="gap-1">
+              <Center>
+                <ConnectionStatus
+                  ping={ping}
+                  isOnline={isOnline}
+                  serverStatus={serverStatus}
+                  onPress={checkServerConnection}
+                  size="lg"
+                />
+              </Center>
+              <Badge size="lg" variant="solid" action="info">
+                <BadgeText>{competitionCode || 'N/A'}</BadgeText>
+              </Badge>
+            </HStack>
           </HStack>
           <Input size="lg" className="mb-4">
             <InputSlot className="pl-3">

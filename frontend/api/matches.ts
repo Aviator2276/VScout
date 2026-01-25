@@ -1,5 +1,5 @@
 import { Match } from '@/types/match';
-import { apiRequest } from '@/config/api';
+import { apiRequest } from '@/utils/api';
 import { db } from '@/utils/db';
 
 export class NoCompetitionCodeError extends Error {

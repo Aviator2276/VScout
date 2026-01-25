@@ -22,11 +22,20 @@ import { HStack } from '@/components/ui/hstack';
 import { useEffect, useState } from 'react';
 import { getCompetitions, Competition } from '@/api/competitions';
 import { ChevronDownIcon } from '@/components/ui/icon';
-import { useCompetitionCode } from '@/utils/CompetitionContext';
+import { useApp } from '@/utils/AppContext';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Box } from '@/components/ui/box';
 
 export default function HomeScreen() {
-  const { competitionCode, setCompetitionCode: setGlobalCompetitionCode } =
-    useCompetitionCode();
+  const {
+    competitionCode,
+    setCompetitionCode: setGlobalCompetitionCode,
+    serverStatus,
+    ping,
+    isOnline,
+    checkServerConnection,
+  } = useApp();
   const [isCompleting, setIsCompleting] = useState(false);
   const [localCompetitionCode, setLocalCompetitionCode] = useState('');
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -80,11 +89,24 @@ export default function HomeScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Center className="p-4 flex-1 max-w-2xl self-center w-full">
-        <VStack space="lg" className="items-center">
-          <Heading size="3xl">Home</Heading>
-          <Text className="p-4">Welcome to VibeScout</Text>
-        </VStack>
+      <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
+        <HStack className="items-center justify-between">
+          <Heading size="2xl">Home</Heading>
+          <HStack className="gap-1">
+            <Center>
+              <ConnectionStatus
+                ping={ping}
+                isOnline={isOnline}
+                serverStatus={serverStatus}
+                onPress={checkServerConnection}
+                size="lg"
+              />
+            </Center>
+            <Badge size="lg" variant="solid" action="info">
+              <BadgeText>{competitionCode || 'N/A'}</BadgeText>
+            </Badge>
+          </HStack>
+        </HStack>
         <FormControl>
           <Text className="text-typography-900 font-medium mb-2">
             Competition
@@ -148,7 +170,7 @@ export default function HomeScreen() {
             </Button>
           </VStack>
         </VStack>
-      </Center>
+      </Box>
     </AdaptiveSafeArea>
   );
 }

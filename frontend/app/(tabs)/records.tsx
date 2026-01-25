@@ -14,8 +14,20 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
+import { HStack } from '@/components/ui/hstack';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { useApp } from '@/utils/AppContext';
+import { Box } from '@/components/ui/box';
 
 export default function RecordsScreen() {
+  const {
+    competitionCode,
+    serverStatus,
+    ping,
+    isOnline,
+    checkServerConnection,
+  } = useApp();
   const [isResetting, setIsResetting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
@@ -40,21 +52,37 @@ export default function RecordsScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Center className="p-4 flex-1 max-w-2xl self-center w-full">
-        <VStack space="lg" className="items-center">
-          <Heading size="3xl">Records</Heading>
-          <Text className="p-4">View your scouting records</Text>
-
-          <Button
-            size="lg"
-            action="negative"
-            onPress={() => setShowDialog(true)}
-            isDisabled={isResetting}
-          >
-            <ButtonText>Reset Database</ButtonText>
-          </Button>
+      <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
+        <VStack space="md">
+          <HStack className="items-center justify-between">
+            <Heading size="2xl">Records</Heading>
+            <HStack className="gap-1">
+              <Center>
+                <ConnectionStatus
+                  ping={ping}
+                  isOnline={isOnline}
+                  serverStatus={serverStatus}
+                  onPress={checkServerConnection}
+                  size="lg"
+                />
+              </Center>
+              <Badge size="lg" variant="solid" action="info">
+                <BadgeText>{competitionCode || 'N/A'}</BadgeText>
+              </Badge>
+            </HStack>
+          </HStack>
         </VStack>
-      </Center>
+      </Box>
+      <Box className="p-4 flex-1 max-w-2xl self-center w-full">
+        <Button
+          size="lg"
+          action="negative"
+          onPress={() => setShowDialog(true)}
+          isDisabled={isResetting}
+        >
+          <ButtonText>Reset Database</ButtonText>
+        </Button>
+      </Box>
 
       <AlertDialog isOpen={showDialog} onClose={() => setShowDialog(false)}>
         <AlertDialogBackdrop />
