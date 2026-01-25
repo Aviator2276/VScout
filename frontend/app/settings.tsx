@@ -169,13 +169,13 @@ export default function SettingsScreen() {
                 <Table className="w-full">
                   <TableBody>
                     <TableRow className="m-0">
-                      <TableData>App Version:</TableData>
+                      <TableData>App version:</TableData>
                       <TableData>
                         {Constants.expoConfig.version || 'Unknown'}
                       </TableData>
                     </TableRow>
                     <TableRow>
-                      <TableData>Comp Code:</TableData>
+                      <TableData>Comp code:</TableData>
                       <TableData>
                         <Badge
                           size="lg"
@@ -187,7 +187,15 @@ export default function SettingsScreen() {
                       </TableData>
                     </TableRow>
                     <TableRow>
-                      <TableData>Server Status:</TableData>
+                      <TableData>Offline mode</TableData>
+                      <TableData>
+                        <Badge size="lg" variant="solid" action="error">
+                          <BadgeText>Unavailable</BadgeText>
+                        </Badge>
+                      </TableData>
+                    </TableRow>
+                    <TableRow>
+                      <TableData>Server status:</TableData>
                       <TableData>
                         <Badge
                           size="lg"
@@ -206,7 +214,7 @@ export default function SettingsScreen() {
                     </TableRow>
                     {ping !== null && (
                       <TableRow>
-                        <TableData>Ping:</TableData>
+                        <TableData>Last ping time:</TableData>
                         <TableData>{ping} ms</TableData>
                       </TableRow>
                     )}
