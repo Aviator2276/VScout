@@ -89,6 +89,12 @@ export default function MatchDetailScreen() {
   const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
   const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
 
+  const isMatchCompleted = (): boolean => {
+    if (!match.end_match_time) return false;
+    const currentTime = Math.floor(Date.now() / 1000);
+    return match.end_match_time < currentTime;
+  };
+
   return (
     <AdaptiveSafeArea>
       <ScrollView className="flex-1">
@@ -99,8 +105,8 @@ export default function MatchDetailScreen() {
               <Button variant="link" onPress={() => router.back()}>
                 <ButtonText>← Back</ButtonText>
               </Button>
-              <Badge size="lg" variant="solid" action={match.has_played ? 'success' : 'warning'}>
-                <BadgeText>{match.has_played ? 'Completed' : 'Upcoming'}</BadgeText>
+              <Badge size="lg" variant="solid" action={isMatchCompleted() ? 'success' : 'warning'}>
+                <BadgeText>{isMatchCompleted() ? 'Completed' : 'Upcoming'}</BadgeText>
               </Badge>
             </HStack>
 

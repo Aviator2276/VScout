@@ -37,3 +37,6 @@ generate-competition:
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos 2025gacmp --output-dir ../match_videos
+
+export:
+	cd frontend && npx expo export -p web && npx workbox-cli generateSW workbox-config.js

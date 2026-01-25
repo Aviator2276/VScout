@@ -90,9 +90,9 @@ export default function MatchesScreen() {
     <AdaptiveSafeArea>
       <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
         <VStack space="md">
-          <HStack space="md" className="flex justify-between">
+          <HStack className="items-center justify-between">
             <Heading size="3xl">Matches</Heading>
-            <Badge size="lg" variant="solid" action="info" className="h-8">
+            <Badge size="lg" variant="solid" action="info">
               <BadgeText>{competitionCode || 'N/A'}</BadgeText>
             </Badge>
           </HStack>
