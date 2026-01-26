@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
+import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
@@ -12,7 +12,7 @@ import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Center } from '@/components/ui/center';
 import { useRouter } from 'expo-router';
-import { db } from '@/utils/db';
+import { db, getStorageBreakdown, StorageBreakdown } from '@/utils/db';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -38,7 +38,13 @@ import {
 import { Competition, getCompetitions } from '@/api/competitions';
 import { cacheMatches } from '@/api/matches';
 import { cacheTeams, cacheTeamInfo } from '@/api/teams';
-import { ChevronDownIcon, Sun, Moon, MonitorCog } from 'lucide-react-native';
+import {
+  ChevronDownIcon,
+  Sun,
+  Moon,
+  MonitorCog,
+  ChevronUpIcon,
+} from 'lucide-react-native';
 import {
   parseCompetitionCode as parseCode,
   extractYear,
@@ -53,6 +59,16 @@ import {
 } from '@/components/ui/table';
 import { Icon } from '@/components/ui/icon';
 import { ScrollView } from 'react-native';
+import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionIcon,
+  AccordionItem,
+  AccordionTitleText,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 export default function SettingsScreen() {
   const {
@@ -73,10 +89,21 @@ export default function SettingsScreen() {
   const [localCompetitionCode, setLocalCompetitionCode] = useState('');
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loadingCompetitions, setLoadingCompetitions] = useState(true);
+  const [storage, setStorage] = useState<StorageBreakdown | null>(null);
 
   useEffect(() => {
     loadCompetitions();
+    loadStorageInfo();
   }, []);
+
+  async function loadStorageInfo() {
+    const info = await getStorageBreakdown();
+    setStorage(info);
+  }
+
+  if (!storage || !storage.available) {
+    return null;
+  }
 
   async function loadCompetitions() {
     try {
@@ -113,6 +140,7 @@ export default function SettingsScreen() {
       await cacheMatches();
       await cacheTeams();
       await cacheTeamInfo();
+      await loadStorageInfo();
       setShowCompCodeDialog(false);
       setIsCompleting(false);
     } catch (error) {
@@ -228,6 +256,106 @@ export default function SettingsScreen() {
                     </TableRow>
                   </TableFooter>
                 </Table>
+                <Heading size="lg" className="text-primary-500 mb-2">
+                  Storage Usage
+                </Heading>
+                <Text className="text-primary-200 mb-2">
+                  Total storage capacity is determined by the device and
+                  available storage.
+                </Text>
+                <VStack space="md">
+                  <VStack space="xs">
+                    <HStack className="justify-between items-center">
+                      <Text className="text-sm font-semibold text-typography-700">
+                        Total Storage Usage
+                      </Text>
+                      <Text className="text-xs text-typography-600">
+                        {storage.usageFormatted} / {storage.quotaFormatted}
+                      </Text>
+                    </HStack>
+                    <Progress value={storage.usagePercentage} size="sm">
+                      <ProgressFilledTrack className="bg-info-500" />
+                    </Progress>
+                    <Text className="text-xs text-typography-600">
+                      {storage.usagePercentage.toFixed(1)}% used
+                    </Text>
+                  </VStack>
+                  <VStack space="sm">
+                    <Accordion
+                      size="lg"
+                      variant="filled"
+                      type="single"
+                      isCollapsible={true}
+                      isDisabled={false}
+                      className=" border border-outline-50"
+                    >
+                      <AccordionItem value="a">
+                        <AccordionHeader>
+                          <AccordionTrigger>
+                            {({ isExpanded }) => {
+                              return (
+                                <>
+                                  <AccordionTitleText>
+                                    <Text className="text-sm font-semibold text-typography-700">
+                                      Detailed View
+                                    </Text>
+                                  </AccordionTitleText>
+                                  {isExpanded ? (
+                                    <AccordionIcon
+                                      as={ChevronUpIcon}
+                                      className="ml-3"
+                                    />
+                                  ) : (
+                                    <AccordionIcon
+                                      as={ChevronDownIcon}
+                                      className="ml-3"
+                                    />
+                                  )}
+                                </>
+                              );
+                            }}
+                          </AccordionTrigger>
+                        </AccordionHeader>
+                        <AccordionContent>
+                          {storage.tables.map((table) => (
+                            <VStack
+                              key={table.name}
+                              space="xs"
+                              className="mb-1"
+                            >
+                              <HStack className="justify-between items-center">
+                                <HStack space="xs" className="items-center">
+                                  <Box
+                                    style={{
+                                      width: 12,
+                                      height: 12,
+                                      borderRadius: 6,
+                                      backgroundColor: table.color,
+                                    }}
+                                  />
+                                  <Text className="text-xs text-typography-700">
+                                    {table.name}
+                                  </Text>
+                                </HStack>
+                                <Text className="text-xs text-typography-600">
+                                  {table.count !== 0
+                                    ? table.count + ' items • '
+                                    : ''}
+                                  {table.estimatedSizeFormatted}
+                                </Text>
+                              </HStack>
+                              <Progress value={table.percentage} size="sm">
+                                <ProgressFilledTrack
+                                  style={{ backgroundColor: table.color }}
+                                />
+                              </Progress>
+                            </VStack>
+                          ))}
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </VStack>
+                </VStack>
               </Card>
               <Card variant="outline" size="sm">
                 <Heading size="lg" className="mb-2">

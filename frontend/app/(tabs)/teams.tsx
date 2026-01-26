@@ -1,6 +1,6 @@
 import { Center } from '@/components/ui/center';
 import { Heading } from '@/components/ui/heading';
-import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
+import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';

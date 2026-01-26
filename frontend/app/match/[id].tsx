@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, ActivityIndicator } from 'react-native';
-import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
+import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { AdaptiveSafeArea } from '@/components/adaptive-safe-area';
+import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
-import { MatchCard } from '@/components/match-card';
+import { MatchCard } from '@/components/MatchCard';
 import { Match } from '@/types/match';
 import { getMatches, NoCompetitionCodeError } from '@/api/matches';
 import { Center } from '@/components/ui/center';
