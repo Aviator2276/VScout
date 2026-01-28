@@ -156,6 +156,8 @@ class Command(BaseCommand):
             '--cookies-from-browser', 'chrome',
             '--download-sections',
             f'*{start_formatted}-{end_formatted}',
+            '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            '--concurrent-fragments', '4',
             '-o', str(output_file),
             stream_link
         ]
