@@ -10,11 +10,8 @@ init:
 backend:
 	cd vibescout_backend && uv run python manage.py runserver
 
-collectstatic:
-	cd vibescout_backend && uv run python manage.py collectstatic --noinput
-
 frontend:
-	cd frontend && npm start
+	cd frontend && npx expo start -c
 
 run:
 	@echo "Starting backend and frontend concurrently..."
@@ -42,4 +39,4 @@ download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos 2025gacmp --output-dir ../match_videos
 
 export:
-	cd frontend && npm run build:web
+	cd frontend && npx expo export -p web && npx workbox-cli generateSW workbox-config.js

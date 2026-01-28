@@ -3,9 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start -c",
-    "web": "expo start --web -c",
-    "build:web": "expo export -p web && npx workbox-cli generateSW workbox-config.js",
+    "start": "expo start",
+    "reset-project": "node ./scripts/reset-project.js",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
