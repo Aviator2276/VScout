@@ -165,13 +165,11 @@ class Command(BaseCommand):
                     'player_client': ['android'],
                 }
             },
-            'cookiesfrombrowser': ('chrome',),
             'paths': {
                 'home': str(output_path),
                 'temp': tmp
             },
             'outtmpl': f"match_{match.match_type}_{match.match_number}_day{day}.%(ext)s",
-            'format': '137+140/136+140/134+140/18',
             'download_ranges': download_range_func(None, [(video_start_time, video_end_time)]),
             'force_keyframes_at_cuts': True,
             'concurrent_fragment_downloads': 4,
