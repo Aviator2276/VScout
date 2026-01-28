@@ -1,8 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-import subprocess
+import platform
 import os
 from pathlib import Path
+import yt_dlp
+from yt_dlp.utils import download_range_func
 from backend.models import Competition, Match
 
 
@@ -150,37 +152,40 @@ class Command(BaseCommand):
             f'[{start_formatted} - {end_formatted}]'
         )
         
-        # Build yt-dlp command
-        cmd = [
-            'yt-dlp',
-            '--cookies-from-browser', 'chrome',
-            '--download-sections',
-            f'*{start_formatted}-{end_formatted}',
-            '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            '--concurrent-fragments', '4',
-            '-o', str(output_file),
-            stream_link
-        ]
+        # Determine temp directory based on platform
+        if platform.system() == "Linux":
+            tmp = '/tmp'
+        else:
+            tmp = 'C:\\tmp'
+        
+        # Configure yt-dlp options using Python API
+        ydl_opts = {
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android'],
+                }
+            },
+            'paths': {
+                'home': str(output_path),
+                'temp': tmp
+            },
+            'outtmpl': f"match_{match.match_type}_{match.match_number}_day{day}.%(ext)s",
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'download_ranges': download_range_func(None, [(video_start_time, video_end_time)]),
+            'force_keyframes_at_cuts': True,
+            'concurrent_fragment_downloads': 4,
+        }
         
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([stream_link])
             self.stdout.write(self.style.SUCCESS(
                 f'    ✓ Downloaded: {output_file.name}'
             ))
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             self.stdout.write(self.style.ERROR(
-                f'    ✗ Failed to download match {match.match_number}: {e.stderr}'
+                f'    ✗ Failed to download match {match.match_number}: {str(e)}'
             ))
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(
-                '    ✗ yt-dlp not found. Please install it: pip install yt-dlp'
-            ))
-            return
 
     def format_timestamp(self, seconds):
         """Convert seconds to HH:MM:SS format"""
