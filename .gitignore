@@ -228,3 +228,5 @@ cython_debug/
 # match_videos
 /vibescout_backend/score_ocr/match-*/
 /vibescout_backend/score_ocr/matches
+# staticfiles
+staticfiles

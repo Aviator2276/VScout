@@ -12,7 +12,12 @@ class TeamSchema(ModelSchema):
 class CompetitionSchema(ModelSchema):
     class Meta:
         model = Competition
-        fields = ['name', 'code']
+        fields = [
+            'name', 'code',
+            'offset_stream_time_to_unix_timestamp_day_1',
+            'offset_stream_time_to_unix_timestamp_day_2',
+            'offset_stream_time_to_unix_timestamp_day_3'
+        ]
 
 
 class TeamInfoSchema(ModelSchema):

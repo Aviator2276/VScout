@@ -124,6 +124,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Additional locations of static files
+STATICFILES_DIRS = [
+    ROOT_DIR / 'frontend' / 'dist',  # Expo web build output
+]
 
 # CORS Configuration
 # For development: Allow all origins

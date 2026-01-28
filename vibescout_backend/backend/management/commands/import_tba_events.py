@@ -63,9 +63,9 @@ class Command(BaseCommand):
         if event_key == '2025gacmp':
             # Stream timestamps where first match of each day starts:
             # Day 1: 3:56:03, Day 2: 35:25, Day 3: 27:31
-            stream_time_day_1 = (3 * 3600) + (56 * 60) + 3  # 14163 seconds
-            stream_time_day_2 = (35 * 60) + 25  # 2125 seconds
-            stream_time_day_3 = (27 * 60) + 31  # 1651 seconds
+            stream_time_day_1 = (3 * 3600) + (56 * 60) + 3  # 14125 seconds
+            stream_time_day_2 = (35 * 60) + 25   # 2087 seconds
+            stream_time_day_3 = (27 * 60) + 31  # 1613 seconds
             
             defaults.update({
                 'stream_link_day_1': 'https://www.youtube.com/watch?v=p-CZ4LRTTqQ',

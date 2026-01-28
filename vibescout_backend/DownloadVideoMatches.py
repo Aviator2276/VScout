@@ -75,7 +75,7 @@ def DownloadYoutubeVideoClip(url, folder, name, startTime, endTime):
             'temp': tmp                  # (Optional) Temporary download location
         },
         'outtmpl': name+'.%(ext)s', #'%(title)s.%(ext)s'
-        'format': "mp4",
+        'format': '137+140/136+140/134+140/18',
         'download_ranges': download_range_func(None, [(startTime,endTime)]),
         'force_keyframes_at_cuts': True,
     }

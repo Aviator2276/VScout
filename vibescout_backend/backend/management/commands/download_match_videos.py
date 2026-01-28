@@ -1,8 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-import subprocess
+import platform
 import os
 from pathlib import Path
+import yt_dlp
+from yt_dlp.utils import download_range_func
 from backend.models import Competition, Match
 
 
@@ -131,15 +133,8 @@ class Command(BaseCommand):
         # So to get stream time from unix timestamp, we subtract the offset
         video_start_time = match.start_match_time - offset - buffer
         
-        # Use actual match duration from end_match_time - start_match_time
-        if match.end_match_time > 0 and match.end_match_time > match.start_match_time:
-            video_end_time = match.end_match_time - offset + buffer
-        else:
-            # Fallback: estimate 3 minutes if end time not available
-            self.stdout.write(self.style.WARNING(
-                f'  Match {match.match_number}: No end_match_time, estimating 3 minutes'
-            ))
-            video_end_time = video_start_time + 180 + (2 * buffer)  # 3 minutes + buffers
+        # Static 2:30 match duration
+        video_end_time = video_start_time + 150 + (2 * buffer)  # 2:30 + buffers
         
         # Ensure times are positive
         if video_start_time < 0:
@@ -157,34 +152,39 @@ class Command(BaseCommand):
             f'[{start_formatted} - {end_formatted}]'
         )
         
-        # Build yt-dlp command
-        cmd = [
-            'yt-dlp',
-            '--download-sections',
-            f'*{start_formatted}-{end_formatted}',
-            '-o', str(output_file),
-            stream_link
-        ]
+        # Determine temp directory based on platform
+        if platform.system() == "Linux":
+            tmp = '/tmp'
+        else:
+            tmp = 'C:\\tmp'
+        
+        # Configure yt-dlp options using Python API
+        ydl_opts = {
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android'],
+                }
+            },
+            'paths': {
+                'home': str(output_path),
+                'temp': tmp
+            },
+            'outtmpl': f"match_{match.match_type}_{match.match_number}_day{day}.%(ext)s",
+            'download_ranges': download_range_func(None, [(video_start_time, video_end_time)]),
+            'force_keyframes_at_cuts': True,
+            'concurrent_fragment_downloads': 4,
+        }
         
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([stream_link])
             self.stdout.write(self.style.SUCCESS(
                 f'    ✓ Downloaded: {output_file.name}'
             ))
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             self.stdout.write(self.style.ERROR(
-                f'    ✗ Failed to download match {match.match_number}: {e.stderr}'
+                f'    ✗ Failed to download match {match.match_number}: {str(e)}'
             ))
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(
-                '    ✗ yt-dlp not found. Please install it: pip install yt-dlp'
-            ))
-            return
 
     def format_timestamp(self, seconds):
         """Convert seconds to HH:MM:SS format"""
