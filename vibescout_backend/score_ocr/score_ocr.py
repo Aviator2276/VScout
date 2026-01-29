@@ -1,15 +1,14 @@
-import os
-import math
-import ffmpeg
-import pytesseract
+import os, json, ffmpeg, pytesseract, re, concurrent.futures
 from PIL import Image, ImageOps
-import re
+os.environ['OMP_THREAD_LIMIT'] = '1' #disable tesseracts internal threading
 
-# ffmpeg, ffprobe, & tesseract is required.
 
-# Use ratios to work with different video resolutions
 
 #TODO: remove cropping when caleb pushes new vid code
+#TODO: beat bryan with a rock
+#TODO: convert seconds to adequate format (OPT)
+#TODO: run tesseract without wrapper for significantly reduced IO overhead
+
 redX = 640
 redY = 970
 redW = 180
@@ -20,65 +19,98 @@ blueY = 970
 blueW = 180
 blueH = 100
 
-root_path = os.path.dirname(os.path.abspath(__file__))
-matches_path = root_path + "/matches/"
-
+rootPath = os.path.dirname(os.path.abspath(__file__))
+videoDir = rootPath + "/matches/"
+fps = 15 
+frame2sec = lambda frameNo,fps : frameNo/fps
 def crop_video(filename):
-    file = matches_path + filename
+    file = videoDir + filename
     probe = ffmpeg.probe(file)
-    video_info = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-    width = int(video_info['width'])
-    height = int(video_info['height'])
 
-    os.makedirs(root_path+'/'+filename.rsplit('.',1)[0]+'/'+'blue/', exist_ok=True)
-    os.makedirs(root_path+'/'+filename.rsplit('.',1)[0]+'/'+'red/', exist_ok=True)
+
+    os.makedirs(rootPath+'/'+filename.rsplit('.',1)[0]+'/'+'blue/', exist_ok=True)
+    os.makedirs(rootPath+'/'+filename.rsplit('.',1)[0]+'/'+'red/', exist_ok=True)
 
     contrast = 255 #all values either 255 or 0
-    fps = 15 
     sat = 0 #remove color
     fmat = 'image2'
-    pix_fmt = 'gray'
+    pix_fmt = 'yuvj420p'
     out = [None,None]
     out[0], err = (
         ffmpeg
         .input(file)
         .crop(redX, redY, redW, redH)
-        .filter('fps', fps=15)
-        .filter('eq', **{'contrast': 255})
+        .filter('fps', fps=fps)
+        .filter('eq', **{'contrast': contrast})
         .filter('hue', s=0)
         #.output('pipe:', format='image2pipe', pix_fmt='rgb0')
         #.run(capture_stdout=True)
-        .output(root_path+'/'+filename.rsplit('.',1)[0]+'/red/%03d.jpg', format=fmat, pix_fmt=pix_fmt)
+        .output(rootPath+'/'+filename.rsplit('.',1)[0]+'/red/%03d.jpg', format=fmat, pix_fmt=pix_fmt)
         .run()
     )
     out[1], err = (
         ffmpeg
         .input(file)
         .crop(blueX, blueY, blueW, blueH)
-        .filter('fps', fps=15)
-        .filter('eq', **{'contrast': 255})
+        .filter('fps', fps=fps)
+        .filter('eq', **{'contrast': contrast})
         .filter('hue', s=0)
         #.output('pipe:', format='image2pipe', pix_fmt='rgb0')
         #.run(capture_stdout=True)
-        .output(root_path+'/'+filename.rsplit('.',1)[0]+'/blue/%03d.jpg', format=fmat, pix_fmt=pix_fmt)
+        .output(rootPath+'/'+filename.rsplit('.',1)[0]+'/blue/%03d.jpg', format=fmat, pix_fmt=pix_fmt)
         .run()
     )
     return out #output isnt used lol
 
-for file in os.listdir(matches_path):
+def ocrThread(imageName,path):
+    frameNo = frame2sec(int(imageName[:-4:]),fps)
+    image = Image.open(path+'/'+imageName)
+    text = re.sub(r'\D', "",pytesseract.image_to_string(image, lang='eng', config=r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789'))
+    try:
+        text = int(text)
+    except: 
+        text = -1
+    return frameNo,text
+
+
+
+matchData = {}
+
+for file in os.listdir(videoDir):
     if not file.endswith('.m4v'):
         continue
     result = crop_video(file) 
-    intlist = {'red':[],'blue':[]}
-    for image_file in os.listdir(root_path+'/'+file.rsplit('.',1)[0]+'/red'):
-        #OCR on red phoe toes
-        image = Image.open(root_path+'/'+file.rsplit('.',1)[0]+'/red/'+image_file)
-        text = pytesseract.image_to_string(image,lang='eng' ,config=r'--oem 3 --psm 8 -c tessedit_char_whitelist= 0123456789')
-        intlist['red'].append(re.sub(r'\D', "", text))        
+    frameDir = rootPath+'/'+file.rsplit('.',1)[0]
+    intlist = {'red':{},'blue':{}}
+    redFutures = []
+    blueFutures = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for imageFile in os.listdir(frameDir+'/red'):
+            redFutures.append(executor.submit(ocrThread, imageFile, frameDir+'/red/'))
+        for imageFile in os.listdir(frameDir+'/blue'):
+            blueFutures.append(executor.submit(ocrThread, imageFile, frameDir+'/blue/'))
+        print('')
+        for future in concurrent.futures.as_completed(redFutures):
+            frameNo, score = future.result() 
+            intlist['red'][frameNo] = score
+        print('red OCR finished')
+        for future in concurrent.futures.as_completed(blueFutures):
+            frameNo, score = future.result() 
+            intlist['blue'][frameNo] = score
+        print('blue OCR finished')
+        matchData[file[:-4:]] = intlist
 
-    for image_file in os.listdir(root_path+'/'+file.rsplit('.',1)[0]+'/blue'):
-        #OCR on blue phoe toes
-        image = Image.open(root_path+'/'+file.rsplit('.',1)[0]+'/blue/'+image_file)
-        text = pytesseract.image_to_string(image,lang='eng' ,config=r'--oem 3 --psm 8 -c tessedit_char_whitelist= 0123456789')
-        intlist['blue'].append(re.sub(r'\D', "", text))
 
+print(matchData)
+json_string = json.dumps(matchData)
+
+
+
+#"matchName" : {
+#   001 : {
+#       "red":0,
+#       "blue":0}
+#   002 : {
+#       "red":0,
+#       "blue":0}
+#       }}}
