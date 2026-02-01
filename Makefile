@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend import-tba generate-competition download-match-videos
+.PHONY: init run migrate makemigrations check shell frontend backend import-tba generate-competition download-match-videos ocr-scores
 
 init:
 	@echo "Installing backend dependencies..."
@@ -43,3 +43,6 @@ download-match-videos:
 
 export:
 	cd frontend && npm run build:web
+
+ocr-scores:
+	cd vibescout_backend/score_ocr && uv run python score_ocr.py

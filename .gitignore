@@ -230,3 +230,5 @@ cython_debug/
 /vibescout_backend/score_ocr/matches
 # staticfiles
 staticfiles
+*.mp4
+data.json
