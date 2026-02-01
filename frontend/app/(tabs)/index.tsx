@@ -26,8 +26,8 @@ export default function HomeScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
-        <HStack className="items-center justify-between mb-2">
+      <Box className="flex-1 max-w-2xl self-center w-full">
+        <HStack className="items-center justify-between mb-2 px-4 pt-4">
           <Heading size="2xl">Home</Heading>
           <HStack className="gap-1">
             <Center>
@@ -46,8 +46,7 @@ export default function HomeScreen() {
         </HStack>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          className="flex-1"
+          className="flex-1 px-4"
         >
           <VStack space="lg" className="grid grid-cols-2 gap-2">
             <Pressable>

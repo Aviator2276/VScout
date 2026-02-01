@@ -65,9 +65,9 @@ export function ConnectionStatus({
     }
 
     // Ping thresholds (in milliseconds)
-    if (ping < 300) {
+    if (ping < 150) {
       return { action: 'success', icon: Wifi, label: 'Good' };
-    } else if (ping < 750) {
+    } else if (ping < 300) {
       return { action: 'warning', icon: WifiHigh, label: 'Weak' };
     } else if (ping < 1500) {
       return { action: 'error', icon: WifiLow, label: 'Bad' };

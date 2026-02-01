@@ -12,7 +12,7 @@ import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import { ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import { useApp } from '@/utils/AppContext';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { parseCompetitionCode } from '@/utils/competitionCode';
@@ -95,67 +95,66 @@ export default function MatchesScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="px-4 pt-4 flex-1 max-w-2xl self-center w-full">
-        <VStack space="md">
-          <HStack className="items-center justify-between">
-            <Heading size="2xl">Matches</Heading>
-            <HStack className="gap-1">
-              <Center>
-                <ConnectionStatus
-                  ping={ping}
-                  isOnline={isOnline}
-                  serverStatus={serverStatus}
-                  onPress={checkServerConnection}
-                  size="lg"
-                />
-              </Center>
-              <Badge size="lg" variant="solid" action="info">
-                <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
-              </Badge>
+      <Box className="flex-1 max-w-2xl self-center w-full">
+          <VStack space="md" className="px-4 pt-4">
+            <HStack className="items-center justify-between">
+              <Heading size="2xl">Matches</Heading>
+              <HStack className="gap-1">
+                <Center>
+                  <ConnectionStatus
+                    ping={ping}
+                    isOnline={isOnline}
+                    serverStatus={serverStatus}
+                    onPress={checkServerConnection}
+                    size="lg"
+                  />
+                </Center>
+                <Badge size="lg" variant="solid" action="info">
+                  <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
+                </Badge>
+              </HStack>
             </HStack>
-          </HStack>
-          <Input size="lg" className="mb-4">
-            <InputSlot className="pl-3">
-              <InputIcon as={SearchIcon} />
-            </InputSlot>
-            <InputField
-              placeholder="Search Match # or @team"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </Input>
-        </VStack>
+            <Input size="lg" className="mb-4">
+              <InputSlot className="pl-3">
+                <InputIcon as={SearchIcon} />
+              </InputSlot>
+              <InputField
+                placeholder="Search Match # or @team"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </Input>
+          </VStack>
         {loading ? (
-          <Center className="flex-1">
+          <Center className="flex-1 px-4">
             <ActivityIndicator size="large" />
           </Center>
         ) : error ? (
-          <Center className="flex-1">
+          <Center className="flex-1 px-4">
             <Text className="text-center text-error-500 p-4">{error}</Text>
           </Center>
         ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            style={{ flex: 1 }}
-          >
-            {filteredMatches.length === 0 ? (
+          <FlatList
+            className="flex-1 px-4"
+            data={filteredMatches}
+            keyExtractor={(item, index) =>
+              `match-${item.match_number}-${index}`
+            }
+            renderItem={({ item }) => (
+                <MatchCard
+                  match={item}
+                  onScout={handleScout}
+                  searchQuery={searchQuery}
+                />
+            )}
+            ListEmptyComponent={
               <Text className="text-center text-typography-500 mt-8">
                 {searchQuery
                   ? 'No matches found for your search'
                   : 'No matches available'}
               </Text>
-            ) : (
-              filteredMatches.map((match, index) => (
-                <MatchCard
-                  key={`match-${match.match_number}-${index}`}
-                  match={match}
-                  onScout={handleScout}
-                  searchQuery={searchQuery}
-                />
-              ))
-            )}
-          </ScrollView>
+            }
+          />
         )}
       </Box>
     </AdaptiveSafeArea>

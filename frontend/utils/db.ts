@@ -51,19 +51,6 @@ export interface StorageInfo {
   available: boolean;
 }
 
-export interface TableStorageInfo {
-  name: string;
-  count: number;
-  estimatedSize: number;
-  estimatedSizeFormatted: string;
-  percentage: number;
-  color: string;
-}
-
-export interface StorageBreakdown extends StorageInfo {
-  tables: TableStorageInfo[];
-}
-
 /**
  * Format bytes to human-readable string
  */
@@ -114,106 +101,6 @@ export async function getStorageInfo(): Promise<StorageInfo> {
       usageFormatted: 'N/A',
       quotaFormatted: 'N/A',
       available: false,
-    };
-  }
-}
-
-/**
- * Get storage breakdown by table with color coding
- * @returns StorageBreakdown with per-table information
- */
-export async function getStorageBreakdown(): Promise<StorageBreakdown> {
-  const baseInfo = await getStorageInfo();
-
-  if (!baseInfo.available) {
-    return {
-      ...baseInfo,
-      tables: [],
-    };
-  }
-
-  try {
-    const [configCount, matchesCount, teamsCount, teamInfoCount] =
-      await Promise.all([
-        db.config.count(),
-        db.matches.count(),
-        db.teams.count(),
-        db.teamInfo.count(),
-      ]);
-
-    // Estimation in Bytes
-    const avgConfigSize = 50;
-    const avgMatchSize = 1250;
-    const avgTeamSize = 70;
-    const avgTeamInfoSize = 700;
-
-    const configSize = configCount * avgConfigSize;
-    const matchesSize = matchesCount * avgMatchSize;
-    const teamsSize = teamsCount * avgTeamSize;
-    const teamInfoSize = teamInfoCount * avgTeamInfoSize;
-    const totalDbSize = configSize + matchesSize + teamsSize + teamInfoSize;
-
-    const appDataSize = Math.max(0, baseInfo.usage - totalDbSize);
-
-    const tables: TableStorageInfo[] = [
-      {
-        name: 'App Data',
-        count: 0,
-        estimatedSize: appDataSize,
-        estimatedSizeFormatted: formatBytes(appDataSize),
-        percentage: 0,
-        color: '#ef4444', // red
-      },
-      {
-        name: 'Config',
-        count: configCount,
-        estimatedSize: configSize,
-        estimatedSizeFormatted: formatBytes(configSize),
-        percentage: 0,
-        color: '#3b82f6', // blue
-      },
-      {
-        name: 'Matches',
-        count: matchesCount,
-        estimatedSize: matchesSize,
-        estimatedSizeFormatted: formatBytes(matchesSize),
-        percentage: 0,
-        color: '#10b981', // green
-      },
-      {
-        name: 'Teams',
-        count: teamsCount,
-        estimatedSize: teamsSize,
-        estimatedSizeFormatted: formatBytes(teamsSize),
-        percentage: 0,
-        color: '#f59e0b', // amber
-      },
-      {
-        name: 'Team Info',
-        count: teamInfoCount,
-        estimatedSize: teamInfoSize,
-        estimatedSizeFormatted: formatBytes(teamInfoSize),
-        percentage: 0,
-        color: '#8b5cf6', // purple
-      },
-    ];
-
-    // Calculate percentages based on actual total usage
-    if (baseInfo.usage > 0) {
-      tables.forEach((table) => {
-        table.percentage = (table.estimatedSize / baseInfo.usage) * 100;
-      });
-    }
-
-    return {
-      ...baseInfo,
-      tables,
-    };
-  } catch (error) {
-    console.error('Failed to get storage breakdown:', error);
-    return {
-      ...baseInfo,
-      tables: [],
     };
   }
 }
