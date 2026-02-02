@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend import-tba generate-competition download-match-videos ocr-scores
+.PHONY: init run migrate makemigrations check shell frontend backend import-tba update-rankings generate-competition download-match-videos ocr-scores
 
 init:
 	@echo "Installing backend dependencies..."
@@ -34,6 +34,9 @@ shell:
 
 import-tba:
 	cd vibescout_backend && uv run python manage.py import_tba_events 2020gagai 2020gadal 2025gacmp
+
+update-rankings:
+	cd vibescout_backend && uv run python manage.py update_rankings 2025gacmp
 
 generate-competition:
 	cd vibescout_backend && uv run python manage.py generate_competition
