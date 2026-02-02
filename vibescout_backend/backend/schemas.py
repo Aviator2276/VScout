@@ -56,6 +56,14 @@ class TeamInfoSchema(Schema):
     avg_climb_points: Optional[float] = None
     avg_alliance_match_points: Optional[float] = None
 
+    # Advanced stats
+    auto_success: Optional[float] = None
+    auto_success_sd: Optional[float] = None
+    climb_success: Optional[float] = None
+    climb_success_sd: Optional[float] = None
+    avg_points_contributed: Optional[float] = None
+    consistency_rating: Optional[float] = None
+
     @staticmethod
     def from_orm(obj):
         return TeamInfoSchema(
@@ -85,6 +93,12 @@ class TeamInfoSchema(Schema):
             avg_auto_fuel=obj.avg_auto_fuel,
             avg_climb_points=obj.avg_climb_points,
             avg_alliance_match_points=obj.avg_alliance_match_points,
+            auto_success=obj.auto_success,
+            auto_success_sd=obj.auto_success_sd,
+            climb_success=obj.climb_success,
+            climb_success_sd=obj.climb_success_sd,
+            avg_points_contributed=obj.avg_points_contributed,
+            consistency_rating=obj.consistency_rating,
         )
 
 

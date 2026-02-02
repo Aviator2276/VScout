@@ -100,6 +100,7 @@ class TeamInfo(models.Model):
     prescout_self_reported_auto_shoot = models.IntegerField(default=0)
     prescout_additional_comments = models.TextField(blank=True, null=True)
 
+    # Basic stats
     accuracy = models.FloatField(default=0.0, blank=True, null=True)
     avg_fuel_scored = models.FloatField(default=0.0, blank=True, null=True)
     avg_shuttle = models.FloatField(default=0.0, blank=True, null=True)
@@ -108,6 +109,26 @@ class TeamInfo(models.Model):
     avg_alliance_match_points = models.FloatField(
         default=0.0, blank=True, null=True
     )  # Tiebreaker #2
+
+    # Advanced stats
+    auto_success = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Average points in auto
+    auto_success_sd = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Standard deviation of auto points
+    climb_success = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Average points in endgame/climb
+    climb_success_sd = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Standard deviation of climb points
+    avg_points_contributed = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Average points contributed to alliance
+    consistency_rating = models.FloatField(
+        default=0.0, blank=True, null=True
+    )  # Consistency based on overall SD (0-100)
 
     def __str__(self):
         return f"{self.team} - {self.ranking_points} RP"
