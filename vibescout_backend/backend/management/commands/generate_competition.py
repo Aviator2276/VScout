@@ -9,6 +9,61 @@ from backend.models import Competition, Match, Team, TeamInfo
 class Command(BaseCommand):
     help = "Generate a competition with teams, matches, and realistic data"
 
+    # Creative team names pool
+    TEAM_NAMES = [
+        "The Robo Raptors",
+        "Cyber Crushers",
+        "Voltage Vipers",
+        "Steel Stallions",
+        "Circuit Breakers",
+        "Quantum Quokkas",
+        "Titanium Titans",
+        "Electric Eagles",
+        "Neon Ninjas",
+        "Plasma Panthers",
+        "Turbo Tigers",
+        "Atomic Ants",
+        "Binary Bots",
+        "Cyber Cyclones",
+        "Data Dragons",
+        "Electron Elites",
+        "Fusion Force",
+        "Gear Grinders",
+        "Hydraulic Hawks",
+        "Iron Impalas",
+        "Kinetic Knights",
+        "Laser Llamas",
+        "Mecha Mustangs",
+        "Nuclear Narwhals",
+        "Omega Otters",
+        "Photon Phoenix",
+        "Quantum Quasars",
+        "Rocket Rhinos",
+        "Silicon Sharks",
+        "Techno Tornadoes",
+        "Ultra Urchins",
+        "Vector Velociraptors",
+        "Wired Wolves",
+        "Xenon X-Wings",
+        "Yotta Yaks",
+        "Zero Gravity Zebras",
+        "Amp'd Alligators",
+        "Bolt Brigade",
+        "Code Commandos",
+        "Digital Dynamos",
+        "Engineering Eagles",
+        "Fusion Falcons",
+        "Gigawatt Geckos",
+        "Helix Heroes",
+        "Impulse Iguanas",
+        "Joule Jaguars",
+        "Kinetic Koalas",
+        "Logic Lynx",
+        "Mechatronics Mavericks",
+        "Nano Navigators",
+        "Ohm's Outlaws",
+    ]
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--name", type=str, default="Test Competition 2026", help="Competition name"
@@ -52,11 +107,21 @@ class Command(BaseCommand):
         teams = []
         team_powers = {}
 
+        # Shuffle team names to get random selection
+        available_names = self.TEAM_NAMES.copy()
+        random.shuffle(available_names)
+
         self.stdout.write("Creating teams...")
         for i in range(num_teams):
             team_number = 1000 + i
+            # Use creative name if available, otherwise generate a name
+            if i < len(available_names):
+                team_name = available_names[i]
+            else:
+                team_name = f"Team {team_number}"
+
             team, _ = Team.objects.get_or_create(
-                number=team_number, defaults={"name": f"Team {team_number}"}
+                number=team_number, defaults={"name": team_name}
             )
             teams.append(team)
 
