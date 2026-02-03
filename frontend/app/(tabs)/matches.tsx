@@ -12,10 +12,17 @@ import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
-import { ScrollView, ActivityIndicator, FlatList } from 'react-native';
+import { ActivityIndicator, FlatList } from 'react-native';
 import { useApp } from '@/utils/AppContext';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { parseCompetitionCode } from '@/utils/competitionCode';
+import { cssInterop } from 'nativewind';
+
+cssInterop(FlatList, {
+  className: {
+    target: 'style', // map className->style
+  },
+});
 
 export default function MatchesScreen() {
   const {
@@ -96,35 +103,35 @@ export default function MatchesScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="flex-1 max-w-2xl self-center w-full">
-          <VStack space="md" className="px-4 pt-4">
-            <HStack className="items-center justify-between">
-              <Heading size="2xl">Matches</Heading>
-              <HStack className="gap-1">
-                <Center>
-                  <ConnectionStatus
-                    ping={ping}
-                    isOnline={isOnline}
-                    serverStatus={serverStatus}
-                    onPress={checkServerConnection}
-                    size="lg"
-                  />
-                </Center>
-                <Badge size="lg" variant="solid" action="info">
-                  <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
-                </Badge>
-              </HStack>
+        <VStack space="md" className="px-4 pt-4">
+          <HStack className="items-center justify-between">
+            <Heading size="2xl">Matches</Heading>
+            <HStack className="gap-1">
+              <Center>
+                <ConnectionStatus
+                  ping={ping}
+                  isOnline={isOnline}
+                  serverStatus={serverStatus}
+                  onPress={checkServerConnection}
+                  size="lg"
+                />
+              </Center>
+              <Badge size="lg" variant="solid" action="info">
+                <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
+              </Badge>
             </HStack>
-            <Input size="lg" className="mb-4">
-              <InputSlot className="pl-3">
-                <InputIcon as={SearchIcon} />
-              </InputSlot>
-              <InputField
-                placeholder="Search Match # or @team"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </Input>
-          </VStack>
+          </HStack>
+          <Input size="lg" className="mb-4">
+            <InputSlot className="pl-3">
+              <InputIcon as={SearchIcon} />
+            </InputSlot>
+            <InputField
+              placeholder="Search Match # or @team"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </Input>
+        </VStack>
         {loading ? (
           <Center className="flex-1 px-4">
             <ActivityIndicator size="large" />
@@ -141,19 +148,17 @@ export default function MatchesScreen() {
               `match-${item.match_number}-${index}`
             }
             renderItem={({ item }) => (
-                <MatchCard
-                  match={item}
-                  onScout={handleScout}
-                  searchQuery={searchQuery}
-                />
+              <MatchCard
+                match={item}
+                onScout={handleScout}
+                searchQuery={searchQuery}
+              />
             )}
-            ListEmptyComponent={
+            ListEmptyComponent={() => (
               <Text className="text-center text-typography-500 mt-8">
-                {searchQuery
-                  ? 'No matches found for your search'
-                  : 'No matches available'}
+                {searchQuery ? 'No matches found' : 'No matches available'}
               </Text>
-            }
+            )}
           />
         )}
       </Box>
