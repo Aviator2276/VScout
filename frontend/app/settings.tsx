@@ -8,9 +8,7 @@ import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
 import { Button, ButtonText } from '@/components/ui/button';
 import { useApp } from '@/utils/AppContext';
-import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { Badge, BadgeText } from '@/components/ui/badge';
-import { Center } from '@/components/ui/center';
 import { useRouter } from 'expo-router';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
 import {
@@ -59,6 +57,7 @@ import {
 import { Icon } from '@/components/ui/icon';
 import { ScrollView } from 'react-native';
 import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
+import { Header } from '@/components/Header';
 
 export default function SettingsScreen() {
   const {
@@ -155,35 +154,7 @@ export default function SettingsScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="flex-1 max-w-2xl self-center w-full">
-        <VStack space="md">
-          <HStack className="items-center justify-between px-4 pt-4">
-            <HStack className="gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="px-2"
-                onPress={() => router.push('/')}
-              >
-                <ButtonText>←</ButtonText>
-              </Button>
-              <Heading size="2xl">Settings</Heading>
-            </HStack>
-
-            <HStack className="gap-1">
-              <Center>
-                <ConnectionStatus
-                  ping={ping}
-                  isOnline={isOnline}
-                  serverStatus={serverStatus}
-                  onPress={checkServerConnection}
-                  size="lg"
-                />
-              </Center>
-              <Badge size="lg" variant="solid" action="info">
-                <BadgeText>{parseCode(competitionCode)}</BadgeText>
-              </Badge>
-            </HStack>
-          </HStack>
+          <Header title="Settings" showBackButton goHome />
           <ScrollView className="flex-1 pb-4 px-4">
             <VStack space="md">
               <Card variant="outline" size="sm">
@@ -406,7 +377,6 @@ export default function SettingsScreen() {
               </Card>
             </VStack>
           </ScrollView>
-        </VStack>
       </Box>
 
       <AlertDialog

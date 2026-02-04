@@ -1,22 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
-import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
 import { MatchCard } from '@/components/MatchCard';
 import { Match } from '@/types/match';
 import { getMatches, NoCompetitionCodeError } from '@/api/matches';
 import { Center } from '@/components/ui/center';
-import { HStack } from '@/components/ui/hstack';
-import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ActivityIndicator, FlatList } from 'react-native';
 import { useApp } from '@/utils/AppContext';
-import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { parseCompetitionCode } from '@/utils/competitionCode';
 import { cssInterop } from 'nativewind';
+import { Header } from '@/components/Header';
 
 cssInterop(FlatList, {
   className: {
@@ -25,13 +21,7 @@ cssInterop(FlatList, {
 });
 
 export default function MatchesScreen() {
-  const {
-    competitionCode,
-    serverStatus,
-    ping,
-    isOnline,
-    checkServerConnection,
-  } = useApp();
+  const { competitionCode } = useApp();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,24 +93,8 @@ export default function MatchesScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="flex-1 max-w-2xl self-center w-full">
-        <VStack space="md" className="px-4 pt-4">
-          <HStack className="items-center justify-between">
-            <Heading size="2xl">Matches</Heading>
-            <HStack className="gap-1">
-              <Center>
-                <ConnectionStatus
-                  ping={ping}
-                  isOnline={isOnline}
-                  serverStatus={serverStatus}
-                  onPress={checkServerConnection}
-                  size="lg"
-                />
-              </Center>
-              <Badge size="lg" variant="solid" action="info">
-                <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
-              </Badge>
-            </HStack>
-          </HStack>
+        <Header title="Matches" isMainScreen />
+        <VStack space="md" className="px-4">
           <Input size="lg" className="mb-4">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />

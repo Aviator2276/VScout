@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { ScrollView, ActivityIndicator } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -13,6 +13,7 @@ import { Center } from '@/components/ui/center';
 import { Match } from '@/types/match';
 import { getMatches } from '@/api/matches';
 import { Box } from '@/components/ui/box';
+import { Header } from '@/components/Header';
 import {
   Table,
   TableBody,
@@ -112,29 +113,11 @@ export default function MatchDetailScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="max-w-2xl self-center w-full">
-        <VStack space="lg">
-          <HStack className="items-center justify-between px-4 pt-4">
-            <HStack className="gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="px-2"
-                onPress={() => router.back()}
-              >
-                <ButtonText>←</ButtonText>
-              </Button>
-              <Heading size="2xl">Match Details</Heading>
-            </HStack>
-            <Badge
-              size="lg"
-              variant="solid"
-              action={isMatchCompleted() ? 'success' : 'warning'}
-            >
-              <BadgeText>
-                {isMatchCompleted() ? 'Completed' : 'Upcoming'}
-              </BadgeText>
-            </Badge>
-          </HStack>
+          <Header
+            title="Match Details"
+            isMainScreen={false}
+            showBackButton
+          />
 
           <ScrollView className="flex-1 px-4 pb-4">
             <>
@@ -570,7 +553,6 @@ export default function MatchDetailScreen() {
               </>
             )}
           </ScrollView>
-        </VStack>
       </Box>
     </AdaptiveSafeArea>
   );

@@ -8,7 +8,13 @@ import { VStack } from '@/components/ui/vstack';
 import { TeamInfo } from '@/types/team';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { getTeamName } from '@/api/teams';
-import { Dice4, Fuel, MoveVertical, PackageOpen } from 'lucide-react-native';
+import {
+  Dice4,
+  Move,
+  MoveVertical,
+  Truck,
+  Volleyball,
+} from 'lucide-react-native';
 
 interface TeamCardProps {
   team: TeamInfo;
@@ -68,26 +74,28 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                   size="lg"
                   variant="solid"
                   action="muted"
-                  className="w-18 justify-evenly"
+                  className="w-18 justify-center items-center bg-amber-500/40"
                 >
-                  <BadgeIcon as={Fuel}></BadgeIcon>
+                  <BadgeIcon as={Volleyball}></BadgeIcon>
                   <BadgeText className="ml-1">{team.avg_fuel_scored}</BadgeText>
                 </Badge>
                 <Badge
                   size="lg"
                   variant="solid"
                   action="muted"
-                  className="w-11 justify-evenly"
+                  className="justify-center items-center bg-emerald-500/40"
                 >
-                  <BadgeText>L{team.avg_climb_points}</BadgeText>
+                  <BadgeText>
+                    L{Math.round(team.avg_climb_points * 10) / 10}
+                  </BadgeText>
                 </Badge>
                 <Badge
                   size="lg"
                   variant="solid"
                   action="muted"
-                  className="w-12 justify-evenly"
+                  className="justify-center items-center bg-purple-500/40"
                 >
-                  <BadgeIcon as={PackageOpen}></BadgeIcon>
+                  <BadgeIcon as={Truck}></BadgeIcon>
                   <BadgeText className="ml-1">
                     {team.prescout_hopper_size}1
                   </BadgeText>
@@ -97,7 +105,9 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     as={
                       team.prescout_drivetrain === 'swerve'
                         ? Dice4
-                        : MoveVertical
+                        : team.prescout_drivetrain === 'mecanum'
+                          ? Move
+                          : MoveVertical
                     }
                   ></BadgeIcon>
                 </Badge>
