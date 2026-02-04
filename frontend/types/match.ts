@@ -16,6 +16,7 @@ export interface Match {
   red_team_2: Team;
   red_team_3: Team;
   competition: Competition;
+  competitionCode?: string; // Flattened field for IndexedDB indexing
   match_number: number;
   set_number: number;
   match_type: string;

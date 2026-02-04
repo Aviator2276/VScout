@@ -1,18 +1,18 @@
-import { Team, TeamInfo } from '@/types/team';
-import { apiRequest } from '@/utils/api';
-import { db } from '@/utils/db';
+import { Team, TeamInfo } from "@/types/team";
+import { apiRequest } from "@/utils/api";
+import { db } from "@/utils/db";
 
 export class NoCompetitionCodeError extends Error {
   constructor() {
-    super('No competition code set');
-    this.name = 'NoCompetitionCodeError';
+    super("No competition code set");
+    this.name = "NoCompetitionCodeError";
   }
 }
 
 export class NoTeamNumberError extends Error {
   constructor() {
-    super('No team number provided');
-    this.name = 'NoTeamNumberError';
+    super("No team number provided");
+    this.name = "NoTeamNumberError";
   }
 }
 
@@ -22,7 +22,7 @@ export class NoTeamNumberError extends Error {
  * @returns The cached teams
  */
 export async function cacheTeams(): Promise<Team[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -40,12 +40,12 @@ export async function cacheTeams(): Promise<Team[]> {
     }));
 
     // Clear existing teams for this competition and store new ones
-    await db.teams.where('competitionCode').equals(competitionCode).delete();
+    await db.teams.where("competitionCode").equals(competitionCode).delete();
     await db.teams.bulkPut(teamsWithCompCode);
 
     return teams;
   } catch (error) {
-    console.error('Failed to cache teams:', error);
+    console.error("Failed to cache teams:", error);
     throw error;
   }
 }
@@ -56,7 +56,7 @@ export async function cacheTeams(): Promise<Team[]> {
  * @returns The team name or null if not found
  */
 export async function getTeamName(teamNumber: number): Promise<string | null> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     return null;
@@ -64,13 +64,13 @@ export async function getTeamName(teamNumber: number): Promise<string | null> {
 
   try {
     const team = await db.teams
-      .where('[competitionCode+number]')
+      .where("[competitionCode+number]")
       .equals([competitionCode, teamNumber])
       .first();
 
     return team?.name || null;
   } catch (error) {
-    console.error('Failed to get team name from cache:', error);
+    console.error("Failed to get team name from cache:", error);
     return null;
   }
 }
@@ -81,7 +81,7 @@ export async function getTeamName(teamNumber: number): Promise<string | null> {
  * @throws NoCompetitionCodeError if no competition code is set
  */
 export async function getTeams(): Promise<Team[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -89,13 +89,13 @@ export async function getTeams(): Promise<Team[]> {
 
   try {
     const teams = await db.teams
-      .where('competitionCode')
+      .where("competitionCode")
       .equals(competitionCode)
       .toArray();
 
     return teams;
   } catch (error) {
-    console.error('Failed to get teams from cache:', error);
+    console.error("Failed to get teams from cache:", error);
     throw error;
   }
 }
@@ -106,7 +106,7 @@ export async function getTeams(): Promise<Team[]> {
  * @returns The cached team info array
  */
 export async function cacheTeamInfo(): Promise<TeamInfo[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -115,7 +115,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
   try {
     // First get all teams to know which team info to fetch
     const teams = await db.teams
-      .where('competitionCode')
+      .where("competitionCode")
       .equals(competitionCode)
       .toArray();
 
@@ -132,7 +132,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
     const teamInfoArray = teamInfoResults
       .filter(
         (result): result is PromiseFulfilledResult<TeamInfo[]> =>
-          result.status === 'fulfilled',
+          result.status === "fulfilled",
       )
       .map((result) => result.value[0])
       .filter(
@@ -140,20 +140,24 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           info !== undefined &&
           info.team_number !== undefined &&
           info.competition?.code !== undefined,
-      );
+      )
+      .map((info) => ({
+        ...info,
+        competitionCode,
+      }));
 
     // Clear existing team info for this competition and store new ones
-    await db.teamInfo.where('competition.code').equals(competitionCode).delete();
+    await db.teamInfo.where("competitionCode").equals(competitionCode).delete();
     if (teamInfoArray.length > 0) {
       await db.teamInfo.bulkPut(teamInfoArray);
-      console.log('Successfully stored team info');
+      console.log("Successfully stored team info");
     } else {
-      console.log('No valid team info to store');
+      console.log("No valid team info to store");
     }
 
     return teamInfoArray;
   } catch (error) {
-    console.error('Failed to cache team info:', error);
+    console.error("Failed to cache team info:", error);
     throw error;
   }
 }
@@ -164,7 +168,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
  * @throws NoCompetitionCodeError if no competition code is set
  */
 export async function getAllTeamInfo(): Promise<TeamInfo[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -172,13 +176,13 @@ export async function getAllTeamInfo(): Promise<TeamInfo[]> {
 
   try {
     const teamInfo = await db.teamInfo
-      .where('competition.code')
+      .where("competitionCode")
       .equals(competitionCode)
       .toArray();
 
     return teamInfo.sort((a, b) => a.rank - b.rank);
   } catch (error) {
-    console.error('Failed to get all team info from cache:', error);
+    console.error("Failed to get all team info from cache:", error);
     throw error;
   }
 }
@@ -202,7 +206,7 @@ export async function getTeamInfo(
   let compCode = competitionCode;
 
   if (!compCode) {
-    compCode = (await db.config.get({ key: 'compCode' }))?.value;
+    compCode = (await db.config.get({ key: "compCode" }))?.value;
   }
 
   if (!compCode) {
@@ -211,13 +215,13 @@ export async function getTeamInfo(
 
   try {
     const teamInfo = await db.teamInfo
-      .where('[competition.code+team_number]')
+      .where("[competitionCode+team_number]")
       .equals([compCode, teamNumber])
       .first();
 
     return teamInfo;
   } catch (error) {
-    console.error('Failed to get team info from cache:', error);
+    console.error("Failed to get team info from cache:", error);
     throw error;
   }
 }

@@ -1,11 +1,11 @@
-import { Match } from '@/types/match';
-import { apiRequest } from '@/utils/api';
-import { db } from '@/utils/db';
+import { Match } from "@/types/match";
+import { apiRequest } from "@/utils/api";
+import { db } from "@/utils/db";
 
 export class NoCompetitionCodeError extends Error {
   constructor() {
-    super('No competition code set');
-    this.name = 'NoCompetitionCodeError';
+    super("No competition code set");
+    this.name = "NoCompetitionCodeError";
   }
 }
 
@@ -15,7 +15,7 @@ export class NoCompetitionCodeError extends Error {
  * @returns The cached matches
  */
 export async function cacheMatches(): Promise<Match[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -26,13 +26,19 @@ export async function cacheMatches(): Promise<Match[]> {
       `/api/competitions/${competitionCode}/matches`,
     );
 
+    // Add competitionCode to each match for indexing
+    const matchesWithCompCode = matches.map((match) => ({
+      ...match,
+      competitionCode,
+    }));
+
     // Clear existing matches for this competition and store new ones
-    await db.matches.where('competition.code').equals(competitionCode).delete();
-    await db.matches.bulkPut(matches);
+    await db.matches.where("competitionCode").equals(competitionCode).delete();
+    await db.matches.bulkPut(matchesWithCompCode);
 
     return matches;
   } catch (error) {
-    console.error('Failed to cache matches:', error);
+    console.error("Failed to cache matches:", error);
     throw error;
   }
 }
@@ -42,7 +48,7 @@ export async function cacheMatches(): Promise<Match[]> {
  * @returns Cached matches for the current competition
  */
 export async function getMatches(): Promise<Match[]> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -50,13 +56,13 @@ export async function getMatches(): Promise<Match[]> {
 
   try {
     const matches = await db.matches
-      .where('competition.code')
+      .where("competitionCode")
       .equals(competitionCode)
       .toArray();
 
     return matches;
   } catch (error) {
-    console.error('Failed to get matches from cache:', error);
+    console.error("Failed to get matches from cache:", error);
     throw error;
   }
 }

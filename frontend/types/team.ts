@@ -20,6 +20,7 @@ export interface TeamInfo {
   lose: number;
   team_number: number;
   competition: Competition;
+  competitionCode?: string; // Flattened field for IndexedDB indexing
   picture: string;
   prescout_drivetrain: string;
   prescout_hopper_size: number;
