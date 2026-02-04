@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from django.contrib.auth.models import User
@@ -26,7 +27,7 @@ class CompetitionSchema(ModelSchema):
 
 class TeamInfoSchema(Schema):
     rank: Optional[int] = None
-    ranking_points: float
+    ranking_points: Decimal
     tie: int
     win: int
     lose: int
@@ -40,8 +41,8 @@ class TeamInfoSchema(Schema):
     prescout_intake_type: Optional[str] = None
     prescout_rotate_yaw: bool
     prescout_rotate_pitch: bool
-    prescout_self_reported_accuracy: Optional[float] = None
-    prescout_unload_time: Optional[float] = None
+    prescout_self_reported_accuracy: Optional[Decimal] = None
+    prescout_unload_time: Optional[Decimal] = None
     prescout_range: Optional[str] = None
     prescout_climber: Optional[str] = None
     prescout_climber_auto: bool
@@ -49,20 +50,20 @@ class TeamInfoSchema(Schema):
     prescout_additional_comments: Optional[str] = None
 
     # Stats fields
-    accuracy: Optional[float] = None
-    avg_fuel_scored: Optional[float] = None
-    avg_shuttle: Optional[float] = None
-    avg_auto_fuel: Optional[float] = None
-    avg_climb_points: Optional[float] = None
-    avg_alliance_match_points: Optional[float] = None
+    accuracy: Optional[Decimal] = None
+    avg_fuel_scored: Optional[Decimal] = None
+    avg_shuttle: Optional[Decimal] = None
+    avg_auto_fuel: Optional[Decimal] = None
+    avg_climb_points: Optional[Decimal] = None
+    avg_alliance_match_points: Optional[Decimal] = None
 
     # Advanced stats
-    auto_success: Optional[float] = None
-    auto_success_sd: Optional[float] = None
-    climb_success: Optional[float] = None
-    climb_success_sd: Optional[float] = None
-    avg_points_contributed: Optional[float] = None
-    consistency_rating: Optional[float] = None
+    auto_success: Optional[Decimal] = None
+    auto_success_sd: Optional[Decimal] = None
+    climb_success: Optional[Decimal] = None
+    climb_success_sd: Optional[Decimal] = None
+    avg_points_contributed: Optional[Decimal] = None
+    consistency_rating: Optional[Decimal] = None
 
     @staticmethod
     def from_orm(obj):
@@ -108,8 +109,8 @@ class PrescouttingUpdateSchema(Schema):
     prescout_intake_type: Optional[str] = None
     prescout_rotate_yaw: Optional[bool] = None
     prescout_rotate_pitch: Optional[bool] = None
-    prescout_self_reported_accuracy: Optional[float] = None
-    prescout_unload_time: Optional[float] = None
+    prescout_self_reported_accuracy: Optional[Decimal] = None
+    prescout_unload_time: Optional[Decimal] = None
     prescout_range: Optional[str] = None
     prescout_climber: Optional[str] = None
     prescout_climber_auto: Optional[bool] = None
@@ -211,6 +212,6 @@ class RobotActionSchema(ModelSchema):
 
 class RobotActionCreateSchema(Schema):
     action_type: str
-    start_time: float
-    end_time: float
+    start_time: Decimal
+    end_time: Decimal
     notes: Optional[str] = None
