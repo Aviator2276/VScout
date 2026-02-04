@@ -92,7 +92,6 @@ export default function TeamDetailScreen() {
           title={`Team ${team.team_number}`}
           isMainScreen={false}
           showBackButton
-          goHome
         />
 
         <ScrollView className="flex-1 px-4 pb-4">

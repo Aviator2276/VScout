@@ -117,7 +117,6 @@ export default function MatchDetailScreen() {
           title={'Match ' + match.match_number}
           isMainScreen={false}
           showBackButton
-          goHome
         />
 
         <ScrollView className="flex-1 px-4 pb-4">
