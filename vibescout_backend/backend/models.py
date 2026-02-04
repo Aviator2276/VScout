@@ -66,7 +66,7 @@ class TeamInfo(models.Model):
     rank = models.IntegerField(default=0, blank=True, null=True)
 
     # Legacy fields for compatibility
-    ranking_points = models.FloatField(default=0.0)
+    ranking_points = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     tie = models.IntegerField(default=0)
     win = models.IntegerField(default=0)
     lose = models.IntegerField(default=0)
@@ -86,10 +86,12 @@ class TeamInfo(models.Model):
     )
     prescout_rotate_yaw = models.BooleanField(default=False)
     prescout_rotate_pitch = models.BooleanField(default=False)
-    prescout_self_reported_accuracy = models.FloatField(
-        default=0.0, blank=True, null=True
+    prescout_self_reported_accuracy = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )
-    prescout_unload_time = models.FloatField(default=0.0, blank=True, null=True)
+    prescout_unload_time = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
     prescout_range = models.CharField(
         max_length=20, choices=RANGE_CHOICES, blank=True, null=True
     )
@@ -101,33 +103,43 @@ class TeamInfo(models.Model):
     prescout_additional_comments = models.TextField(blank=True, null=True)
 
     # Basic stats
-    accuracy = models.FloatField(default=0.0, blank=True, null=True)
-    avg_fuel_scored = models.FloatField(default=0.0, blank=True, null=True)
-    avg_shuttle = models.FloatField(default=0.0, blank=True, null=True)
-    avg_auto_fuel = models.FloatField(default=0.0, blank=True, null=True)
-    avg_climb_points = models.FloatField(default=0.0, blank=True, null=True)
-    avg_alliance_match_points = models.FloatField(
-        default=0.0, blank=True, null=True
+    accuracy = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
+    avg_fuel_scored = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
+    avg_shuttle = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
+    avg_auto_fuel = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
+    avg_climb_points = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )
+    avg_alliance_match_points = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Tiebreaker #2
 
     # Advanced stats
-    auto_success = models.FloatField(
-        default=0.0, blank=True, null=True
+    auto_success = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Average points in auto
-    auto_success_sd = models.FloatField(
-        default=0.0, blank=True, null=True
+    auto_success_sd = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Standard deviation of auto points
-    climb_success = models.FloatField(
-        default=0.0, blank=True, null=True
+    climb_success = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Average points in endgame/climb
-    climb_success_sd = models.FloatField(
-        default=0.0, blank=True, null=True
+    climb_success_sd = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Standard deviation of climb points
-    avg_points_contributed = models.FloatField(
-        default=0.0, blank=True, null=True
+    avg_points_contributed = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Average points contributed to alliance
-    consistency_rating = models.FloatField(
-        default=0.0, blank=True, null=True
+    consistency_rating = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Consistency based on overall SD (0-100)
 
     def __str__(self):
@@ -271,8 +283,12 @@ class RobotAction(models.Model):
         Team, on_delete=models.CASCADE, related_name="robot_actions"
     )
     action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
-    start_time = models.FloatField()  # Time in seconds from match start
-    end_time = models.FloatField()  # Time in seconds from match start
+    start_time = models.DecimalField(
+        max_digits=10, decimal_places=2
+    )  # Time in seconds from match start
+    end_time = models.DecimalField(
+        max_digits=10, decimal_places=2
+    )  # Time in seconds from match start
     recorded_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
