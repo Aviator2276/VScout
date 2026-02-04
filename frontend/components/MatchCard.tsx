@@ -75,7 +75,7 @@ export function MatchCard({
           </HStack>
 
           <VStack space="xs">
-            <HStack space="xs" className="flex-1 justify-around">
+            <HStack space="xs" className="flex-1 w-[calc(100%-1.25rem)] h-3">
               {blueTeams.map((team, index) => {
                 const isHighlighted = isTeamHighlighted(team.number);
                 return (
@@ -83,8 +83,9 @@ export function MatchCard({
                     size="lg"
                     variant="solid"
                     key={`blue-${index}`}
-                    className={`bg-blue-500/75 font-medium flex-1 justify-center py-2 ${
-                      isHighlighted && '!border-amber-400 border-4 py-0'
+                    className={`bg-blue-500/75 font-medium w-1/6 justify-center py-1 ${
+                      isHighlighted &&
+                      '!border-amber-400 border-[0.15rem] py-[0.1rem]'
                     }`}
                   >
                     <BadgeText>{team.number}</BadgeText>
@@ -98,8 +99,9 @@ export function MatchCard({
                     size="lg"
                     variant="solid"
                     key={`red-${index}`}
-                    className={`bg-red-500/75 font-medium flex-1 justify-center py-2 ${
-                      isHighlighted && '!border-amber-400 border-4 py-0'
+                    className={`bg-red-500/75 font-medium w-1/6 justify-center py-1 ${
+                      isHighlighted &&
+                      '!border-amber-400 border-[0.15rem] py-[0.1rem]'
                     }`}
                   >
                     <BadgeText>{team.number}</BadgeText>
