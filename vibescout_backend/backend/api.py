@@ -1,5 +1,9 @@
+import os
+from pathlib import Path
 from typing import List
 
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI
 
@@ -150,3 +154,47 @@ def list_robot_actions(
 @api.get("/scary-api")
 def scary_api(request):
     return {"scary": "67"}
+
+
+@api.get("/competitions/{competition_code}/matches/{match_number}/video")
+def get_match_video(request, competition_code: str, match_number: int):
+    """
+    Get the video file for a specific match.
+    Searches for the video file matching the pattern: match_qualification_{match_number}_day*.mp4
+
+    Args:
+        competition_code: The competition code (e.g., "2025gacmp")
+        match_number: The match number
+
+    Returns:
+        FileResponse: The video file stream
+    """
+    # Verify the competition exists
+    get_object_or_404(Competition, code=competition_code)
+
+    # Construct the video directory path
+    video_dir = (
+        Path(__file__).resolve().parent.parent.parent
+        / "match_videos"
+        / competition_code
+    )
+
+    # Check if the directory exists
+    if not video_dir.exists():
+        raise Http404(f"No videos found for competition: {competition_code}")
+
+    # Search for video files matching the pattern
+    # Pattern: match_qualification_{match_number}_day*.mp4
+    video_pattern = f"match_qualification_{match_number}_day*.mp4"
+    matching_videos = list(video_dir.glob(video_pattern))
+
+    if not matching_videos:
+        raise Http404(f"Video not found for match {match_number}")
+
+    # Use the first matching video (in case there are multiple days)
+    video_path = matching_videos[0]
+
+    # Return the video file as a streaming response
+    response = FileResponse(open(video_path, "rb"), content_type="video/mp4")
+    response["Content-Disposition"] = f'inline; filename="{video_path.name}"'
+    return response
