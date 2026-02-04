@@ -15,42 +15,42 @@ export default function HomeScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="flex-1 max-w-2xl self-center w-full">
-        <Header title="Home" isMainScreen />
+      <Box className='flex-1 max-w-2xl self-center w-full'>
+        <Header title='Home' isMainScreen />
         <ScrollView
           showsVerticalScrollIndicator={false}
-          className="flex-1 px-4"
+          className='flex-1 px-4'
         >
-          <VStack space="lg" className="grid grid-cols-2 gap-2">
+          <VStack space='lg' className='grid grid-cols-2 gap-2'>
             <Pressable>
-              <Card variant="filled" className="p-4">
-                <HStack className="items-center justify-between">
-                  <Heading size="md">Tutorials</Heading>
-                  <Icon as={NotebookTabs} size="lg" />
+              <Card variant='filled' className='p-4'>
+                <HStack className='items-center justify-between'>
+                  <Heading size='md'>Tutorials</Heading>
+                  <Icon as={NotebookTabs} size='lg' />
                 </HStack>
               </Card>
             </Pressable>
             <Pressable onPress={() => router.push('/settings')}>
-              <Card variant="filled" className="p-4">
-                <HStack className="items-center justify-between">
-                  <Heading size="md">Settings</Heading>
-                  <Icon as={Bolt} size="lg" />
+              <Card variant='filled' className='p-4'>
+                <HStack className='items-center justify-between'>
+                  <Heading size='md'>Settings</Heading>
+                  <Icon as={Bolt} size='lg' />
                 </HStack>
               </Card>
             </Pressable>
             <Pressable>
-              <Card variant="filled" className="p-4 aspect-square">
-                <HStack className="items-center justify-between">
-                  <Heading size="md">Alliance Predictor</Heading>
-                  <Icon as={WandSparkles} size="lg" />
+              <Card variant='filled' className='p-4 aspect-square'>
+                <HStack className='items-center justify-between'>
+                  <Heading size='md'>Alliance Predictor</Heading>
+                  <Icon as={WandSparkles} size='lg' />
                 </HStack>
               </Card>
             </Pressable>
             <Pressable>
-              <Card variant="filled" className="p-4 aspect-square">
-                <HStack className="items-center justify-between">
-                  <Icon as={Scale} size="lg" />
-                  <Heading size="md">Compare Teams</Heading>
+              <Card variant='filled' className='p-4 aspect-square'>
+                <HStack className='items-center justify-between'>
+                  <Heading size='md'>Compare Teams</Heading>
+                  <Icon as={Scale} size='lg' />
                 </HStack>
               </Card>
             </Pressable>
