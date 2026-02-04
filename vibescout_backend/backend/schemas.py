@@ -41,12 +41,7 @@ class TeamInfoSchema(Schema):
     prescout_intake_type: Optional[str] = None
     prescout_rotate_yaw: bool
     prescout_rotate_pitch: bool
-    prescout_self_reported_accuracy: Optional[Decimal] = None
-    prescout_unload_time: Optional[Decimal] = None
     prescout_range: Optional[str] = None
-    prescout_climber: Optional[str] = None
-    prescout_climber_auto: bool
-    prescout_self_reported_auto_shoot: int
     prescout_additional_comments: Optional[str] = None
 
     # Stats fields
@@ -55,13 +50,10 @@ class TeamInfoSchema(Schema):
     avg_shuttle: Optional[Decimal] = None
     avg_auto_fuel: Optional[Decimal] = None
     avg_climb_points: Optional[Decimal] = None
-    avg_alliance_match_points: Optional[Decimal] = None
 
     # Advanced stats
-    auto_success: Optional[Decimal] = None
-    auto_success_sd: Optional[Decimal] = None
-    climb_success: Optional[Decimal] = None
-    climb_success_sd: Optional[Decimal] = None
+    avg_auto_fuel_sd: Optional[Decimal] = None
+    avg_climb_points_sd: Optional[Decimal] = None
     avg_points_contributed: Optional[Decimal] = None
     consistency_rating: Optional[Decimal] = None
 
@@ -81,23 +73,15 @@ class TeamInfoSchema(Schema):
             prescout_intake_type=obj.prescout_intake_type,
             prescout_rotate_yaw=obj.prescout_rotate_yaw,
             prescout_rotate_pitch=obj.prescout_rotate_pitch,
-            prescout_self_reported_accuracy=obj.prescout_self_reported_accuracy,
-            prescout_unload_time=obj.prescout_unload_time,
             prescout_range=obj.prescout_range,
-            prescout_climber=obj.prescout_climber,
-            prescout_climber_auto=obj.prescout_climber_auto,
-            prescout_self_reported_auto_shoot=obj.prescout_self_reported_auto_shoot,
             prescout_additional_comments=obj.prescout_additional_comments,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
             avg_shuttle=obj.avg_shuttle,
             avg_auto_fuel=obj.avg_auto_fuel,
             avg_climb_points=obj.avg_climb_points,
-            avg_alliance_match_points=obj.avg_alliance_match_points,
-            auto_success=obj.auto_success,
-            auto_success_sd=obj.auto_success_sd,
-            climb_success=obj.climb_success,
-            climb_success_sd=obj.climb_success_sd,
+            avg_auto_fuel_sd=obj.avg_auto_fuel_sd,
+            avg_climb_points_sd=obj.avg_climb_points_sd,
             avg_points_contributed=obj.avg_points_contributed,
             consistency_rating=obj.consistency_rating,
         )
@@ -109,12 +93,7 @@ class PrescouttingUpdateSchema(Schema):
     prescout_intake_type: Optional[str] = None
     prescout_rotate_yaw: Optional[bool] = None
     prescout_rotate_pitch: Optional[bool] = None
-    prescout_self_reported_accuracy: Optional[Decimal] = None
-    prescout_unload_time: Optional[Decimal] = None
     prescout_range: Optional[str] = None
-    prescout_climber: Optional[str] = None
-    prescout_climber_auto: Optional[bool] = None
-    prescout_self_reported_auto_shoot: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
 
 

@@ -149,14 +149,9 @@ class Command(BaseCommand):
                     "prescout_intake_type": random.choice(["inbumper", "overbumper"]),
                     "prescout_rotate_yaw": random.choice([True, False]),
                     "prescout_rotate_pitch": random.choice([True, False]),
-                    "prescout_self_reported_accuracy": random.uniform(0.5, 0.95),
-                    "prescout_unload_time": random.uniform(1.0, 5.0),
                     "prescout_range": random.choice(
                         ["alliance", "neutral", "opponent"]
                     ),
-                    "prescout_climber": random.choice(["l1", "l2", "l3", "none"]),
-                    "prescout_climber_auto": random.choice([True, False]),
-                    "prescout_self_reported_auto_shoot": random.randint(0, 5),
                 },
             )
 
@@ -368,20 +363,18 @@ class Command(BaseCommand):
                 team_info.avg_climb_points = total_climb_points / match_count
 
                 # Advanced stats
-                team_info.auto_success = total_auto_fuel / match_count
-                team_info.climb_success = total_climb_points / match_count
                 team_info.avg_points_contributed = total_fuel / match_count
 
                 # Calculate standard deviations
                 if len(auto_fuel_values) > 1:
-                    team_info.auto_success_sd = statistics.stdev(auto_fuel_values)
+                    team_info.avg_auto_fuel_sd = statistics.stdev(auto_fuel_values)
                 else:
-                    team_info.auto_success_sd = 0.0
+                    team_info.avg_auto_fuel_sd = 0.0
 
                 if len(climb_point_values) > 1:
-                    team_info.climb_success_sd = statistics.stdev(climb_point_values)
+                    team_info.avg_climb_points_sd = statistics.stdev(climb_point_values)
                 else:
-                    team_info.climb_success_sd = 0.0
+                    team_info.avg_climb_points_sd = 0.0
 
                 # Consistency rating (0-100, higher = more consistent)
                 if len(fuel_values) > 1 and team_info.avg_fuel_scored > 0:

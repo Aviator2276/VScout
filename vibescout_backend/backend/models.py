@@ -86,20 +86,9 @@ class TeamInfo(models.Model):
     )
     prescout_rotate_yaw = models.BooleanField(default=False)
     prescout_rotate_pitch = models.BooleanField(default=False)
-    prescout_self_reported_accuracy = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )
-    prescout_unload_time = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )
     prescout_range = models.CharField(
         max_length=20, choices=RANGE_CHOICES, blank=True, null=True
     )
-    prescout_climber = models.CharField(
-        max_length=20, choices=CLIMBER_CHOICES, blank=True, null=True
-    )
-    prescout_climber_auto = models.BooleanField(default=False)
-    prescout_self_reported_auto_shoot = models.IntegerField(default=0)
     prescout_additional_comments = models.TextField(blank=True, null=True)
 
     # Basic stats
@@ -118,21 +107,12 @@ class TeamInfo(models.Model):
     avg_climb_points = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )
-    avg_alliance_match_points = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )  # Tiebreaker #2
 
     # Advanced stats
-    auto_success = models.DecimalField(
+    avg_auto_fuel_sd = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )  # Average points in auto
-    auto_success_sd = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )  # Standard deviation of auto points
-    climb_success = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
-    )  # Average points in endgame/climb
-    climb_success_sd = models.DecimalField(
+    )  # Standard deviation of auto fuel
+    avg_climb_points_sd = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Standard deviation of climb points
     avg_points_contributed = models.DecimalField(
