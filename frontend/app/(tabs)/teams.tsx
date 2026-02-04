@@ -10,7 +10,7 @@ import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ActivityIndicator, FlatList } from 'react-native';
-import { useApp } from '@/utils/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
 

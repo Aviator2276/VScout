@@ -9,10 +9,10 @@ import { TeamInfo } from '@/types/team';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { getTeamName } from '@/api/teams';
 import {
-  Dice4,
   Move,
   MoveVertical,
   Truck,
+  Dice4,
   Volleyball,
 } from 'lucide-react-native';
 
@@ -63,7 +63,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
               </Text>
             </HStack>
             <HStack space="sm" className="items-center w-full">
-              <Badge size="lg" variant="solid" action="info">
+              <Badge size="lg" variant="solid" action="muted">
                 <BadgeText>#{team.rank}</BadgeText>
               </Badge>
               <Text className="text-sm text-amber-600 dark:text-amber-500">
@@ -100,7 +100,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     {team.prescout_hopper_size}1
                   </BadgeText>
                 </Badge>
-                <Badge size="lg" variant="solid" action="muted">
+                <Badge size="md" variant="solid" action="muted">
                   <BadgeIcon
                     as={
                       team.prescout_drivetrain === 'swerve'

@@ -82,7 +82,9 @@ export function ConnectionStatus({
   return (
     <Pressable onPress={handlePress}>
       <Badge size={size} variant="solid" action={quality.action}>
-        {showPing && ping !== null && <BadgeText>{ping} ms</BadgeText>}
+        {showPing && ping !== null && (
+          <BadgeText className="line-clamp-1">{ping} ms</BadgeText>
+        )}
         {isChecking ? (
           <Spinner size="small" className="ml-1" color="grey" />
         ) : (

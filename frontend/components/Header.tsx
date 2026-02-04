@@ -6,7 +6,8 @@ import { Center } from '@/components/ui/center';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { useApp } from '@/utils/AppContext';
+import { DataStatus } from '@/components/DataStatus';
+import { useApp } from '@/contexts/AppContext';
 import { parseCompetitionCode } from '@/utils/competitionCode';
 
 interface HeaderProps {
@@ -31,20 +32,49 @@ export function Header({
     checkServerConnection,
   } = useApp();
 
+  const handleBackNavigation = () => {
+    if (goHome) {
+      router.push('/');
+      return;
+    }
+
+    // Try to go back first
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      // Fallback based on current route
+      const pathname = window.location.pathname;
+
+      if (pathname.includes('/match/')) {
+        router.push('/(tabs)/matches');
+      } else if (pathname.includes('/team/')) {
+        router.push('/(tabs)/teams');
+      } else {
+        // Default fallback to home
+        router.push('/(tabs)');
+      }
+    }
+  };
+
   return (
-    <HStack className="items-center justify-between px-4 py-2">
+    <HStack className="items-center justify-between px-4 py-3">
       <HStack className="gap-2 items-center">
         {showBackButton && (
           <Button
-            variant="link"
+            variant="outline"
             size="sm"
-            className="font-bold"
-            onPress={() => goHome ? router.push('/') : router.back()}
+            className="px-2 font-bold border-primary-500/5"
+            onPress={handleBackNavigation}
           >
             <ButtonText>←</ButtonText>
           </Button>
         )}
-        <Heading size={isMainScreen ? '2xl' : 'lg'}>{title}</Heading>
+        <Heading
+          size={isMainScreen ? '2xl' : 'lg'}
+          className="text-ellipsis line-clamp-1"
+        >
+          {title}
+        </Heading>
       </HStack>
       <HStack className="gap-1">
         <Center>
@@ -55,6 +85,9 @@ export function Header({
             onPress={checkServerConnection}
             size="lg"
           />
+        </Center>
+        <Center>
+          <DataStatus size="lg" />
         </Center>
         <Badge size="lg" variant="solid" action="info">
           <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>

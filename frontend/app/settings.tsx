@@ -7,7 +7,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
 import { Button, ButtonText } from '@/components/ui/button';
-import { useApp } from '@/utils/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { useRouter } from 'expo-router';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
@@ -154,7 +154,7 @@ export default function SettingsScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="flex-1 max-w-2xl self-center w-full">
-          <Header title="Settings" showBackButton goHome />
+          <Header title="Settings"  showBackButton goHome />
           <ScrollView className="flex-1 pb-4 px-4">
             <VStack space="md">
               <Card variant="outline" size="sm">

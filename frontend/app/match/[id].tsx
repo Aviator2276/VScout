@@ -93,8 +93,8 @@ export default function MatchDetailScreen() {
           <Text className="text-error-500 text-center mb-4">
             {error || 'Match not found'}
           </Text>
-          <Button onPress={() => router.back()}>
-            <ButtonText>Go Back</ButtonText>
+          <Button onPress={() => router.push('/(tabs)')}>
+            <ButtonText>Go Home</ButtonText>
           </Button>
         </Center>
       </AdaptiveSafeArea>
@@ -113,446 +113,445 @@ export default function MatchDetailScreen() {
   return (
     <AdaptiveSafeArea>
       <Box className="max-w-2xl self-center w-full">
-          <Header
-            title="Match Details"
-            isMainScreen={false}
-            showBackButton
-          />
+        <Header
+          title={'Match ' + match.match_number}
+          isMainScreen={false}
+          showBackButton
+          goHome
+        />
 
-          <ScrollView className="flex-1 px-4 pb-4">
+        <ScrollView className="flex-1 px-4 pb-4">
+          <>
+            {/* Match Info */}
+            <Card variant="outline" className="p-4 mb-2">
+              <VStack space="md">
+                <Heading size="2xl" className="capitalize">
+                  {match.match_type} Match #{match.match_number}
+                </Heading>
+                <VStack space="xs">
+                  <HStack className="justify-between">
+                    <Text className="text-typography-700">Set Number:</Text>
+                    <Text className="font-semibold">{match.set_number}</Text>
+                  </HStack>
+                  <HStack className="justify-between">
+                    <Text className="text-typography-700">Competition:</Text>
+                    <Text className="font-semibold">
+                      {match.competition.code}
+                    </Text>
+                  </HStack>
+                  <HStack className="justify-between">
+                    <Text className="text-typography-700">Start Time:</Text>
+                    <Text className="font-semibold">
+                      {formatMatchTime(match.start_match_time)}
+                    </Text>
+                  </HStack>
+                </VStack>
+              </VStack>
+            </Card>
+
+            {/* Scout Button */}
+            <Button size="lg" action="primary" className="mb-2">
+              <ButtonText>Scout Match</ButtonText>
+            </Button>
+
+            {/* Teams */}
+            <Card variant="outline" className="p-4 mb-2">
+              <VStack space="md">
+                {/* Blue Alliance */}
+                <VStack space="xs">
+                  <Text className="font-semibold text-blue-500">
+                    Blue Alliance
+                  </Text>
+                  {blueTeams.map((team, index) => (
+                    <HStack
+                      key={`blue-${index}`}
+                      className="items-center justify-between p-2 bg-blue-500/20 rounded"
+                    >
+                      <Text className="font-medium">Team {team.number}</Text>
+                      <Text className="text-sm text-typography-600">
+                        {team.name}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+
+                {/* Red Alliance */}
+                <VStack space="xs">
+                  <Text className="font-semibold text-red-500">
+                    Red Alliance
+                  </Text>
+                  {redTeams.map((team, index) => (
+                    <HStack
+                      key={`red-${index}`}
+                      className="items-center justify-between p-2 bg-red-500/20 rounded"
+                    >
+                      <Text className="font-medium">Team {team.number}</Text>
+                      <Text className="text-sm text-typography-600">
+                        {team.name}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+              </VStack>
+            </Card>
+          </>
+
+          {/* Tab Navigation */}
+          <HStack className=" mb-2 p-1 rounded bg-secondary-100">
+            <Button
+              size="xs"
+              variant={activeTab === 'overview' ? 'solid' : 'link'}
+              action="secondary"
+              className="w-1/2"
+              onPress={() => setActiveTab('overview')}
+            >
+              <Text className="text-center font-semibold">Match Overview</Text>
+            </Button>
+            <Button
+              size="xs"
+              variant={activeTab === 'scores' ? 'solid' : 'link'}
+              action="secondary"
+              className="w-1/2"
+              onPress={() => setActiveTab('scores')}
+            >
+              <Text className="text-center font-semibold">Team Scores</Text>
+            </Button>
+          </HStack>
+          {activeTab === 'overview' && (
             <>
-              {/* Match Info */}
               <Card variant="outline" className="p-4 mb-2">
                 <VStack space="md">
-                  <Heading size="2xl" className="capitalize">
-                    {match.match_type} Match #{match.match_number}
-                  </Heading>
+                  <Heading size="lg">Score Breakdown</Heading>
+                  <Table className="w-full !text-center text-xs">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Blue</TableHead>
+                        <TableHead className="text-center">Score</TableHead>
+                        <TableHead className="text-center">Red</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableData className="text-center bg-blue-500/20">
+                          {match.blue_1_auto_fuel +
+                            match.blue_2_auto_fuel +
+                            match.blue_3_auto_fuel}
+                        </TableData>
+                        <TableData className="text-center text-sm">
+                          Auto Fuel
+                        </TableData>
+                        <TableData className="text-center bg-red-500/20">
+                          {match.red_1_auto_fuel +
+                            match.red_2_auto_fuel +
+                            match.red_3_auto_fuel}
+                        </TableData>
+                      </TableRow>
+                      <TableRow>
+                        <TableData className="text-center bg-blue-500/20">
+                          {match.blue_1_fuel_scored +
+                            match.blue_2_fuel_scored +
+                            match.blue_3_fuel_scored}
+                        </TableData>
+                        <TableData className="text-center text-sm">
+                          Teleop Fuel
+                        </TableData>
+                        <TableData className="text-center bg-red-500/20">
+                          {match.red_1_fuel_scored +
+                            match.red_2_fuel_scored +
+                            match.red_3_fuel_scored}
+                        </TableData>
+                      </TableRow>
+                      <TableRow>
+                        <TableData className="text-center bg-blue-500/20">
+                          {match.total_blue_fuels}
+                        </TableData>
+                        <TableData className="text-center text-sm">
+                          Total Fuel
+                        </TableData>
+                        <TableData className="text-center bg-red-500/20">
+                          {match.total_red_fuels}
+                        </TableData>
+                      </TableRow>
+                      <TableRow>
+                        <TableData className="text-center bg-blue-500/20">
+                          {match.blue_1_climb}
+                        </TableData>
+                        <TableData className="text-center text-sm">
+                          Auto Climb ***
+                        </TableData>
+                        <TableData className="text-center bg-red-500/20">
+                          {match.red_1_climb}
+                        </TableData>
+                      </TableRow>
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableHead className="text-center text-sm bg-blue-500/20">
+                          Unknown
+                        </TableHead>
+                        <TableHead className="text-center text-sm">
+                          Total Score ***
+                        </TableHead>
+                        <TableHead className="text-center text-sm bg-red-500/20">
+                          Unknown
+                        </TableHead>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </VStack>
+              </Card>
+            </>
+          )}
+          {activeTab === 'scores' && (
+            <>
+              {/* Fuel Statistics */}
+              <Card variant="outline" className="p-4 mb-2">
+                <VStack space="md">
+                  <Heading size="lg">Fuel Breakdown</Heading>
+
+                  <VStack space="sm">
+                    <HStack className="justify-between">
+                      <Text className="text-typography-700">
+                        Total Blue Fuels:
+                      </Text>
+                      <Text className="font-semibold text-blue-500">
+                        {match.total_blue_fuels}
+                      </Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-typography-700">
+                        Total Red Fuels:
+                      </Text>
+                      <Text className="font-semibold text-red-500">
+                        {match.total_red_fuels}
+                      </Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Auto Fuel */}
                   <VStack space="xs">
+                    <Text className="font-semibold">Autonomous Fuel</Text>
                     <HStack className="justify-between">
-                      <Text className="text-typography-700">Set Number:</Text>
-                      <Text className="font-semibold">{match.set_number}</Text>
+                      <Text className="text-sm text-typography-600">
+                        Blue 1:
+                      </Text>
+                      <Text>{match.blue_1_auto_fuel}</Text>
                     </HStack>
                     <HStack className="justify-between">
-                      <Text className="text-typography-700">Competition:</Text>
-                      <Text className="font-semibold">
-                        {match.competition.code}
+                      <Text className="text-sm text-typography-600">
+                        Blue 2:
                       </Text>
+                      <Text>{match.blue_2_auto_fuel}</Text>
                     </HStack>
                     <HStack className="justify-between">
-                      <Text className="text-typography-700">Start Time:</Text>
-                      <Text className="font-semibold">
-                        {formatMatchTime(match.start_match_time)}
+                      <Text className="text-sm text-typography-600">
+                        Blue 3:
                       </Text>
+                      <Text>{match.blue_3_auto_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 1:
+                      </Text>
+                      <Text>{match.red_1_auto_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 2:
+                      </Text>
+                      <Text>{match.red_2_auto_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 3:
+                      </Text>
+                      <Text>{match.red_3_auto_fuel}</Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Teleop Fuel */}
+                  <VStack space="xs">
+                    <Text className="font-semibold">Teleop Fuel</Text>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 1:
+                      </Text>
+                      <Text>{match.blue_1_teleop_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 2:
+                      </Text>
+                      <Text>{match.blue_2_teleop_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 3:
+                      </Text>
+                      <Text>{match.blue_3_teleop_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 1:
+                      </Text>
+                      <Text>{match.red_1_teleop_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 2:
+                      </Text>
+                      <Text>{match.red_2_teleop_fuel}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 3:
+                      </Text>
+                      <Text>{match.red_3_teleop_fuel}</Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Fuel Scored */}
+                  <VStack space="xs">
+                    <Text className="font-semibold">Fuel Scored</Text>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 1:
+                      </Text>
+                      <Text>{match.blue_1_fuel_scored}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 2:
+                      </Text>
+                      <Text>{match.blue_2_fuel_scored}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Blue 3:
+                      </Text>
+                      <Text>{match.blue_3_fuel_scored}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 1:
+                      </Text>
+                      <Text>{match.red_1_fuel_scored}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 2:
+                      </Text>
+                      <Text>{match.red_2_fuel_scored}</Text>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Red 3:
+                      </Text>
+                      <Text>{match.red_3_fuel_scored}</Text>
                     </HStack>
                   </VStack>
                 </VStack>
               </Card>
 
-              {/* Scout Button */}
-              <Button size="lg" action="primary" className="mb-2">
-                <ButtonText>Scout Match</ButtonText>
-              </Button>
-
-              {/* Teams */}
+              {/* Climb Statistics */}
               <Card variant="outline" className="p-4 mb-2">
                 <VStack space="md">
-                  {/* Blue Alliance */}
+                  <Heading size="lg">Climb Breakdown</Heading>
+
                   <VStack space="xs">
                     <Text className="font-semibold text-blue-500">
                       Blue Alliance
                     </Text>
-                    {blueTeams.map((team, index) => (
-                      <HStack
-                        key={`blue-${index}`}
-                        className="items-center justify-between p-2 bg-blue-500/20 rounded"
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {blueTeams[0].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.blue_1_climb !== 'None' ? 'success' : 'muted'
+                        }
                       >
-                        <Text className="font-medium">Team {team.number}</Text>
-                        <Text className="text-sm text-typography-600">
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    ))}
+                        <BadgeText>{match.blue_1_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {blueTeams[1].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.blue_2_climb !== 'None' ? 'success' : 'muted'
+                        }
+                      >
+                        <BadgeText>{match.blue_2_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {blueTeams[2].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.blue_3_climb !== 'None' ? 'success' : 'muted'
+                        }
+                      >
+                        <BadgeText>{match.blue_3_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
                   </VStack>
 
-                  {/* Red Alliance */}
                   <VStack space="xs">
                     <Text className="font-semibold text-red-500">
                       Red Alliance
                     </Text>
-                    {redTeams.map((team, index) => (
-                      <HStack
-                        key={`red-${index}`}
-                        className="items-center justify-between p-2 bg-red-500/20 rounded"
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {redTeams[0].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.red_1_climb !== 'None' ? 'success' : 'muted'
+                        }
                       >
-                        <Text className="font-medium">Team {team.number}</Text>
-                        <Text className="text-sm text-typography-600">
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    ))}
+                        <BadgeText>{match.red_1_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {redTeams[1].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.red_2_climb !== 'None' ? 'success' : 'muted'
+                        }
+                      >
+                        <BadgeText>{match.red_2_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className="justify-between">
+                      <Text className="text-sm text-typography-600">
+                        Team {redTeams[2].number}:
+                      </Text>
+                      <Badge
+                        variant="solid"
+                        action={
+                          match.red_3_climb !== 'None' ? 'success' : 'muted'
+                        }
+                      >
+                        <BadgeText>{match.red_3_climb}</BadgeText>
+                      </Badge>
+                    </HStack>
                   </VStack>
                 </VStack>
               </Card>
             </>
-
-            {/* Tab Navigation */}
-            <HStack className=" mb-2 p-1 rounded bg-secondary-100">
-              <Button
-                size="xs"
-                variant={activeTab === 'overview' ? 'solid' : 'link'}
-                action="secondary"
-                className="w-1/2"
-                onPress={() => setActiveTab('overview')}
-              >
-                <Text className="text-center font-semibold">
-                  Match Overview
-                </Text>
-              </Button>
-              <Button
-                size="xs"
-                variant={activeTab === 'scores' ? 'solid' : 'link'}
-                action="secondary"
-                className="w-1/2"
-                onPress={() => setActiveTab('scores')}
-              >
-                <Text className="text-center font-semibold">Team Scores</Text>
-              </Button>
-            </HStack>
-            {activeTab === 'overview' && (
-              <>
-                <Card variant="outline" className="p-4 mb-2">
-                  <VStack space="md">
-                    <Heading size="lg">Score Breakdown</Heading>
-                    <Table className="w-full !text-center text-xs">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-center">Blue</TableHead>
-                          <TableHead className="text-center">Score</TableHead>
-                          <TableHead className="text-center">Red</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableData className="text-center bg-blue-500/20">
-                            {match.blue_1_auto_fuel +
-                              match.blue_2_auto_fuel +
-                              match.blue_3_auto_fuel}
-                          </TableData>
-                          <TableData className="text-center text-sm">
-                            Auto Fuel
-                          </TableData>
-                          <TableData className="text-center bg-red-500/20">
-                            {match.red_1_auto_fuel +
-                              match.red_2_auto_fuel +
-                              match.red_3_auto_fuel}
-                          </TableData>
-                        </TableRow>
-                        <TableRow>
-                          <TableData className="text-center bg-blue-500/20">
-                            {match.blue_1_fuel_scored +
-                              match.blue_2_fuel_scored +
-                              match.blue_3_fuel_scored}
-                          </TableData>
-                          <TableData className="text-center text-sm">
-                            Teleop Fuel
-                          </TableData>
-                          <TableData className="text-center bg-red-500/20">
-                            {match.red_1_fuel_scored +
-                              match.red_2_fuel_scored +
-                              match.red_3_fuel_scored}
-                          </TableData>
-                        </TableRow>
-                        <TableRow>
-                          <TableData className="text-center bg-blue-500/20">
-                            {match.total_blue_fuels}
-                          </TableData>
-                          <TableData className="text-center text-sm">
-                            Total Fuel
-                          </TableData>
-                          <TableData className="text-center bg-red-500/20">
-                            {match.total_red_fuels}
-                          </TableData>
-                        </TableRow>
-                        <TableRow>
-                          <TableData className="text-center bg-blue-500/20">
-                            {match.blue_1_climb}
-                          </TableData>
-                          <TableData className="text-center text-sm">
-                            Auto Climb ***
-                          </TableData>
-                          <TableData className="text-center bg-red-500/20">
-                            {match.red_1_climb}
-                          </TableData>
-                        </TableRow>
-                      </TableBody>
-                      <TableFooter>
-                        <TableRow>
-                          <TableHead className="text-center text-sm bg-blue-500/20">
-                            Unknown
-                          </TableHead>
-                          <TableHead className="text-center text-sm">
-                            Total Score ***
-                          </TableHead>
-                          <TableHead className="text-center text-sm bg-red-500/20">
-                            Unknown
-                          </TableHead>
-                        </TableRow>
-                      </TableFooter>
-                    </Table>
-                  </VStack>
-                </Card>
-              </>
-            )}
-            {activeTab === 'scores' && (
-              <>
-                {/* Fuel Statistics */}
-                <Card variant="outline" className="p-4 mb-2">
-                  <VStack space="md">
-                    <Heading size="lg">Fuel Breakdown</Heading>
-
-                    <VStack space="sm">
-                      <HStack className="justify-between">
-                        <Text className="text-typography-700">
-                          Total Blue Fuels:
-                        </Text>
-                        <Text className="font-semibold text-blue-500">
-                          {match.total_blue_fuels}
-                        </Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-typography-700">
-                          Total Red Fuels:
-                        </Text>
-                        <Text className="font-semibold text-red-500">
-                          {match.total_red_fuels}
-                        </Text>
-                      </HStack>
-                    </VStack>
-
-                    {/* Auto Fuel */}
-                    <VStack space="xs">
-                      <Text className="font-semibold">Autonomous Fuel</Text>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 1:
-                        </Text>
-                        <Text>{match.blue_1_auto_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 2:
-                        </Text>
-                        <Text>{match.blue_2_auto_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 3:
-                        </Text>
-                        <Text>{match.blue_3_auto_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 1:
-                        </Text>
-                        <Text>{match.red_1_auto_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 2:
-                        </Text>
-                        <Text>{match.red_2_auto_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 3:
-                        </Text>
-                        <Text>{match.red_3_auto_fuel}</Text>
-                      </HStack>
-                    </VStack>
-
-                    {/* Teleop Fuel */}
-                    <VStack space="xs">
-                      <Text className="font-semibold">Teleop Fuel</Text>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 1:
-                        </Text>
-                        <Text>{match.blue_1_teleop_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 2:
-                        </Text>
-                        <Text>{match.blue_2_teleop_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 3:
-                        </Text>
-                        <Text>{match.blue_3_teleop_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 1:
-                        </Text>
-                        <Text>{match.red_1_teleop_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 2:
-                        </Text>
-                        <Text>{match.red_2_teleop_fuel}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 3:
-                        </Text>
-                        <Text>{match.red_3_teleop_fuel}</Text>
-                      </HStack>
-                    </VStack>
-
-                    {/* Fuel Scored */}
-                    <VStack space="xs">
-                      <Text className="font-semibold">Fuel Scored</Text>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 1:
-                        </Text>
-                        <Text>{match.blue_1_fuel_scored}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 2:
-                        </Text>
-                        <Text>{match.blue_2_fuel_scored}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Blue 3:
-                        </Text>
-                        <Text>{match.blue_3_fuel_scored}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 1:
-                        </Text>
-                        <Text>{match.red_1_fuel_scored}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 2:
-                        </Text>
-                        <Text>{match.red_2_fuel_scored}</Text>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Red 3:
-                        </Text>
-                        <Text>{match.red_3_fuel_scored}</Text>
-                      </HStack>
-                    </VStack>
-                  </VStack>
-                </Card>
-
-                {/* Climb Statistics */}
-                <Card variant="outline" className="p-4 mb-2">
-                  <VStack space="md">
-                    <Heading size="lg">Climb Breakdown</Heading>
-
-                    <VStack space="xs">
-                      <Text className="font-semibold text-blue-500">
-                        Blue Alliance
-                      </Text>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {blueTeams[0].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.blue_1_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.blue_1_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {blueTeams[1].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.blue_2_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.blue_2_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {blueTeams[2].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.blue_3_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.blue_3_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                    </VStack>
-
-                    <VStack space="xs">
-                      <Text className="font-semibold text-red-500">
-                        Red Alliance
-                      </Text>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {redTeams[0].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.red_1_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.red_1_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {redTeams[1].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.red_2_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.red_2_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-sm text-typography-600">
-                          Team {redTeams[2].number}:
-                        </Text>
-                        <Badge
-                          variant="solid"
-                          action={
-                            match.red_3_climb !== 'None' ? 'success' : 'muted'
-                          }
-                        >
-                          <BadgeText>{match.red_3_climb}</BadgeText>
-                        </Badge>
-                      </HStack>
-                    </VStack>
-                  </VStack>
-                </Card>
-              </>
-            )}
-          </ScrollView>
+          )}
+        </ScrollView>
       </Box>
     </AdaptiveSafeArea>
   );
