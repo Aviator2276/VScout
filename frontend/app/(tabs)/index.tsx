@@ -6,7 +6,7 @@ import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView } from 'react-native';
-import { Bolt, NotebookTabs } from 'lucide-react-native';
+import { Bolt, NotebookTabs, Scale, WandSparkles } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Header } from '@/components/Header';
 
@@ -35,6 +35,22 @@ export default function HomeScreen() {
                 <HStack className="items-center justify-between">
                   <Heading size="md">Settings</Heading>
                   <Icon as={Bolt} size="lg" />
+                </HStack>
+              </Card>
+            </Pressable>
+            <Pressable>
+              <Card variant="filled" className="p-4 aspect-square">
+                <HStack className="items-center justify-between">
+                  <Heading size="md">Alliance Predictor</Heading>
+                  <Icon as={WandSparkles} size="lg" />
+                </HStack>
+              </Card>
+            </Pressable>
+            <Pressable>
+              <Card variant="filled" className="p-4 aspect-square">
+                <HStack className="items-center justify-between">
+                  <Icon as={Scale} size="lg" />
+                  <Heading size="md">Compare Teams</Heading>
                 </HStack>
               </Card>
             </Pressable>
