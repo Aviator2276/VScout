@@ -1,4 +1,5 @@
 import random
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.db import models
@@ -251,8 +252,8 @@ class Command(BaseCommand):
             red_score = match.total_red_fuels
 
             if blue_score > red_score:
-                rp_blue = 2.0
-                rp_red = 0.0
+                rp_blue = Decimal("2.0")
+                rp_red = Decimal("0.0")
                 for team in blue_teams:
                     team_info = TeamInfo.objects.get(team=team, competition=competition)
                     team_info.win += 1
@@ -264,8 +265,8 @@ class Command(BaseCommand):
                     team_info.ranking_points += rp_red
                     team_info.save()
             elif red_score > blue_score:
-                rp_blue = 0.0
-                rp_red = 2.0
+                rp_blue = Decimal("0.0")
+                rp_red = Decimal("2.0")
                 for team in blue_teams:
                     team_info = TeamInfo.objects.get(team=team, competition=competition)
                     team_info.lose += 1
@@ -277,12 +278,12 @@ class Command(BaseCommand):
                     team_info.ranking_points += rp_red
                     team_info.save()
             else:
-                rp_blue = 1.0
-                rp_red = 1.0
+                rp_blue = Decimal("1.0")
+                rp_red = Decimal("1.0")
                 for team in blue_teams + red_teams:
                     team_info = TeamInfo.objects.get(team=team, competition=competition)
                     team_info.tie += 1
-                    team_info.ranking_points += 1.0
+                    team_info.ranking_points += Decimal("1.0")
                     team_info.save()
 
         # Calculate average stats for each team

@@ -92,7 +92,7 @@ def get_competition_matches_by_code(request, code: str):
         output_field=IntegerField(),
     )
 
-    return (
+    matches = (
         Match.objects.select_related(
             "competition",
             "blue_team_1",
@@ -105,6 +105,8 @@ def get_competition_matches_by_code(request, code: str):
         .filter(competition=competition)
         .order_by(match_type_order, "match_number")
     )
+
+    return [MatchSchema.from_orm(match) for match in matches]
 
 
 @api.post("/robot-actions", response=RobotActionSchema)

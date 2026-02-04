@@ -97,7 +97,7 @@ class PrescouttingUpdateSchema(Schema):
     prescout_additional_comments: Optional[str] = None
 
 
-class MatchSchema(ModelSchema):
+class MatchSchema(Schema):
     blue_team_1: TeamSchema
     blue_team_2: TeamSchema
     blue_team_3: TeamSchema
@@ -105,64 +105,110 @@ class MatchSchema(ModelSchema):
     red_team_2: TeamSchema
     red_team_3: TeamSchema
     competition: CompetitionSchema
+    match_number: int
+    set_number: int
+    match_type: str
+    has_played: bool
+    predicted_match_time: int
+    start_match_time: int
+    end_match_time: int
+    total_points: int
+    total_blue_fuels: int
+    total_red_fuels: int
+    blue_1_auto_fuel: int
+    blue_2_auto_fuel: int
+    blue_3_auto_fuel: int
+    red_1_auto_fuel: int
+    red_2_auto_fuel: int
+    red_3_auto_fuel: int
+    blue_1_teleop_fuel: int
+    blue_2_teleop_fuel: int
+    blue_3_teleop_fuel: int
+    red_1_teleop_fuel: int
+    red_2_teleop_fuel: int
+    red_3_teleop_fuel: int
+    blue_1_fuel_scored: int
+    blue_2_fuel_scored: int
+    blue_3_fuel_scored: int
+    red_1_fuel_scored: int
+    red_2_fuel_scored: int
+    red_3_fuel_scored: int
+    blue_1_climb: Optional[str] = None
+    blue_2_climb: Optional[str] = None
+    blue_3_climb: Optional[str] = None
+    red_1_climb: Optional[str] = None
+    red_2_climb: Optional[str] = None
+    red_3_climb: Optional[str] = None
+    calculated_points: int
+    blue_total_score: int
+    red_total_score: int
+    blue_ranking_points: int
+    red_ranking_points: int
+    winning_alliance: Optional[str] = None
+    blue_auto_points: int
+    red_auto_points: int
+    blue_teleop_points: int
+    red_teleop_points: int
+    blue_endgame_points: int
+    red_endgame_points: int
 
-    class Meta:
-        model = Match
-        fields = [
-            "competition",
-            "match_number",
-            "set_number",
-            "match_type",
-            "has_played",
-            "predicted_match_time",
-            "start_match_time",
-            "end_match_time",
-            "blue_team_1",
-            "blue_team_2",
-            "blue_team_3",
-            "red_team_1",
-            "red_team_2",
-            "red_team_3",
-            "total_points",
-            "total_blue_fuels",
-            "total_red_fuels",
-            "blue_1_auto_fuel",
-            "blue_2_auto_fuel",
-            "blue_3_auto_fuel",
-            "red_1_auto_fuel",
-            "red_2_auto_fuel",
-            "red_3_auto_fuel",
-            "blue_1_teleop_fuel",
-            "blue_2_teleop_fuel",
-            "blue_3_teleop_fuel",
-            "red_1_teleop_fuel",
-            "red_2_teleop_fuel",
-            "red_3_teleop_fuel",
-            "blue_1_fuel_scored",
-            "blue_2_fuel_scored",
-            "blue_3_fuel_scored",
-            "red_1_fuel_scored",
-            "red_2_fuel_scored",
-            "red_3_fuel_scored",
-            "blue_1_climb",
-            "blue_2_climb",
-            "blue_3_climb",
-            "red_1_climb",
-            "red_2_climb",
-            "red_3_climb",
-            "calculated_points",
-            "blue_total_score",
-            "red_total_score",
-            "blue_ranking_points",
-            "red_ranking_points",
-            "winning_alliance",
-            "blue_auto_points",
-            "red_auto_points",
-            "blue_teleop_points",
-            "red_teleop_points",
-            "blue_endgame_points",
-            "red_endgame_points",
-        ]
+    @staticmethod
+    def from_orm(obj):
+        return MatchSchema(
+            blue_team_1=TeamSchema.from_orm(obj.blue_team_1),
+            blue_team_2=TeamSchema.from_orm(obj.blue_team_2),
+            blue_team_3=TeamSchema.from_orm(obj.blue_team_3),
+            red_team_1=TeamSchema.from_orm(obj.red_team_1),
+            red_team_2=TeamSchema.from_orm(obj.red_team_2),
+            red_team_3=TeamSchema.from_orm(obj.red_team_3),
+            competition=CompetitionSchema.from_orm(obj.competition),
+            match_number=obj.match_number,
+            set_number=obj.set_number,
+            match_type=obj.match_type,
+            has_played=obj.has_played,
+            predicted_match_time=obj.predicted_match_time,
+            start_match_time=obj.start_match_time,
+            end_match_time=obj.end_match_time,
+            total_points=obj.total_points,
+            total_blue_fuels=obj.total_blue_fuels,
+            total_red_fuels=obj.total_red_fuels,
+            blue_1_auto_fuel=obj.blue_1_auto_fuel,
+            blue_2_auto_fuel=obj.blue_2_auto_fuel,
+            blue_3_auto_fuel=obj.blue_3_auto_fuel,
+            red_1_auto_fuel=obj.red_1_auto_fuel,
+            red_2_auto_fuel=obj.red_2_auto_fuel,
+            red_3_auto_fuel=obj.red_3_auto_fuel,
+            blue_1_teleop_fuel=obj.blue_1_teleop_fuel,
+            blue_2_teleop_fuel=obj.blue_2_teleop_fuel,
+            blue_3_teleop_fuel=obj.blue_3_teleop_fuel,
+            red_1_teleop_fuel=obj.red_1_teleop_fuel,
+            red_2_teleop_fuel=obj.red_2_teleop_fuel,
+            red_3_teleop_fuel=obj.red_3_teleop_fuel,
+            blue_1_fuel_scored=obj.blue_1_fuel_scored,
+            blue_2_fuel_scored=obj.blue_2_fuel_scored,
+            blue_3_fuel_scored=obj.blue_3_fuel_scored,
+            red_1_fuel_scored=obj.red_1_fuel_scored,
+            red_2_fuel_scored=obj.red_2_fuel_scored,
+            red_3_fuel_scored=obj.red_3_fuel_scored,
+            blue_1_climb=obj.blue_1_climb,
+            blue_2_climb=obj.blue_2_climb,
+            blue_3_climb=obj.blue_3_climb,
+            red_1_climb=obj.red_1_climb,
+            red_2_climb=obj.red_2_climb,
+            red_3_climb=obj.red_3_climb,
+            calculated_points=obj.calculated_points,
+            blue_total_score=obj.blue_total_score,
+            red_total_score=obj.red_total_score,
+            blue_ranking_points=obj.blue_ranking_points,
+            red_ranking_points=obj.red_ranking_points,
+            winning_alliance=obj.winning_alliance,
+            blue_auto_points=obj.blue_auto_points,
+            red_auto_points=obj.red_auto_points,
+            blue_teleop_points=obj.blue_teleop_points,
+            red_teleop_points=obj.red_teleop_points,
+            blue_endgame_points=obj.blue_endgame_points,
+            red_endgame_points=obj.red_endgame_points,
+        )
 
 
 class UserSchema(ModelSchema):
