@@ -38,32 +38,21 @@ export function Header({
       return;
     }
 
-    // Try to go back first
     if (router.canGoBack()) {
       router.back();
     } else {
-      // Fallback based on current route
-      const pathname = window.location.pathname;
-
-      if (pathname.includes('/match/')) {
-        router.push('/(tabs)/matches');
-      } else if (pathname.includes('/team/')) {
-        router.push('/(tabs)/teams');
-      } else {
-        // Default fallback to home
-        router.push('/(tabs)');
-      }
+      router.push('/(tabs)');
     }
   };
 
   return (
-    <HStack className="items-center justify-between px-4 py-3">
-      <HStack className="gap-2 items-center">
+    <HStack className='items-center justify-between px-4 py-3'>
+      <HStack className='gap-2 items-center'>
         {showBackButton && (
           <Button
-            variant="outline"
-            size="sm"
-            className="px-2 font-bold border-primary-500/5"
+            variant='outline'
+            size='sm'
+            className='px-2 font-bold border-primary-500/5'
             onPress={handleBackNavigation}
           >
             <ButtonText>←</ButtonText>
@@ -71,25 +60,25 @@ export function Header({
         )}
         <Heading
           size={isMainScreen ? '2xl' : 'lg'}
-          className="text-ellipsis line-clamp-1"
+          className='text-ellipsis line-clamp-1'
         >
           {title}
         </Heading>
       </HStack>
-      <HStack className="gap-1">
+      <HStack className='gap-1'>
         <Center>
           <ConnectionStatus
             ping={ping}
             isOnline={isOnline}
             serverStatus={serverStatus}
             onPress={checkServerConnection}
-            size="lg"
+            size='lg'
           />
         </Center>
         <Center>
-          <DataStatus size="lg" />
+          <DataStatus size='lg' />
         </Center>
-        <Badge size="lg" variant="solid" action="info">
+        <Badge size='lg' variant='solid' action='info'>
           <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
         </Badge>
       </HStack>
