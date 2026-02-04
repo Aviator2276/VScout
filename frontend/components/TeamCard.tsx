@@ -8,7 +8,7 @@ import { VStack } from '@/components/ui/vstack';
 import { TeamInfo } from '@/types/team';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { getTeamName } from '@/api/teams';
-import { ArrowUpFromLine, Car, Fuel, PackageOpen } from 'lucide-react-native';
+import { Dice4, Fuel, MoveVertical, PackageOpen } from 'lucide-react-native';
 
 interface TeamCardProps {
   team: TeamInfo;
@@ -48,7 +48,9 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                 <Text className="text-lg font-bold text-typography-900">
                   {team.team_number}
                 </Text>
-                <Text className="text-md text-typography-600">{teamName}</Text>
+                <Text className="text-md text-typography-600 overflow-hidden max-w-48">
+                  {teamName}
+                </Text>
               </HStack>
               <Text className="text-md text-typography-600">
                 RP {team.ranking_points}
@@ -62,12 +64,6 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                 {team.win}-{team.lose}-{team.tie}
               </Text>
               <HStack className="flex-1 w-full justify-end gap-1">
-                <Badge size="lg" variant="solid" action="muted">
-                  <BadgeIcon as={Car}></BadgeIcon>
-                  <BadgeText className="ml-1">
-                    {team.prescout_drivetrain}
-                  </BadgeText>
-                </Badge>
                 <Badge
                   size="lg"
                   variant="solid"
@@ -95,6 +91,15 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                   <BadgeText className="ml-1">
                     {team.prescout_hopper_size}1
                   </BadgeText>
+                </Badge>
+                <Badge size="lg" variant="solid" action="muted">
+                  <BadgeIcon
+                    as={
+                      team.prescout_drivetrain === 'swerve'
+                        ? Dice4
+                        : MoveVertical
+                    }
+                  ></BadgeIcon>
                 </Badge>
               </HStack>
             </HStack>
