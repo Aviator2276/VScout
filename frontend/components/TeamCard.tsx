@@ -53,7 +53,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
       <Card
         variant='outline'
         size='md'
-        className={`mb-3 p-4 ${isHighlighted() ? 'border-amber-400 border-2' : ''}`}
+        className={`mb-2 p-2 ${isHighlighted() ? 'border-amber-400 border-2' : ''}`}
       >
         <HStack className='items-center justify-between'>
           <VStack className='w-full'>
@@ -119,7 +119,9 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                         className='justify-center items-center bg-emerald-500/40'
                       >
                         <BadgeText>
-                          L{Math.round(parseFloat(team.avg_climb_points) * 10) / 10}
+                          L
+                          {Math.round(parseFloat(team.avg_climb_points) * 10) /
+                            10}
                         </BadgeText>
                       </Badge>
                     </Pressable>

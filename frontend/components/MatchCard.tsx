@@ -51,7 +51,7 @@ export function MatchCard({
 
   return (
     <Pressable onPress={handleCardPress}>
-      <Card variant='outline' size='md' className='mb-3 p-4'>
+      <Card variant='outline' size='md' className='mb-2 p-2'>
         <VStack space='md'>
           <HStack className='items-center justify-between gap-2'>
             <HStack space='xs' className='items-center'>
@@ -85,7 +85,7 @@ export function MatchCard({
                     size='lg'
                     variant='solid'
                     key={`blue-${index}`}
-                    className={`bg-blue-500/75 font-medium w-1/6 justify-center py-1 ${
+                    className={`bg-blue-500/75 rounded font-medium w-1/6 justify-center py-1 ${
                       isHighlighted &&
                       '!border-amber-400 border-[0.15rem] py-[0.1rem]'
                     }`}
@@ -101,7 +101,7 @@ export function MatchCard({
                     size='lg'
                     variant='solid'
                     key={`red-${index}`}
-                    className={`bg-red-500/75 font-medium w-1/6 justify-center py-1 ${
+                    className={`bg-red-500/75 rounded font-medium w-1/6 justify-center py-1 ${
                       isHighlighted &&
                       '!border-amber-400 border-[0.15rem] py-[0.1rem]'
                     }`}

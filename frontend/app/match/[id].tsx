@@ -140,9 +140,21 @@ export default function MatchDetailScreen() {
                   </HStack>
                   <HStack className='justify-between'>
                     <Text className='text-typography-700'>Start Time:</Text>
-                    <Text className='font-semibold'>
-                      {formatMatchTime(match.start_match_time)}
-                    </Text>
+                    <Badge
+                      size='sm'
+                      variant='solid'
+                      action={match.has_played ? 'success' : 'muted'}
+                    >
+                      <BadgeText>
+                        {match.has_played
+                          ? 'Done'
+                          : match.predicted_match_time
+                            ? formatMatchTime(match.predicted_match_time)
+                            : match.start_match_time
+                              ? formatMatchTime(match.start_match_time)
+                              : 'TBD'}
+                      </BadgeText>
+                    </Badge>
                   </HStack>
                 </VStack>
               </VStack>
@@ -154,44 +166,45 @@ export default function MatchDetailScreen() {
             </Button>
 
             {/* Teams */}
-            <Card variant='outline' className='p-4 mb-2'>
-              <VStack space='md'>
-                {/* Blue Alliance */}
-                <VStack space='xs'>
-                  <Text className='font-semibold text-blue-500'>
+            <Card variant='outline' className='p-1 mb-2'>
+              <HStack space='xs' className='w-full'>
+                <VStack space='xs' className='w-full'>
+                  <Text className='font-semibold text-center text-blue-500'>
                     Blue Alliance
                   </Text>
                   {blueTeams.map((team, index) => (
                     <HStack
                       key={`blue-${index}`}
-                      className='items-center justify-between p-2 bg-blue-500/20 rounded'
+                      className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'
                     >
-                      <Text className='font-medium'>Team {team.number}</Text>
-                      <Text className='text-sm text-typography-600'>
+                      <Text className='col-span-1 font-medium'>
+                        {team.number}
+                      </Text>
+                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
                         {team.name}
                       </Text>
                     </HStack>
                   ))}
                 </VStack>
-
-                {/* Red Alliance */}
-                <VStack space='xs'>
-                  <Text className='font-semibold text-red-500'>
+                <VStack space='xs' className='w-full'>
+                  <Text className='font-semibold text-center text-red-500'>
                     Red Alliance
                   </Text>
                   {redTeams.map((team, index) => (
                     <HStack
                       key={`red-${index}`}
-                      className='items-center justify-between p-2 bg-red-500/20 rounded'
+                      className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'
                     >
-                      <Text className='font-medium'>Team {team.number}</Text>
-                      <Text className='text-sm text-typography-600'>
+                      <Text className='col-span-1 font-medium'>
+                        {team.number}
+                      </Text>
+                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
                         {team.name}
                       </Text>
                     </HStack>
                   ))}
                 </VStack>
-              </VStack>
+              </HStack>
             </Card>
           </>
 
@@ -247,17 +260,17 @@ export default function MatchDetailScreen() {
                       </TableRow>
                       <TableRow>
                         <TableData className='text-center bg-blue-500/20'>
-                          {match.blue_1_fuel_scored +
-                            match.blue_2_fuel_scored +
-                            match.blue_3_fuel_scored}
+                          {match.blue_1_teleop_fuel +
+                            match.blue_2_teleop_fuel +
+                            match.blue_3_teleop_fuel}
                         </TableData>
                         <TableData className='text-center text-sm'>
                           Teleop Fuel
                         </TableData>
                         <TableData className='text-center bg-red-500/20'>
-                          {match.red_1_fuel_scored +
-                            match.red_2_fuel_scored +
-                            match.red_3_fuel_scored}
+                          {match.red_1_teleop_fuel +
+                            match.red_2_teleop_fuel +
+                            match.red_3_teleop_fuel}
                         </TableData>
                       </TableRow>
                       <TableRow>
@@ -277,6 +290,17 @@ export default function MatchDetailScreen() {
                         </TableData>
                         <TableData className='text-center text-sm'>
                           Auto Climb ***
+                        </TableData>
+                        <TableData className='text-center bg-red-500/20'>
+                          {match.red_1_climb}
+                        </TableData>
+                      </TableRow>
+                      <TableRow>
+                        <TableData className='text-center bg-blue-500/20'>
+                          {match.blue_1_climb}
+                        </TableData>
+                        <TableData className='text-center text-sm'>
+                          Climb
                         </TableData>
                         <TableData className='text-center bg-red-500/20'>
                           {match.red_1_climb}
