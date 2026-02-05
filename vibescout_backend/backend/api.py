@@ -77,6 +77,20 @@ def get_competition_teams(request, code: str):
     )
 
 
+@api.get("/competitions/{code}/team-info", response=List[TeamInfoSchema])
+def get_competition_team_info(request, code: str):
+    """
+    Get all teams' full information for a competition including rankings, stats, and prescout data.
+    """
+    competition = get_object_or_404(Competition, code=code)
+    queryset = (
+        TeamInfo.objects.select_related("team", "competition")
+        .filter(competition=competition)
+        .order_by("rank")
+    )
+    return [TeamInfoSchema.from_orm(obj) for obj in queryset]
+
+
 @api.get("/competitions/{code}/matches", response=List[MatchSchema])
 def get_competition_matches_by_code(request, code: str):
     from django.db.models import Case, IntegerField, When
