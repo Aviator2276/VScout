@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pressable } from 'react-native';
 import { Badge, BadgeIcon } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -14,13 +14,11 @@ import {
 } from '@/components/ui/popover';
 import {
   LucideIcon,
-  ClockAlert,
-  Clock,
-  Clock4,
-  ClockCheck,
-  ClockFading,
+  CloudDownload,
+  CloudCheck,
+  CloudBackup,
+  CloudAlert,
 } from 'lucide-react-native';
-import { Spinner } from './ui/spinner';
 import { useApp } from '@/contexts/AppContext';
 
 interface DataStatusProps {
@@ -40,29 +38,28 @@ const STATUS_CONFIG: Record<
 > = {
   current: {
     action: 'success',
-    icon: ClockCheck,
+    icon: CloudCheck,
     label: 'Current',
     description: 'Data was recently synchronized.',
   },
   aging: {
     action: 'warning',
-    icon: ClockFading,
+    icon: CloudBackup,
     label: 'Aging',
     description: 'Data may be outdated.',
   },
   stale: {
     action: 'error',
-    icon: ClockAlert,
+    icon: CloudAlert,
     label: 'Stale',
     description: 'Data is stale.',
   },
 };
 
-function formatTimeSince(date: Date | null): string {
+function formatTimeSince(date: Date | null, currentTime: Date): string {
   if (!date) return 'Never';
 
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = currentTime.getTime() - date.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
   const diffHours = Math.floor(diffMinutes / 60);
@@ -81,6 +78,7 @@ function formatTimeSince(date: Date | null): string {
 
 export function DataStatus({ size = 'lg' }: DataStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const {
     lastDataUpdate,
@@ -92,6 +90,18 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
 
   const config = STATUS_CONFIG[dataFreshnessStatus];
 
+  // Update current time when popover opens and every second while open
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentTime(new Date());
+      const interval = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isOpen]);
+
   const handleRefresh = async () => {
     await forceDataRefresh();
   };
@@ -101,15 +111,18 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       onOpen={() => setIsOpen(true)}
-      placement="bottom"
-      size="sm"
+      placement='bottom'
+      size='sm'
       trigger={(triggerProps) => (
         <Pressable {...triggerProps}>
-          <Badge size={size} variant="solid" action={config.action}>
+          <Badge size={size} variant='solid' action={config.action}>
             {isRefreshingData ? (
-              <Spinner size="small" className="ml-1" color="grey" />
+              <BadgeIcon
+                as={CloudDownload}
+                className='my-[0.1rem] animate-pulse'
+              />
             ) : (
-              <BadgeIcon as={config.icon} className="my-[0.1rem]" />
+              <BadgeIcon as={config.icon} className='my-[0.1rem]' />
             )}
           </Badge>
         </Pressable>
@@ -117,20 +130,20 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
     >
       <PopoverBackdrop />
       <PopoverContent>
-        <PopoverHeader className="mb-2">
-          <Text size="sm" className="text-typography-600">
+        <PopoverHeader className='mb-2'>
+          <Text size='sm' className='text-typography-600'>
             {config.description}
           </Text>
         </PopoverHeader>
-        <PopoverBody className="mb-2">
-          <Text size="sm" className="text-typography-500">
-            <Text size="sm" className="font-semibold">
+        <PopoverBody className='mb-2'>
+          <Text size='sm' className='text-typography-500'>
+            <Text size='sm' className='font-semibold'>
               Last Updated:
             </Text>{' '}
-            {formatTimeSince(lastDataUpdate)}
+            {formatTimeSince(lastDataUpdate, currentTime)}
           </Text>
-          <Text size="sm" className="text-typography-500">
-            <Text size="sm" className="font-semibold">
+          <Text size='sm' className='text-typography-500'>
+            <Text size='sm' className='font-semibold'>
               Refresh Interval:
             </Text>{' '}
             {dataRefreshInterval} minute{dataRefreshInterval !== 1 ? 's' : ''}
@@ -138,11 +151,11 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
         </PopoverBody>
         <PopoverFooter>
           <Button
-            size="sm"
-            action="primary"
+            size='sm'
+            action='primary'
             onPress={handleRefresh}
             isDisabled={isRefreshingData}
-            className="w-full"
+            className='w-full'
           >
             <ButtonText>
               {isRefreshingData ? 'Refreshing...' : 'Refresh Now'}

@@ -7,13 +7,24 @@ import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
 import { Card } from '@/components/ui/card';
-import { Badge, BadgeText } from '@/components/ui/badge';
+import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { TeamInfo } from '@/types/team';
 import { getTeamInfo, getTeamName } from '@/api/teams';
 import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
+import {
+  Binoculars,
+  CircleQuestionMark,
+  Dice4,
+  Forklift,
+  Move,
+  MoveVertical,
+  Target,
+  TriangleAlert,
+  Truck,
+} from 'lucide-react-native';
 
 type TabType = 'overview' | 'prescout';
 
@@ -63,8 +74,8 @@ export default function TeamDetailScreen() {
   if (loading) {
     return (
       <AdaptiveSafeArea>
-        <Center className="flex-1">
-          <ActivityIndicator size="large" />
+        <Center className='flex-1'>
+          <ActivityIndicator size='large' />
         </Center>
       </AdaptiveSafeArea>
     );
@@ -73,8 +84,8 @@ export default function TeamDetailScreen() {
   if (error || !team) {
     return (
       <AdaptiveSafeArea>
-        <Center className="flex-1 p-4">
-          <Text className="text-error-500 text-center mb-4">
+        <Center className='flex-1 p-4'>
+          <Text className='text-error-500 text-center mb-4'>
             {error || 'Team not found'}
           </Text>
           <Button onPress={() => router.push('/(tabs)')}>
@@ -87,100 +98,100 @@ export default function TeamDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="max-w-2xl self-center w-full">
+      <Box className='max-w-2xl self-center w-full'>
         <Header
           title={`Team ${team.team_number}`}
           isMainScreen={false}
           showBackButton
         />
 
-        <ScrollView className="flex-1 px-4 pb-4">
+        <ScrollView className='flex-1 px-4 pb-4'>
           <Card
-            variant="outline"
-            className="p-4 mb-2 aspect-square justify-evenly items-center"
+            variant='outline'
+            className='p-4 mb-2 aspect-square justify-evenly items-center'
           >
             A Beautiful Robot Image
           </Card>
           {/* Team Info */}
-          <Card variant="outline" className="p-4 mb-2">
-            <VStack space="md">
-              <HStack className="items-center gap-2">
-                <Heading size="2xl">{team.team_number}</Heading>
-                <Text className="text-lg text-typography-600">{teamName}</Text>
+          <Card variant='outline' className='p-4 mb-2'>
+            <VStack space='md'>
+              <HStack className='items-center gap-2'>
+                <Heading size='2xl'>{team.team_number}</Heading>
+                <Text className='text-lg text-typography-600'>{teamName}</Text>
               </HStack>
-              <VStack space="xs">
-                <HStack className="justify-between">
-                  <Text className="text-typography-700">Competition:</Text>
-                  <Text className="font-semibold">{team.competition.name}</Text>
+              <VStack space='xs'>
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Competition:</Text>
+                  <Text className='font-semibold'>{team.competition.name}</Text>
                 </HStack>
-                <HStack className="justify-between">
-                  <Text className="text-typography-700">Record:</Text>
-                  <Text className="font-semibold text-amber-600">
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Record:</Text>
+                  <Text className='font-semibold text-amber-600'>
                     {team.win}-{team.lose}-{team.tie}
                   </Text>
                 </HStack>
-                <HStack className="justify-between">
-                  <Text className="text-typography-700">Ranking Points:</Text>
-                  <Text className="font-semibold">{team.ranking_points}</Text>
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Ranking Points:</Text>
+                  <Text className='font-semibold'>{team.ranking_points}</Text>
                 </HStack>
               </VStack>
             </VStack>
           </Card>
 
           {/* Tab Navigation */}
-          <HStack className="mb-2 p-1 rounded bg-secondary-100">
+          <HStack className='mb-2 p-1 rounded bg-secondary-100'>
             <Button
-              size="xs"
+              size='xs'
               variant={activeTab === 'overview' ? 'solid' : 'link'}
-              action="secondary"
-              className="w-1/2"
+              action='secondary'
+              className='w-1/2'
               onPress={() => setActiveTab('overview')}
             >
-              <Text className="text-center font-semibold">Statistics</Text>
+              <Text className='text-center font-semibold'>Statistics</Text>
             </Button>
             <Button
-              size="xs"
+              size='xs'
               variant={activeTab === 'prescout' ? 'solid' : 'link'}
-              action="secondary"
-              className="w-1/2"
+              action='secondary'
+              className='w-1/2'
               onPress={() => setActiveTab('prescout')}
             >
-              <Text className="text-center font-semibold">Prescout Info</Text>
+              <Text className='text-center font-semibold'>Prescout Info</Text>
             </Button>
           </HStack>
 
           {activeTab === 'overview' && (
             <>
               {/* Performance Stats */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Performance</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Accuracy:</Text>
-                      <Text className="font-semibold">
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <Heading size='lg'>Performance</Heading>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Accuracy:</Text>
+                      <Text className='font-semibold'>
                         {Math.round(team.accuracy * 100)}%
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Avg Fuel Scored:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_fuel_scored * 10) / 10}
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Avg Auto Fuel:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_auto_fuel * 10) / 10}
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Avg Shuttle:</Text>
-                      <Text className="font-semibold">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Avg Shuttle:</Text>
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_shuttle * 10) / 10}
                       </Text>
                     </HStack>
@@ -189,31 +200,31 @@ export default function TeamDetailScreen() {
               </Card>
 
               {/* Climb Stats */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Climb</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <Heading size='lg'>Climb</Heading>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Avg Climb Points:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_climb_points * 10) / 10}
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Climb Success:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.climb_success * 100)}%
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Climb Success SD:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.climb_success_sd * 100) / 100}
                       </Text>
                     </HStack>
@@ -222,21 +233,21 @@ export default function TeamDetailScreen() {
               </Card>
 
               {/* Auto Stats */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Autonomous</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Auto Success:</Text>
-                      <Text className="font-semibold">
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <Heading size='lg'>Autonomous</Heading>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Auto Success:</Text>
+                      <Text className='font-semibold'>
                         {Math.round(team.auto_success * 100)}%
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Auto Success SD:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.auto_success_sd * 100) / 100}
                       </Text>
                     </HStack>
@@ -245,31 +256,31 @@ export default function TeamDetailScreen() {
               </Card>
 
               {/* Overall Stats */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Overall</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <Heading size='lg'>Overall</Heading>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Avg Points Contributed:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_points_contributed * 10) / 10}
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Avg Alliance Match Points:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.avg_alliance_match_points * 10) / 10}
                       </Text>
                     </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
                         Consistency Rating:
                       </Text>
-                      <Text className="font-semibold">
+                      <Text className='font-semibold'>
                         {Math.round(team.consistency_rating * 100) / 100}
                       </Text>
                     </HStack>
@@ -283,129 +294,118 @@ export default function TeamDetailScreen() {
             <>
               {/* Robot Info */}
 
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Robot Info</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Drivetrain:</Text>
-                      <Badge variant="solid" action="muted">
-                        <BadgeText className="capitalize">
-                          {team.prescout_drivetrain}
-                        </BadgeText>
-                      </Badge>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Intake Type:</Text>
-                      <Badge variant="solid" action="muted">
-                        <BadgeText className="capitalize">
-                          {team.prescout_intake_type}
-                        </BadgeText>
-                      </Badge>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Hopper Size:</Text>
-                      <Text className="font-semibold">
-                        {team.prescout_hopper_size}
-                      </Text>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Range:</Text>
-                      <Badge variant="solid" action="muted">
-                        <BadgeText className="capitalize">
-                          {team.prescout_range}
-                        </BadgeText>
-                      </Badge>
-                    </HStack>
-                  </VStack>
-                </VStack>
-              </Card>
-
-              {/* Rotation */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Rotation</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Rotate Yaw:</Text>
-                      <Badge
-                        variant="solid"
-                        action={team.prescout_rotate_yaw ? 'success' : 'muted'}
-                      >
-                        <BadgeText>
-                          {team.prescout_rotate_yaw ? 'Yes' : 'No'}
-                        </BadgeText>
-                      </Badge>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Rotate Pitch:</Text>
-                      <Badge
-                        variant="solid"
-                        action={
-                          team.prescout_rotate_pitch ? 'success' : 'muted'
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <HStack className='gap-2'>
+                    <Heading size='lg'>Robot Info</Heading>
+                    <Badge
+                      size='lg'
+                      variant='solid'
+                      action={team.prescout_drivetrain ? 'success' : 'error'}
+                      className='justify-center items-center'
+                    >
+                      <BadgeIcon
+                        as={
+                          team.prescout_drivetrain ? Binoculars : TriangleAlert
                         }
-                      >
-                        <BadgeText>
-                          {team.prescout_rotate_pitch ? 'Yes' : 'No'}
+                      ></BadgeIcon>
+                      <BadgeText className='capitalize ml-1'>
+                        {team.prescout_drivetrain ? 'Scouted' : 'Not Scouted'}
+                      </BadgeText>
+                    </Badge>
+                  </HStack>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Drivetrain:</Text>
+                      <Badge size='lg' variant='solid' action='muted'>
+                        <BadgeIcon
+                          as={
+                            team.prescout_drivetrain === 'swerve'
+                              ? Dice4
+                              : team.prescout_drivetrain === 'mecanum'
+                                ? Move
+                                : team.prescout_drivetrain === 'tank'
+                                  ? MoveVertical
+                                  : CircleQuestionMark
+                          }
+                        ></BadgeIcon>
+                        <BadgeText className='capitalize ml-1'>
+                          {team.prescout_drivetrain || 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
-                  </VStack>
-                </VStack>
-              </Card>
-
-              {/* Climber */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Climber</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Climber Type:</Text>
-                      <Badge variant="solid" action="muted">
-                        <BadgeText className="capitalize">
-                          {team.prescout_climber}
-                        </BadgeText>
-                      </Badge>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Auto Climb:</Text>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Intake Type:</Text>
                       <Badge
-                        variant="solid"
-                        action={
-                          team.prescout_climber_auto ? 'success' : 'muted'
-                        }
+                        size='lg'
+                        variant='solid'
+                        action='muted'
+                        className='justify-center items-center bg-amber-500/40'
                       >
-                        <BadgeText>
-                          {team.prescout_climber_auto ? 'Yes' : 'No'}
+                        <BadgeIcon as={Forklift}></BadgeIcon>
+                        <BadgeText className='capitalize ml-1'>
+                          {team.prescout_intake_type || 'Unknown'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Hopper Size:</Text>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action='muted'
+                        className='justify-center items-center bg-purple-500/40'
+                      >
+                        <BadgeIcon as={Truck}></BadgeIcon>
+                        <BadgeText className='capitalize ml-1'>
+                          {team.prescout_hopper_size || 'Unknown'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Range:</Text>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action='muted'
+                        className='justify-center items-center bg-rose-500/40'
+                      >
+                        <BadgeIcon as={Target}></BadgeIcon>
+                        <BadgeText className='capitalize ml-1'>
+                          {team.prescout_range || 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
                   </VStack>
-                </VStack>
-              </Card>
-
-              {/* Self-Reported */}
-              <Card variant="outline" className="p-4 mb-2">
-                <VStack space="md">
-                  <Heading size="lg">Self-Reported</Heading>
-                  <VStack space="xs">
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Accuracy:</Text>
-                      <Text className="font-semibold">
-                        {team.prescout_self_reported_accuracy}%
-                      </Text>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Auto Shoot:</Text>
-                      <Text className="font-semibold">
-                        {team.prescout_self_reported_auto_shoot}
-                      </Text>
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-700">Unload Time:</Text>
-                      <Text className="font-semibold">
-                        {team.prescout_unload_time}s
-                      </Text>
+                  <Heading size='lg'>Shooter Rotation</Heading>
+                  <VStack space='xs'>
+                    <HStack className='justify-evenly'>
+                      <HStack className='gap-1'>
+                        <Text className='text-typography-700'>Turret:</Text>
+                        <Badge
+                          variant='solid'
+                          action={
+                            team.prescout_rotate_yaw ? 'success' : 'muted'
+                          }
+                        >
+                          <BadgeText>
+                            {team.prescout_rotate_yaw ? 'Yes' : 'No'}
+                          </BadgeText>
+                        </Badge>
+                      </HStack>
+                      <HStack className='gap-1'>
+                        <Text className='text-typography-700'>Hood:</Text>
+                        <Badge
+                          variant='solid'
+                          action={
+                            team.prescout_rotate_pitch ? 'success' : 'muted'
+                          }
+                        >
+                          <BadgeText>
+                            {team.prescout_rotate_pitch ? 'Yes' : 'No'}
+                          </BadgeText>
+                        </Badge>
+                      </HStack>
                     </HStack>
                   </VStack>
                 </VStack>
@@ -413,16 +413,16 @@ export default function TeamDetailScreen() {
 
               {/* Comments */}
               {team.prescout_additional_comments && (
-                <Card variant="outline" className="p-4 mb-2">
-                  <VStack space="md">
-                    <Heading size="lg">Additional Comments</Heading>
-                    <Text className="text-typography-700">
+                <Card variant='outline' className='p-4 mb-2'>
+                  <VStack space='md'>
+                    <Heading size='lg'>Additional Comments</Heading>
+                    <Text className='text-typography-700'>
                       {team.prescout_additional_comments}
                     </Text>
                   </VStack>
                 </Card>
               )}
-              <Button size="lg" action="primary" className="mb-2">
+              <Button size='lg' action='primary' className='mb-2'>
                 <ButtonText>Prescout Team</ButtonText>
               </Button>
             </>
