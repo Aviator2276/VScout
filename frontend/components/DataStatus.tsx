@@ -143,7 +143,7 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
         <PopoverBody className='mb-2'>
           <Text size='sm' className='text-typography-500'>
             <Text size='sm' className='font-semibold'>
-              Last Updated:
+              Last Update:
             </Text>{' '}
             {formatTimeSince(lastDataUpdate, currentTime)}
           </Text>

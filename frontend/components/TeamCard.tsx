@@ -74,7 +74,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
               <Badge size='lg' variant='solid' action='muted'>
                 <BadgeText>#{team.rank}</BadgeText>
               </Badge>
-              <Text className='text-sm text-amber-600 dark:text-amber-500'>
+              <Text className='text-sm text-amber-600 dark:text-amber-400'>
                 {team.win}-{team.lose}-{team.tie}
               </Text>
               <HStack className='flex-1 w-full justify-end gap-1'>
@@ -119,7 +119,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                         className='justify-center items-center bg-emerald-500/40'
                       >
                         <BadgeText>
-                          L{Math.round(team.avg_climb_points * 10) / 10}
+                          L{Math.round(parseFloat(team.avg_climb_points) * 10) / 10}
                         </BadgeText>
                       </Badge>
                     </Pressable>

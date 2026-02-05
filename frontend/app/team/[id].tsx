@@ -21,6 +21,7 @@ import {
   Forklift,
   Move,
   MoveVertical,
+  Star,
   Target,
   TriangleAlert,
   Truck,
@@ -125,8 +126,14 @@ export default function TeamDetailScreen() {
                   <Text className='font-semibold'>{team.competition.name}</Text>
                 </HStack>
                 <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Rank:</Text>
+                  <Badge size='lg' variant='solid' action='info'>
+                    <BadgeText>#{team.rank}</BadgeText>
+                  </Badge>
+                </HStack>
+                <HStack className='justify-between'>
                   <Text className='text-typography-700'>Record:</Text>
-                  <Text className='font-semibold text-amber-600'>
+                  <Text className='font-semibold text-amber-600 dark:text-amber-400'>
                     {team.win}-{team.lose}-{team.tie}
                   </Text>
                 </HStack>
@@ -162,127 +169,80 @@ export default function TeamDetailScreen() {
 
           {activeTab === 'overview' && (
             <>
-              {/* Performance Stats */}
+              {/* Overview Stats */}
               <Card variant='outline' className='p-4 mb-2'>
                 <VStack space='md'>
-                  <Heading size='lg'>Performance</Heading>
+                  <HStack className='justify-between'>
+                    <Heading size='lg'>Overview</Heading>
+                    <Badge
+                      size='lg'
+                      variant='solid'
+                      action='success'
+                      className='justify-center items-center'
+                    >
+                      <BadgeIcon as={Star}></BadgeIcon>
+                      <BadgeText className='capitalize ml-1'>
+                        Consistency:{' '}
+                        {Math.round(parseFloat(team.consistency_rating) * 100)}%
+                      </BadgeText>
+                    </Badge>
+                  </HStack>
+
                   <VStack space='xs'>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>Accuracy:</Text>
                       <Text className='font-semibold'>
-                        {Math.round(team.accuracy * 100)}%
+                        {Math.round(parseFloat(team.accuracy) * 100)}%
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Avg Fuel Scored:
+                        Average Auto Fuel:
                       </Text>
                       <Text className='font-semibold'>
-                        {Math.round(team.avg_fuel_scored * 10) / 10}
+                        {Math.round(parseFloat(team.avg_auto_fuel) * 10) / 10} ±{' '}
+                        {Math.round(parseFloat(team.avg_auto_fuel_sd) * 10) /
+                          10}
+                      </Text>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Average Fuel:</Text>
+                      <Text className='font-semibold'>
+                        {Math.round(parseFloat(team.avg_fuel_scored) * 10) / 10}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Avg Auto Fuel:
+                        Average Fuel Shuttle:
                       </Text>
                       <Text className='font-semibold'>
-                        {Math.round(team.avg_auto_fuel * 10) / 10}
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>Avg Shuttle:</Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.avg_shuttle * 10) / 10}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </VStack>
-              </Card>
-
-              {/* Climb Stats */}
-              <Card variant='outline' className='p-4 mb-2'>
-                <VStack space='md'>
-                  <Heading size='lg'>Climb</Heading>
-                  <VStack space='xs'>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Avg Climb Points:
-                      </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.avg_climb_points * 10) / 10}
+                        {Math.round(parseFloat(team.avg_shuttle) * 10) / 10}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Climb Success:
+                        Average Climb Level:
                       </Text>
                       <Text className='font-semibold'>
-                        {Math.round(team.climb_success * 100)}%
+                        L
+                        {Math.round(parseFloat(team.avg_climb_points) * 10) /
+                          10}{' '}
+                        ±{' '}
+                        {Math.round(parseFloat(team.avg_climb_points_sd) * 10) /
+                          10}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Climb Success SD:
+                        Average Points Contributed:
                       </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.climb_success_sd * 100) / 100}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </VStack>
-              </Card>
-
-              {/* Auto Stats */}
-              <Card variant='outline' className='p-4 mb-2'>
-                <VStack space='md'>
-                  <Heading size='lg'>Autonomous</Heading>
-                  <VStack space='xs'>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>Auto Success:</Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.auto_success * 100)}%
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Auto Success SD:
-                      </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.auto_success_sd * 100) / 100}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </VStack>
-              </Card>
-
-              {/* Overall Stats */}
-              <Card variant='outline' className='p-4 mb-2'>
-                <VStack space='md'>
-                  <Heading size='lg'>Overall</Heading>
-                  <VStack space='xs'>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Avg Points Contributed:
-                      </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.avg_points_contributed * 10) / 10}
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Avg Alliance Match Points:
-                      </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.avg_alliance_match_points * 10) / 10}
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Consistency Rating:
-                      </Text>
-                      <Text className='font-semibold'>
-                        {Math.round(team.consistency_rating * 100) / 100}
-                      </Text>
+                      <Badge size='md' variant='solid' action='info'>
+                        <BadgeText>
+                          {Math.round(
+                            parseFloat(team.avg_points_contributed) * 10,
+                          ) / 10}
+                        </BadgeText>
+                      </Badge>
                     </HStack>
                   </VStack>
                 </VStack>

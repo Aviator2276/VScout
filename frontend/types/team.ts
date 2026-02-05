@@ -14,7 +14,7 @@ export interface Competition {
 
 export interface TeamInfo {
   rank: number;
-  ranking_points: number;
+  ranking_points: string;
   tie: number;
   win: number;
   lose: number;
@@ -27,23 +27,15 @@ export interface TeamInfo {
   prescout_intake_type: string;
   prescout_rotate_yaw: boolean;
   prescout_rotate_pitch: boolean;
-  prescout_self_reported_accuracy: number;
-  prescout_unload_time: number;
   prescout_range: string;
-  prescout_climber: string;
-  prescout_climber_auto: boolean;
-  prescout_self_reported_auto_shoot: number;
   prescout_additional_comments: string;
-  accuracy: number;
-  avg_fuel_scored: number;
-  avg_shuttle: number;
-  avg_auto_fuel: number;
-  avg_climb_points: number;
-  avg_alliance_match_points: number;
-  auto_success: number;
-  auto_success_sd: number;
-  climb_success: number;
-  climb_success_sd: number;
-  avg_points_contributed: number;
-  consistency_rating: number;
+  accuracy: string;
+  avg_fuel_scored: string;
+  avg_shuttle: string;
+  avg_auto_fuel: string;
+  avg_climb_points: string;
+  avg_auto_fuel_sd: string;
+  avg_climb_points_sd: string;
+  avg_points_contributed: string;
+  consistency_rating: string;
 }
