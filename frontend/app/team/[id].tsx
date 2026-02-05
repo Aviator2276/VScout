@@ -16,12 +16,12 @@ import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
 import {
   Binoculars,
+  CircleGauge,
   CircleQuestionMark,
   Dice4,
   Forklift,
   Move,
   MoveVertical,
-  Star,
   Target,
   TriangleAlert,
   Truck,
@@ -180,7 +180,7 @@ export default function TeamDetailScreen() {
                       action='success'
                       className='justify-center items-center'
                     >
-                      <BadgeIcon as={Star}></BadgeIcon>
+                      <BadgeIcon as={CircleGauge}></BadgeIcon>
                       <BadgeText className='capitalize ml-1'>
                         Consistency:{' '}
                         {Math.round(parseFloat(team.consistency_rating) * 100)}%
