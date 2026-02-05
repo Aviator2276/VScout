@@ -7,7 +7,13 @@ import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
 import { TeamInfo } from '@/types/team';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipText } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverBackdrop,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
+} from '@/components/ui/popover';
 import { getTeamName } from '@/api/teams';
 import {
   Move,
@@ -72,13 +78,11 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                 {team.win}-{team.lose}-{team.tie}
               </Text>
               <HStack className='flex-1 w-full justify-end gap-1'>
-                <Tooltip
+                <Popover
                   placement='bottom'
+                  size='xs'
                   trigger={(triggerProps) => (
-                    <Pressable
-                      {...triggerProps}
-                      onLongPress={triggerProps.onPress}
-                    >
+                    <Pressable {...triggerProps}>
                       <Badge
                         size='lg'
                         variant='solid'
@@ -93,17 +97,21 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     </Pressable>
                   )}
                 >
-                  <TooltipContent>
-                    <TooltipText>Average Fuel Scored</TooltipText>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>
+                        Average Fuel Scored
+                      </Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+                <Popover
                   placement='bottom'
+                  size='xs'
                   trigger={(triggerProps) => (
-                    <Pressable
-                      {...triggerProps}
-                      onLongPress={triggerProps.onPress}
-                    >
+                    <Pressable {...triggerProps}>
                       <Badge
                         size='lg'
                         variant='solid'
@@ -117,17 +125,21 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     </Pressable>
                   )}
                 >
-                  <TooltipContent>
-                    <TooltipText>Average Climb Points</TooltipText>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>
+                        Average Climb Points
+                      </Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+                <Popover
                   placement='bottom'
+                  size='xs'
                   trigger={(triggerProps) => (
-                    <Pressable
-                      {...triggerProps}
-                      onLongPress={triggerProps.onPress}
-                    >
+                    <Pressable {...triggerProps}>
                       <Badge
                         size='lg'
                         variant='solid'
@@ -142,17 +154,19 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     </Pressable>
                   )}
                 >
-                  <TooltipContent>
-                    <TooltipText>Hopper Size</TooltipText>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>Hopper Size</Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+                <Popover
                   placement='bottom'
+                  size='xs'
                   trigger={(triggerProps) => (
-                    <Pressable
-                      {...triggerProps}
-                      onLongPress={triggerProps.onPress}
-                    >
+                    <Pressable {...triggerProps}>
                       <Badge
                         size='lg'
                         variant='solid'
@@ -160,7 +174,6 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                         className='justify-center items-center h-7'
                       >
                         <BadgeIcon
-                          size='lg'
                           as={
                             team.prescout_drivetrain === 'swerve'
                               ? Dice4
@@ -175,14 +188,18 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     </Pressable>
                   )}
                 >
-                  <TooltipContent>
-                    <TooltipText>
-                      {team.prescout_drivetrain
-                        ? `${team.prescout_drivetrain.charAt(0).toUpperCase() + team.prescout_drivetrain.slice(1)} Drivetrain`
-                        : 'Unknown Drivetrain'}
-                    </TooltipText>
-                  </TooltipContent>
-                </Tooltip>
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>
+                        {team.prescout_drivetrain
+                          ? `${team.prescout_drivetrain.charAt(0).toUpperCase() + team.prescout_drivetrain.slice(1)} Drivetrain`
+                          : 'Unknown Drivetrain'}
+                      </Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
               </HStack>
             </HStack>
           </VStack>

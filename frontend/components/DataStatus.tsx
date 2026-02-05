@@ -3,7 +3,6 @@ import { Pressable } from 'react-native';
 import { Badge, BadgeIcon } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { VStack } from '@/components/ui/vstack';
 import {
   Popover,
   PopoverBackdrop,
@@ -11,6 +10,7 @@ import {
   PopoverHeader,
   PopoverBody,
   PopoverFooter,
+  PopoverArrow,
 } from '@/components/ui/popover';
 import {
   LucideIcon,
@@ -90,13 +90,13 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
 
   const config = STATUS_CONFIG[dataFreshnessStatus];
 
-  // Update current time when popover opens and every second while open
+  // Update current time when popover opens and every 10 seconds while open
   useEffect(() => {
     if (isOpen) {
       setCurrentTime(new Date());
       const interval = setInterval(() => {
         setCurrentTime(new Date());
-      }, 1000);
+      }, 10000);
 
       return () => clearInterval(interval);
     }
@@ -115,7 +115,11 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
       size='sm'
       trigger={(triggerProps) => (
         <Pressable {...triggerProps}>
-          <Badge size={size} variant='solid' action={config.action}>
+          <Badge
+            size={size}
+            variant='solid'
+            action={isRefreshingData ? 'muted' : config.action}
+          >
             {isRefreshingData ? (
               <BadgeIcon
                 as={CloudDownload}
@@ -130,6 +134,7 @@ export function DataStatus({ size = 'lg' }: DataStatusProps) {
     >
       <PopoverBackdrop />
       <PopoverContent>
+        <PopoverArrow />
         <PopoverHeader className='mb-2'>
           <Text size='sm' className='text-typography-600'>
             {config.description}
