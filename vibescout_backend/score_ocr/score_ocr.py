@@ -10,9 +10,8 @@ from PIL import Image, ImageOps
 os.environ["OMP_THREAD_LIMIT"] = "1"  # disable tesseracts internal threading
 
 
-# TODO: remove cropping when caleb pushes new vid code
+# TODO: update cropping when new data is avail
 # TODO: beat bryan with a rock
-# TODO: convert seconds to adequate format (OPT)
 # TODO: run tesseract without wrapper for significantly reduced IO overhead
 
 redX = 640
@@ -47,12 +46,17 @@ def crop_video(filename):
     fmat = "image2"
     pix_fmt = "yuvj420p"
     out = [None, None]
+    expr = 'gt(p(X,Y),128)*255'
     out[0], err = (
         ffmpeg.input(file)
         .crop(redX, redY, redW, redH)
         .filter("fps", fps=fps)
+        .filter('format', 'gray')
+        .filter('negate')
         .filter("eq", **{"contrast": contrast})
         .filter("hue", s=0)
+        .filter('geq', r=expr, g=expr, b=expr) 
+        .filter('format', 'monob') 
         # .output('pipe:', format='image2pipe', pix_fmt='rgb0')
         # .run(capture_stdout=True)
         .output(
@@ -66,8 +70,12 @@ def crop_video(filename):
         ffmpeg.input(file)
         .crop(blueX, blueY, blueW, blueH)
         .filter("fps", fps=fps)
+        .filter('format', 'gray')
+        .filter('negate')
         .filter("eq", **{"contrast": contrast})
         .filter("hue", s=0)
+        .filter('geq', r=expr, g=expr, b=expr) 
+        .filter('format', 'monob') 
         # .output('pipe:', format='image2pipe', pix_fmt='rgb0')
         # .run(capture_stdout=True)
         .output(
@@ -81,7 +89,7 @@ def crop_video(filename):
 
 
 def ocrThread(imageName, path):
-    frameNo = frame2sec(int(imageName[:-4:]), fps)
+    frameNo = int(imageName[:-4:])
     image = Image.open(path + "/" + imageName)
     text = re.sub(
         r"\D",
@@ -89,7 +97,7 @@ def ocrThread(imageName, path):
         pytesseract.image_to_string(
             image,
             lang="eng",
-            config=r"--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789",
+            config=r"--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789",
         ),
     )
     try:
@@ -103,6 +111,7 @@ if __name__ == "__main__":
     matchData = {}
 
     for file in os.listdir(videoDir):
+
         if not file.endswith(".m4v"):
             continue
         result = crop_video(file)
@@ -110,24 +119,44 @@ if __name__ == "__main__":
         intlist = {"red": {}, "blue": {}}
         redFutures = []
         blueFutures = []
+        
         with concurrent.futures.ProcessPoolExecutor() as executor:
+
             for imageFile in os.listdir(frameDir + "/red"):
                 redFutures.append(
                     executor.submit(ocrThread, imageFile, frameDir + "/red/")
                 )
+
             for imageFile in os.listdir(frameDir + "/blue"):
                 blueFutures.append(
                     executor.submit(ocrThread, imageFile, frameDir + "/blue/")
                 )
-            print("")
+
             for future in concurrent.futures.as_completed(redFutures):
                 frameNo, score = future.result()
                 intlist["red"][frameNo] = score
             print("red OCR finished")
+
             for future in concurrent.futures.as_completed(blueFutures):
                 frameNo, score = future.result()
                 intlist["blue"][frameNo] = score
             print("blue OCR finished")
+
+
+            for frame in range(2,2690):
+                if intlist['blue'][frame] == -1:
+                    try:
+                        intlist['blue'][frame] = intlist['blue'][frame-1]
+                    except:
+                        pass
+
+
+            for frame in range(2,2690):
+                if intlist['red'][frame] == -1:
+                    try:
+                        intlist['red'][frame] = intlist['red'][frame-1]
+                    except:
+                        pass
 
             # Sort timestamps for both alliances
             intlist["red"] = dict(sorted(intlist["red"].items()))
@@ -138,12 +167,16 @@ if __name__ == "__main__":
     with open(rootPath + "/data.json", "w") as f:
         json.dump(matchData, f, indent=4)
 
+for i in range(300,600):
+    print(str(i)+' : '+str(matchData[file[:-4:]]['blue'][i]))
+
+
 
 # "matchName" : {
-#   001 : {
-#       "red":0,
-#       "blue":0}
-#   002 : {
-#       "red":0,
-#       "blue":0}
+#   'red' : {
+#       001:0,
+#       002:1,}
+#   'blue' : {
+#       001:0,
+#       002:1,}
 #       }}}
