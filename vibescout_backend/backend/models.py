@@ -214,6 +214,14 @@ class Match(models.Model):
     red_2_climb = models.CharField(max_length=10, choices=CLIMB_CHOICES, default="None")
     red_3_climb = models.CharField(max_length=10, choices=CLIMB_CHOICES, default="None")
 
+    # Auto climb (during autonomous period) - boolean for climbed or not
+    blue_1_auto_climb = models.BooleanField(default=False)
+    blue_2_auto_climb = models.BooleanField(default=False)
+    blue_3_auto_climb = models.BooleanField(default=False)
+    red_1_auto_climb = models.BooleanField(default=False)
+    red_2_auto_climb = models.BooleanField(default=False)
+    red_3_auto_climb = models.BooleanField(default=False)
+
     calculated_points = models.IntegerField(default=0)
 
     # Match overview/summary fields
