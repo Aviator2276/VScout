@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "backend",
+    "dev_commands",  # Development management commands
 ]
 
 MIDDLEWARE = [

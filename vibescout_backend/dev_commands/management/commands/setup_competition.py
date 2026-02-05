@@ -89,7 +89,10 @@ class Command(BaseCommand):
             team_number = 1000 + i
             team_name = team_names[i] if i < len(team_names) else f"Team {team_number}"
 
-            team = Team.objects.create(number=team_number, name=team_name)
+            # Get or create team
+            team, created = Team.objects.get_or_create(
+                number=team_number, defaults={"name": team_name}
+            )
             teams.append(team)
 
             # Create TeamInfo entry
