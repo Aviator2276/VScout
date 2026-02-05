@@ -6,6 +6,9 @@ export interface Team {
 export interface Competition {
   name: string;
   code: string;
+  offset_stream_time_to_unix_timestamp_day_1: number;
+  offset_stream_time_to_unix_timestamp_day_2: number;
+  offset_stream_time_to_unix_timestamp_day_3: number;
 }
 
 export interface Match {
@@ -52,4 +55,15 @@ export interface Match {
   red_2_climb: string;
   red_3_climb: string;
   calculated_points: number;
+  blue_total_score: number;
+  red_total_score: number;
+  blue_ranking_points: number;
+  red_ranking_points: number;
+  winning_alliance: string;
+  blue_auto_points: number;
+  red_auto_points: number;
+  blue_teleop_points: number;
+  red_teleop_points: number;
+  blue_endgame_points: number;
+  red_endgame_points: number;
 }

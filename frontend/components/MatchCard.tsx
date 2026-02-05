@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
-import { Button, ButtonText } from '@/components/ui/button';
 import { Match } from '@/types/match';
 import { Badge, BadgeText } from '@/components/ui/badge';
 
@@ -38,7 +37,6 @@ export function MatchCard({
 
   // Format Unix timestamp to readable time
   const formatMatchTime = (timestamp: number): string => {
-    if (!timestamp) return 'TBD';
     const date = new Date(timestamp * 1000);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -53,35 +51,39 @@ export function MatchCard({
 
   return (
     <Pressable onPress={handleCardPress}>
-      <Card variant="outline" size="md" className="mb-3 p-4">
-        <VStack space="md">
-          <HStack className="items-center justify-between gap-2">
-            <HStack space="xs" className="items-center">
-              <Text className="text-lg font-bold text-typography-900 capitalize">
+      <Card variant='outline' size='md' className='mb-3 p-4'>
+        <VStack space='md'>
+          <HStack className='items-center justify-between gap-2'>
+            <HStack space='xs' className='items-center'>
+              <Text className='text-lg font-bold text-typography-900 capitalize'>
                 {match.match_type} #{match.match_number}
               </Text>
-              <Text className="text-sm text-typography-700">
-                {formatMatchTime(match.start_match_time)}
-              </Text>
+              <Badge
+                size='sm'
+                variant='solid'
+                action={match.has_played ? 'success' : 'muted'}
+              >
+                <BadgeText>
+                  {match.has_played
+                    ? 'Done'
+                    : match.predicted_match_time
+                      ? formatMatchTime(match.predicted_match_time)
+                      : match.start_match_time
+                        ? formatMatchTime(match.start_match_time)
+                        : 'TBD'}
+                </BadgeText>
+              </Badge>
             </HStack>
-            <Button
-              className="right-0"
-              size="sm"
-              action="primary"
-              onPress={() => onScout(match)}
-            >
-              <ButtonText>Scout</ButtonText>
-            </Button>
           </HStack>
 
-          <VStack space="xs">
-            <HStack space="xs" className="flex-1 w-[calc(100%-1.25rem)] h-3">
+          <VStack space='xs'>
+            <HStack space='xs' className='flex-1 w-[calc(100%-1.25rem)] h-3'>
               {blueTeams.map((team, index) => {
                 const isHighlighted = isTeamHighlighted(team.number);
                 return (
                   <Badge
-                    size="lg"
-                    variant="solid"
+                    size='lg'
+                    variant='solid'
                     key={`blue-${index}`}
                     className={`bg-blue-500/75 font-medium w-1/6 justify-center py-1 ${
                       isHighlighted &&
@@ -96,8 +98,8 @@ export function MatchCard({
                 const isHighlighted = isTeamHighlighted(team.number);
                 return (
                   <Badge
-                    size="lg"
-                    variant="solid"
+                    size='lg'
+                    variant='solid'
                     key={`red-${index}`}
                     className={`bg-red-500/75 font-medium w-1/6 justify-center py-1 ${
                       isHighlighted &&
