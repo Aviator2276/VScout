@@ -35,6 +35,7 @@ export interface TeamInfo {
   avg_auto_fuel: string;
   avg_climb_points: string;
   avg_auto_fuel_sd: string;
+  avg_fuel_sd: string;
   avg_climb_points_sd: string;
   avg_points_contributed: string;
   consistency_rating: string;

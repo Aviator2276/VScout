@@ -208,7 +208,8 @@ export default function TeamDetailScreen() {
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>Average Fuel:</Text>
                       <Text className='font-semibold'>
-                        {Math.round(parseFloat(team.avg_fuel_scored) * 10) / 10}
+                        {Math.round(parseFloat(team.avg_fuel_scored) * 10) / 10}{' '}
+                        ± {Math.round(parseFloat(team.avg_fuel_sd) * 10) / 10}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>

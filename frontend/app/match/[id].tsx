@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { calculateAllianceClimbPoints } from '@/utils/climbPoints';
 
 type TabType = 'overview' | 'scores';
 
@@ -284,39 +285,92 @@ export default function MatchDetailScreen() {
                           {match.total_red_fuels}
                         </TableData>
                       </TableRow>
+
                       <TableRow>
                         <TableData className='text-center bg-blue-500/20'>
-                          {match.blue_1_climb}
+                          {calculateAllianceClimbPoints([
+                            {
+                              level: 0,
+                              isAutonomous: match.blue_1_auto_climb,
+                            },
+                            {
+                              level: 0,
+                              isAutonomous: match.blue_2_auto_climb,
+                            },
+                            {
+                              level: 0,
+                              isAutonomous: match.blue_3_auto_climb,
+                            },
+                          ])}
                         </TableData>
                         <TableData className='text-center text-sm'>
-                          Auto Climb ***
+                          Auto Climb
                         </TableData>
                         <TableData className='text-center bg-red-500/20'>
-                          {match.red_1_climb}
+                          {calculateAllianceClimbPoints([
+                            {
+                              level: 0,
+                              isAutonomous: match.red_1_auto_climb,
+                            },
+                            {
+                              level: 0,
+                              isAutonomous: match.red_2_auto_climb,
+                            },
+                            {
+                              level: 0,
+                              isAutonomous: match.red_3_auto_climb,
+                            },
+                          ])}
                         </TableData>
                       </TableRow>
                       <TableRow>
                         <TableData className='text-center bg-blue-500/20'>
-                          {match.blue_1_climb}
+                          {calculateAllianceClimbPoints([
+                            {
+                              level: match.blue_1_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.blue_2_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.blue_3_climb,
+                              isAutonomous: false,
+                            },
+                          ])}
                         </TableData>
                         <TableData className='text-center text-sm'>
-                          Climb
+                          Endgame Climb
                         </TableData>
                         <TableData className='text-center bg-red-500/20'>
-                          {match.red_1_climb}
+                          {calculateAllianceClimbPoints([
+                            {
+                              level: match.red_1_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.red_2_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.red_3_climb,
+                              isAutonomous: false,
+                            },
+                          ])}
                         </TableData>
                       </TableRow>
                     </TableBody>
                     <TableFooter>
                       <TableRow>
                         <TableHead className='text-center text-sm bg-blue-500/20'>
-                          Unknown
+                          {match.blue_total_score}
                         </TableHead>
                         <TableHead className='text-center text-sm'>
-                          Total Score ***
+                          Total Score
                         </TableHead>
                         <TableHead className='text-center text-sm bg-red-500/20'>
-                          Unknown
+                          {match.red_total_score}
                         </TableHead>
                       </TableRow>
                     </TableFooter>
