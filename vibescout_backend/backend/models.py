@@ -112,6 +112,9 @@ class TeamInfo(models.Model):
     avg_auto_fuel_sd = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Standard deviation of auto fuel
+    avg_fuel_sd = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
+    )  # Standard deviation of auto fuel
     avg_climb_points_sd = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, blank=True, null=True
     )  # Standard deviation of climb points

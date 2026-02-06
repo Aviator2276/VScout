@@ -53,6 +53,7 @@ class TeamInfoSchema(Schema):
 
     # Advanced stats
     avg_auto_fuel_sd: Optional[Decimal] = None
+    avg_fuel_sd: Optional[Decimal] = None
     avg_climb_points_sd: Optional[Decimal] = None
     avg_points_contributed: Optional[Decimal] = None
     consistency_rating: Optional[Decimal] = None
@@ -81,6 +82,7 @@ class TeamInfoSchema(Schema):
             avg_auto_fuel=obj.avg_auto_fuel,
             avg_climb_points=obj.avg_climb_points,
             avg_auto_fuel_sd=obj.avg_auto_fuel_sd,
+            avg_fuel_sd=obj.avg_fuel_sd,
             avg_climb_points_sd=obj.avg_climb_points_sd,
             avg_points_contributed=obj.avg_points_contributed,
             consistency_rating=obj.consistency_rating,
