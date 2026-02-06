@@ -1,8 +1,11 @@
+import hashlib
+import json
 import os
 from pathlib import Path
 from typing import List
 
 from django.conf import settings
+from django.core.serializers import serialize
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI
@@ -24,6 +27,38 @@ api = NinjaAPI()
 @api.get("/health")
 def health(request):
     return {"status": "healthy"}
+
+
+@api.get("/sync")
+def sync(request):
+    """
+    Returns a hash of the entire database for sync detection.
+    If the hash changes, the client knows the database has been updated.
+    """
+    # Serialize all relevant models
+    data_to_hash = []
+
+    # Get all data from each model, ordered consistently
+    models_to_hash = [
+        Team.objects.all().order_by("id"),
+        Competition.objects.all().order_by("id"),
+        TeamInfo.objects.all().order_by("id"),
+        Match.objects.all().order_by("id"),
+        RobotAction.objects.all().order_by("id"),
+    ]
+
+    for queryset in models_to_hash:
+        serialized = serialize("json", queryset)
+        data_to_hash.append(serialized)
+
+    # Combine all serialized data
+    combined_data = "".join(data_to_hash)
+
+    # Generate SHA256 hash
+    hash_object = hashlib.sha256(combined_data.encode())
+    db_hash = hash_object.hexdigest()
+
+    return {"hash": db_hash}
 
 
 @api.get("/competitions", response=List[CompetitionSchema])
