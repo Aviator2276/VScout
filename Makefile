@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend import-tba update-rankings generate-competition comp-setup download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals
+.PHONY: init run migrate makemigrations check shell frontend backend import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals
 
 init:
 	@echo "Installing backend dependencies..."
@@ -45,6 +45,10 @@ generate-competition:
 comp-setup:
 	@echo "Setting up competition WITHOUT playing matches (for step-through)..."
 	cd vibescout_backend && uv run python manage.py setup_competition
+
+comp-reset:
+	@echo "Resetting database (deleting all data)..."
+	cd vibescout_backend && uv run python manage.py reset_database
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos 2025gacmp --output-dir ../match_videos
