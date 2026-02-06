@@ -141,6 +141,12 @@ class MatchSchema(Schema):
     red_1_climb: Optional[str] = None
     red_2_climb: Optional[str] = None
     red_3_climb: Optional[str] = None
+    blue_1_auto_climb: bool
+    blue_2_auto_climb: bool
+    blue_3_auto_climb: bool
+    red_1_auto_climb: bool
+    red_2_auto_climb: bool
+    red_3_auto_climb: bool
     calculated_points: int
     blue_total_score: int
     red_total_score: int
@@ -198,6 +204,12 @@ class MatchSchema(Schema):
             red_1_climb=obj.red_1_climb,
             red_2_climb=obj.red_2_climb,
             red_3_climb=obj.red_3_climb,
+            blue_1_auto_climb=obj.blue_1_auto_climb,
+            blue_2_auto_climb=obj.blue_2_auto_climb,
+            blue_3_auto_climb=obj.blue_3_auto_climb,
+            red_1_auto_climb=obj.red_1_auto_climb,
+            red_2_auto_climb=obj.red_2_auto_climb,
+            red_3_auto_climb=obj.red_3_auto_climb,
             calculated_points=obj.calculated_points,
             blue_total_score=obj.blue_total_score,
             red_total_score=obj.red_total_score,
