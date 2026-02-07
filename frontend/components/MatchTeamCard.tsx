@@ -94,7 +94,7 @@ export function MatchTeamCard({ stats, matchNumber }: MatchTeamCardProps) {
     <Card
       variant='outline'
       size='sm'
-      className={`mb-2 p-3 ${allianceBorderColor} border-l-4`}
+      className={`mb-2 p-3 ${allianceBorderColor} border-l-8`}
     >
       <VStack space='sm'>
         <Pressable onPress={handlePress}>
@@ -230,20 +230,20 @@ export function MatchTeamCard({ stats, matchNumber }: MatchTeamCardProps) {
                 tickMargin={10}
                 axisLine={false}
               />
-              <ChartTooltip 
+              <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent hideLabel />} 
+                content={<ChartTooltipContent hideLabel />}
               />
-              <Line 
-                dataKey='fuel' 
-                type="monotone"
+              <Line
+                dataKey='fuel'
+                type='monotone'
                 stroke={fuelColor}
                 strokeWidth={2}
                 dot={false}
               />
-              <Line 
-                dataKey='climb' 
-                type="monotone"
+              <Line
+                dataKey='climb'
+                type='monotone'
                 stroke={climbColor}
                 strokeWidth={2}
                 dot={false}
