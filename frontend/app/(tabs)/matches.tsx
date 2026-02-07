@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Text } from '@/components/ui/text';
 import { MatchCard } from '@/components/MatchCard';
@@ -9,7 +9,7 @@ import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
-import { ActivityIndicator, FlatList } from 'react-native';
+import { ActivityIndicator, FlatList, FlatList as FlatListType } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
@@ -26,6 +26,8 @@ export default function MatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const flatListRef = useRef<FlatListType<Match>>(null);
+  const hasScrolledRef = useRef(false);
 
   useEffect(() => {
     loadMatches();
@@ -85,6 +87,30 @@ export default function MatchesScreen() {
     );
   }, [matches, searchQuery]);
 
+  const firstUnplayedIndex = useMemo(() => {
+    return filteredMatches.findIndex((match) => !match.has_played);
+  }, [filteredMatches]);
+
+  useEffect(() => {
+    if (
+      !loading &&
+      !searchQuery &&
+      filteredMatches.length > 0 &&
+      firstUnplayedIndex > 0 &&
+      flatListRef.current &&
+      !hasScrolledRef.current
+    ) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: firstUnplayedIndex,
+          animated: false,
+          viewPosition: 0,
+        });
+        hasScrolledRef.current = true;
+      }, 100);
+    }
+  }, [loading, filteredMatches, firstUnplayedIndex, searchQuery]);
+
   function handleScout(match: Match) {
     // TODO: Navigate to scouting screen with match data
     console.log('Scouting match:', match.match_number);
@@ -116,6 +142,7 @@ export default function MatchesScreen() {
           </Center>
         ) : (
           <FlatList
+            ref={flatListRef}
             className="flex-1 px-4"
             data={filteredMatches}
             keyExtractor={(item, index) =>
@@ -133,6 +160,14 @@ export default function MatchesScreen() {
                 {searchQuery ? 'No matches found' : 'No matches available'}
               </Text>
             )}
+            onScrollToIndexFailed={(info) => {
+              setTimeout(() => {
+                flatListRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: false,
+                });
+              }, 100);
+            }}
           />
         )}
       </Box>

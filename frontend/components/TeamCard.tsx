@@ -22,6 +22,8 @@ import {
   Dice4,
   Volleyball,
   CircleQuestionMark,
+  Binoculars,
+  EyeOff,
 } from 'lucide-react-native';
 import { Divider } from './ui/divider';
 
@@ -67,9 +69,42 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                   {teamName}
                 </Text>
               </HStack>
-              <Text className='text-md text-typography-600'>
-                RP {team.ranking_points}
-              </Text>
+              <HStack space='sm' className='items-center'>
+                <Text className='text-md text-typography-600'>
+                  RP {team.ranking_points}
+                </Text>
+
+                <Popover
+                  placement='top'
+                  size='xs'
+                  trigger={(triggerProps) => (
+                    <Pressable {...triggerProps}>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action={team.prescout_drivetrain ? 'success' : 'error'}
+                        className='justify-center items-center'
+                      >
+                        <BadgeIcon
+                          as={team.prescout_drivetrain ? Binoculars : EyeOff}
+                        ></BadgeIcon>
+                      </Badge>
+                    </Pressable>
+                  )}
+                >
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>
+                        {team.prescout_drivetrain
+                          ? 'Prescouted'
+                          : 'Not Prescouted'}
+                      </Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+              </HStack>
             </HStack>
             <HStack space='sm' className='items-center w-full'>
               <Badge size='lg' variant='solid' action='muted'>

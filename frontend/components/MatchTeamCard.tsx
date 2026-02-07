@@ -128,8 +128,7 @@ export function MatchTeamCard({ stats, matchNumber }: MatchTeamCardProps) {
                       totalAllianceScore) *
                       100,
                   ) || 0}
-                  {'% '}
-                  Contributed
+                  {'%'}
                 </BadgeText>
               </Badge>
             </HStack>

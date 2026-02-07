@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -176,17 +176,23 @@ export default function MatchDetailScreen() {
                     Blue Alliance
                   </Text>
                   {blueTeams.map((team, index) => (
-                    <HStack
+                    <Pressable
                       key={`blue-${index}`}
-                      className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                        )
+                      }
                     >
-                      <Text className='col-span-1 font-medium'>
-                        {team.number}
-                      </Text>
-                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                        {team.name}
-                      </Text>
-                    </HStack>
+                      <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
+                        <Text className='col-span-1 font-medium'>
+                          {team.number}
+                        </Text>
+                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                          {team.name}
+                        </Text>
+                      </HStack>
+                    </Pressable>
                   ))}
                 </VStack>
                 <VStack space='xs' className='w-full'>
@@ -194,17 +200,23 @@ export default function MatchDetailScreen() {
                     Red Alliance
                   </Text>
                   {redTeams.map((team, index) => (
-                    <HStack
+                    <Pressable
                       key={`red-${index}`}
-                      className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                        )
+                      }
                     >
-                      <Text className='col-span-1 font-medium'>
-                        {team.number}
-                      </Text>
-                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                        {team.name}
-                      </Text>
-                    </HStack>
+                      <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
+                        <Text className='col-span-1 font-medium'>
+                          {team.number}
+                        </Text>
+                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                          {team.name}
+                        </Text>
+                      </HStack>
+                    </Pressable>
                   ))}
                 </VStack>
               </HStack>

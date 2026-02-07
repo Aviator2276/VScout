@@ -19,18 +19,22 @@ import {
   CircleGauge,
   CircleQuestionMark,
   Dice4,
+  EyeOff,
   Forklift,
   Move,
   MoveVertical,
   Target,
-  TriangleAlert,
   Truck,
 } from 'lucide-react-native';
 
 type TabType = 'overview' | 'prescout';
 
 export default function TeamDetailScreen() {
-  const { id, from, matchId } = useLocalSearchParams<{ id: string; from?: string; matchId?: string }>();
+  const { id, from, matchId } = useLocalSearchParams<{
+    id: string;
+    from?: string;
+    matchId?: string;
+  }>();
   const router = useRouter();
   const [team, setTeam] = useState<TeamInfo | null>(null);
   const [teamName, setTeamName] = useState<string | null>(null);
@@ -274,12 +278,12 @@ export default function TeamDetailScreen() {
                       className='justify-center items-center'
                     >
                       <BadgeIcon
-                        as={
-                          team.prescout_drivetrain ? Binoculars : TriangleAlert
-                        }
+                        as={team.prescout_drivetrain ? Binoculars : EyeOff}
                       ></BadgeIcon>
                       <BadgeText className='capitalize ml-1'>
-                        {team.prescout_drivetrain ? 'Scouted' : 'Not Scouted'}
+                        {team.prescout_drivetrain
+                          ? 'Prescouted'
+                          : 'Not Prescouted'}
                       </BadgeText>
                     </Badge>
                   </HStack>
