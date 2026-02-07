@@ -52,7 +52,7 @@ const STATUS_CONFIG: Record<
     action: 'error',
     icon: CloudAlert,
     label: 'Stale',
-    description: 'Data is stale.',
+    description: 'Data is outdated.',
   },
 };
 

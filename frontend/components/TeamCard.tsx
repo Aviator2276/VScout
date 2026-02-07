@@ -25,7 +25,6 @@ import {
   Binoculars,
   EyeOff,
 } from 'lucide-react-native';
-import { Divider } from './ui/divider';
 
 interface TeamCardProps {
   team: TeamInfo;

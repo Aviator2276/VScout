@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "frontend",
-    "slug": "vibescout",
+    "slug": "vscout",
     "version": "alpha-1.0.0",
     "orientation": "default",
     "icon": "./assets/images/favicon.png",
@@ -26,6 +26,13 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {
@@ -38,6 +45,6 @@
         "projectId": "c6274ef0-8702-4a21-99d7-4cf81118386b"
       }
     },
-    "owner": "vibescout"
+    "owner": "vscout"
   }
 }

@@ -18,6 +18,7 @@ import {
   Binoculars,
   CircleGauge,
   CircleQuestionMark,
+  Contact,
   Dice4,
   EyeOff,
   Forklift,
@@ -266,7 +267,6 @@ export default function TeamDetailScreen() {
           {activeTab === 'prescout' && (
             <>
               {/* Robot Info */}
-
               <Card variant='outline' className='p-4 mb-2'>
                 <VStack space='md'>
                   <HStack className='justify-between'>
@@ -318,6 +318,22 @@ export default function TeamDetailScreen() {
                         <BadgeIcon as={Forklift}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
                           {team.prescout_intake_type || 'Unknown'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
+                        Primary Driver Years:
+                      </Text>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action='muted'
+                        className='justify-center items-center bg-emerald-500/40'
+                      >
+                        <BadgeIcon as={Contact}></BadgeIcon>
+                        <BadgeText className='capitalize ml-1'>
+                          {0 || 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
@@ -395,8 +411,13 @@ export default function TeamDetailScreen() {
                   </VStack>
                 </Card>
               )}
-              <Button size='lg' action='primary' className='mb-2'>
-                <ButtonText>Prescout Team</ButtonText>
+              <Button
+                size='lg'
+                action='primary'
+                className='mb-2'
+                onPress={() => router.push(`/(tabs)/team/prescout/${id}`)}
+              >
+                <ButtonText>Prescout Robot</ButtonText>
               </Button>
             </>
           )}
