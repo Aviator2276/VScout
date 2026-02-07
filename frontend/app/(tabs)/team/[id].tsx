@@ -257,7 +257,7 @@ export default function TeamDetailScreen() {
 
               <Card variant='outline' className='p-4 mb-2'>
                 <VStack space='md'>
-                  <HStack className='gap-2'>
+                  <HStack className='justify-between'>
                     <Heading size='lg'>Robot Info</Heading>
                     <Badge
                       size='lg'

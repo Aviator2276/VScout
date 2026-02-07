@@ -46,7 +46,7 @@ export function Header({
   };
 
   return (
-    <HStack className='items-center justify-between px-4 py-3'>
+    <HStack className='items-center justify-between px-4 py-2 mb-4'>
       <HStack className='gap-2 items-center'>
         {showBackButton && (
           <Button

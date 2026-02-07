@@ -51,6 +51,13 @@ export function AdaptiveTabBar({
     >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+        
+        // Skip routes that are hidden from tab bar (detail screens)
+        // Check by route name since href may not be accessible
+        if (route.name.includes('/') || route.name.includes('[')) {
+          return null;
+        }
+        
         const label = options.title ?? route.name;
         const isFocused = state.index === index;
 

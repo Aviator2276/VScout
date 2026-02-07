@@ -362,6 +362,20 @@ export default function MatchDetailScreen() {
                       </TableRow>
                       <TableRow>
                         <TableData className='text-center text-sm bg-blue-500/20'>
+                          {-1}
+                        </TableData>
+                        <TableData className='text-center text-sm'>
+                          Foul Points
+                          <Text className='text-xs text-typography-300'>
+                            Bryan add this.
+                          </Text>
+                        </TableData>
+                        <TableData className='text-center text-sm bg-red-500/20'>
+                          {-1}
+                        </TableData>
+                      </TableRow>
+                      <TableRow>
+                        <TableData className='text-center text-sm bg-blue-500/20'>
                           {match.blue_total_score}
                         </TableData>
                         <TableData className='text-center text-sm'>

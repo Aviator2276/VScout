@@ -42,6 +42,18 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Icon as={NotepadText} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="match/[id]"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="team/[id]"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
     </Tabs>
   );
 }
