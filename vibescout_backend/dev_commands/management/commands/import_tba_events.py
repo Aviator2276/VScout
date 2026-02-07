@@ -220,13 +220,29 @@ class Command(BaseCommand):
             total_blue_fuels = blue_auto_cells + blue_teleop_cells
             total_red_fuels = red_auto_cells + red_teleop_cells
         elif year == 2025:
-            # 2025 Reefscape scoring - adapt based on actual game pieces
-            # For now, use generic scoring from breakdown if available
-            # You may need to adjust these field names based on actual 2025 API structure
-            blue_auto_cells = blue_breakdown.get("autoGamePieceCount", 0)
-            red_auto_cells = red_breakdown.get("autoGamePieceCount", 0)
-            blue_teleop_cells = blue_breakdown.get("teleopGamePieceCount", 0)
-            red_teleop_cells = red_breakdown.get("teleopGamePieceCount", 0)
+            # 2025 Reefscape
+            blue_auto_cells = blue_breakdown.get("autoCoralCount", 0)
+            red_auto_cells = red_breakdown.get("autoCoralCount", 0)
+            blue_teleop_cells = blue_breakdown.get("teleopCoralCount", 0)
+            red_teleop_cells = red_breakdown.get("teleopCoralCount", 0)
+            total_blue_fuels = blue_auto_cells + blue_teleop_cells
+            total_red_fuels = red_auto_cells + red_teleop_cells
+        elif year == 2026:
+            # 2026 - Use hub score
+            hub_blue = blue_breakdown.get("hubScore", {})
+            hub_red = red_breakdown.get("hubScore", {})
+            blue_auto_cells = (
+                hub_blue.get("autoGamePieces", 0) if isinstance(hub_blue, dict) else 0
+            )
+            red_auto_cells = (
+                hub_red.get("autoGamePieces", 0) if isinstance(hub_red, dict) else 0
+            )
+            blue_teleop_cells = (
+                hub_blue.get("teleopGamePieces", 0) if isinstance(hub_blue, dict) else 0
+            )
+            red_teleop_cells = (
+                hub_red.get("teleopGamePieces", 0) if isinstance(hub_red, dict) else 0
+            )
             total_blue_fuels = blue_auto_cells + blue_teleop_cells
             total_red_fuels = red_auto_cells + red_teleop_cells
 
@@ -244,14 +260,27 @@ class Command(BaseCommand):
                 elif endgame_value == "Hang":
                     return "L3"
             elif year == 2025:
-                # 2025: Map based on actual endgame values
-                # Adjust these mappings based on 2025 game manual
-                if endgame_value in ["Shallow", "Park"]:
+                # 2025 Reefscape: DeepCage, None, Parked, ShallowCage
+                if endgame_value == "Parked":
                     return "L1"
-                elif endgame_value == "Deep":
+                elif endgame_value == "ShallowCage":
                     return "L2"
-                elif endgame_value in ["Cage", "High"]:
+                elif endgame_value == "DeepCage":
                     return "L3"
+            elif year == 2026:
+                # 2026: TowerRobot_2026
+                if isinstance(endgame_value, str):
+                    lower_val = endgame_value.lower()
+                    if "park" in lower_val or "low" in lower_val:
+                        return "L1"
+                    elif "mid" in lower_val or "shallow" in lower_val:
+                        return "L2"
+                    elif (
+                        "high" in lower_val
+                        or "deep" in lower_val
+                        or "cage" in lower_val
+                    ):
+                        return "L3"
             return "None"
 
         match, created = Match.objects.update_or_create(
