@@ -46,7 +46,7 @@ export function MatchCard({
   };
 
   const handleCardPress = () => {
-    router.push(`/match/${match.match_number}`);
+    router.push(`/(tabs)/match/${match.match_number}`);
   };
 
   return (

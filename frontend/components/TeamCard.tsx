@@ -46,7 +46,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
   };
 
   const handleCardPress = () => {
-    router.push(`/team/${team.team_number}`);
+    router.push(`/(tabs)/team/${team.team_number}`);
   };
 
   return (

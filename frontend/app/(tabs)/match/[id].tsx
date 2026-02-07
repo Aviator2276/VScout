@@ -119,6 +119,7 @@ export default function MatchDetailScreen() {
           title={'Match ' + match.match_number}
           isMainScreen={false}
           showBackButton
+          fallbackRoute="/(tabs)/matches"
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>
@@ -419,6 +420,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.blue_1_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
               <MatchTeamCard
                 stats={{
@@ -432,6 +434,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.blue_2_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
               <MatchTeamCard
                 stats={{
@@ -445,6 +448,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.blue_3_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
               <MatchTeamCard
                 stats={{
@@ -458,6 +462,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.red_1_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
               <MatchTeamCard
                 stats={{
@@ -471,6 +476,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.red_2_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
               <MatchTeamCard
                 stats={{
@@ -484,6 +490,7 @@ export default function MatchDetailScreen() {
                   climbLevel: match.red_3_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
+                matchNumber={match.match_number}
               />
             </>
           )}

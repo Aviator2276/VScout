@@ -30,13 +30,20 @@ import {
 type TabType = 'overview' | 'prescout';
 
 export default function TeamDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from, matchId } = useLocalSearchParams<{ id: string; from?: string; matchId?: string }>();
   const router = useRouter();
   const [team, setTeam] = useState<TeamInfo | null>(null);
   const [teamName, setTeamName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+
+  const getBackRoute = () => {
+    if (from === 'match' && matchId) {
+      return `/(tabs)/match/${matchId}`;
+    }
+    return '/(tabs)/teams';
+  };
 
   useEffect(() => {
     loadTeamDetails();
@@ -104,6 +111,7 @@ export default function TeamDetailScreen() {
           title={`Team ${team.team_number}`}
           isMainScreen={false}
           showBackButton
+          fallbackRoute={getBackRoute()}
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>

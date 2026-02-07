@@ -26,9 +26,10 @@ export interface MatchTeamStats {
 
 interface MatchTeamCardProps {
   stats: MatchTeamStats;
+  matchNumber?: number;
 }
 
-export function MatchTeamCard({ stats }: MatchTeamCardProps) {
+export function MatchTeamCard({ stats, matchNumber }: MatchTeamCardProps) {
   const router = useRouter();
   const {
     team,
@@ -48,7 +49,11 @@ export function MatchTeamCard({ stats }: MatchTeamCardProps) {
     alliance === 'blue' ? 'border-blue-500' : 'border-red-500';
 
   const handlePress = () => {
-    router.push(`/team/${team.number}`);
+    if (matchNumber) {
+      router.push(`/(tabs)/team/${team.number}?from=match&matchId=${matchNumber}`);
+    } else {
+      router.push(`/(tabs)/team/${team.number}`);
+    }
   };
 
   return (

@@ -15,6 +15,7 @@ interface HeaderProps {
   isMainScreen?: boolean;
   showBackButton?: boolean;
   goHome?: boolean;
+  fallbackRoute?: string;
 }
 
 export function Header({
@@ -22,6 +23,7 @@ export function Header({
   isMainScreen = false,
   showBackButton = false,
   goHome = false,
+  fallbackRoute,
 }: HeaderProps) {
   const router = useRouter();
   const {
@@ -38,10 +40,12 @@ export function Header({
       return;
     }
 
-    if (router.canGoBack()) {
+    if (fallbackRoute) {
+      router.navigate(fallbackRoute as any);
+    } else if (router.canGoBack()) {
       router.back();
     } else {
-      router.push('/(tabs)');
+      router.navigate('/');
     }
   };
 
