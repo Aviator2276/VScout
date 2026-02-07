@@ -360,17 +360,28 @@ export default function MatchDetailScreen() {
                           ])}
                         </TableData>
                       </TableRow>
+                      <TableRow>
+                        <TableData className='text-center text-sm bg-blue-500/20'>
+                          {match.blue_total_score}
+                        </TableData>
+                        <TableData className='text-center text-sm'>
+                          Total Score
+                        </TableData>
+                        <TableData className='text-center text-sm bg-red-500/20'>
+                          {match.red_total_score}
+                        </TableData>
+                      </TableRow>
                     </TableBody>
                     <TableFooter>
                       <TableRow>
                         <TableHead className='text-center text-sm bg-blue-500/20'>
-                          {match.blue_total_score}
+                          {match.blue_ranking_points}
                         </TableHead>
                         <TableHead className='text-center text-sm'>
-                          Total Score
+                          Ranking Points
                         </TableHead>
                         <TableHead className='text-center text-sm bg-red-500/20'>
-                          {match.red_total_score}
+                          {match.red_ranking_points}
                         </TableHead>
                       </TableRow>
                     </TableFooter>
