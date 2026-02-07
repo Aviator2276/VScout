@@ -23,6 +23,7 @@ import {
   Volleyball,
   CircleQuestionMark,
 } from 'lucide-react-native';
+import { Divider } from './ui/divider';
 
 interface TeamCardProps {
   team: TeamInfo;
@@ -57,7 +58,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
       >
         <HStack className='items-center justify-between'>
           <VStack className='w-full'>
-            <HStack space='sm' className='items-center pb-2 justify-between'>
+            <HStack space='sm' className='items-center justify-between'>
               <HStack space='sm' className='items-center'>
                 <Text className='text-lg font-bold text-typography-900'>
                   {team.team_number}
