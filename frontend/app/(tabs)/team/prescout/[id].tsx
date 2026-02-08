@@ -30,7 +30,7 @@ import {
   CheckboxIcon,
   CheckboxLabel,
 } from '@/components/ui/checkbox';
-import { getTeamName } from '@/api/teams';
+import { getTeamName, updateTeamPrescout } from '@/api/teams';
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -72,8 +72,22 @@ export default function PrescoutFormScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [uri, setUri] = useState<string | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Reset form state when team ID changes
+    setDrivetrain('');
+    setIntake('');
+    setHopper('');
+    setDriverExperience('');
+    setRange('');
+    setTurret(false);
+    setHood(false);
+    setNotes('');
+    setUri(null);
+    setCameraReady(false);
+    setCameraError(null);
     loadTeamName();
   }, [id]);
 
@@ -94,19 +108,24 @@ export default function PrescoutFormScreen() {
 
   async function handleSubmit() {
     setSubmitting(true);
-    console.log('Submitting prescout data:', {
-      teamNumber: id,
-      drivetrain,
-      intake,
-      range,
-      turret,
-      hood,
-      notes,
-    });
-    setTimeout(() => {
+    try {
+      const teamNumber = parseInt(id || '0', 10);
+      await updateTeamPrescout(teamNumber, {
+        prescout_drivetrain: drivetrain,
+        prescout_hopper_size: parseInt(hopper, 10) || 0,
+        prescout_intake_type: intake,
+        prescout_rotate_yaw: turret,
+        prescout_rotate_pitch: hood,
+        prescout_range: range,
+        prescout_additional_comments: notes,
+        picture: uri || '',
+      });
+      router.replace(`/(tabs)/team/${id}`);
+    } catch (error) {
+      console.error('Failed to save prescout data:', error);
+    } finally {
       setSubmitting(false);
-      router.back();
-    }, 1000);
+    }
   }
 
   if (loading) {
@@ -119,7 +138,11 @@ export default function PrescoutFormScreen() {
     );
   }
 
-  const handleClose = () => setShowCameraView(false);
+  const handleClose = () => {
+    setShowCameraView(false);
+    setCameraReady(false);
+    setCameraError(null);
+  };
 
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
@@ -138,30 +161,43 @@ export default function PrescoutFormScreen() {
           {!permission?.granted ? (
             <Center className='flex-1 max-w-2xl self-center w-full p-4'>
               <VStack space='md'>
-                <Text>We need your permission to show the camera</Text>
+                <Text>We need your permission to take pictures.</Text>
                 <Button onPress={requestPermission}>
                   <ButtonText>Grant Permission</ButtonText>
                 </Button>
               </VStack>
             </Center>
-          ) : !permission ? (
+          ) : cameraError ? (
             <Center className='flex-1 max-w-2xl self-center w-full p-4'>
               <VStack space='md'>
-                <Spinner />
+                <Text className='text-error-500 text-center'>{cameraError}</Text>
+                <Button onPress={handleClose}>
+                  <ButtonText>Close</ButtonText>
+                </Button>
               </VStack>
             </Center>
           ) : (
-            <CameraView
-              ref={ref}
-              style={{
-                width: '100%',
-                height: 500,
-                marginTop: 8,
-                borderRadius: 10,
-              }}
-              facing={'back'}
-              mirror={false}
-            />
+            <>
+              {!cameraReady && (
+                <Center className='absolute inset-0 z-10'>
+                  <Spinner size='large' />
+                </Center>
+              )}
+              <CameraView
+                ref={ref}
+                style={{
+                  width: '100%',
+                  height: 1000,
+                  marginTop: 8,
+                  borderRadius: 10,
+                  opacity: cameraReady ? 1 : 0,
+                }}
+                facing={'back'}
+                mirror={false}
+                onCameraReady={() => setCameraReady(true)}
+                onMountError={(error) => setCameraError(error.message)}
+              />
+            </>
           )}
           <Button
             size='lg'

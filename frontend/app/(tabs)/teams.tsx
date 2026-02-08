@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Text } from '@/components/ui/text';
 import { TeamCard } from '@/components/TeamCard';
@@ -11,6 +11,7 @@ import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ActivityIndicator, FlatList } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useFocusEffect } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
 
@@ -27,9 +28,11 @@ export default function TeamsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadTeams();
-  }, [competitionCode]);
+  useFocusEffect(
+    useCallback(() => {
+      loadTeams();
+    }, [competitionCode])
+  );
 
   async function loadTeams() {
     try {

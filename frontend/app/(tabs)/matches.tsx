@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Text } from '@/components/ui/text';
 import { MatchCard } from '@/components/MatchCard';
@@ -11,6 +11,7 @@ import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
 import { ActivityIndicator, FlatList, FlatList as FlatListType } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useFocusEffect } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
 
@@ -29,9 +30,11 @@ export default function MatchesScreen() {
   const flatListRef = useRef<FlatListType<Match>>(null);
   const hasScrolledRef = useRef(false);
 
-  useEffect(() => {
-    loadMatches();
-  }, [competitionCode]);
+  useFocusEffect(
+    useCallback(() => {
+      loadMatches();
+    }, [competitionCode])
+  );
 
   async function loadMatches() {
     try {

@@ -129,7 +129,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
     const teamInfoResults = await Promise.allSettled(teamInfoPromises);
 
     // Filter out failed requests, extract first element from array response, and validate
-    const teamInfoArray = teamInfoResults
+    const apiTeamInfoArray = teamInfoResults
       .filter(
         (result): result is PromiseFulfilledResult<TeamInfo[]> =>
           result.status === "fulfilled",
@@ -140,11 +140,45 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           info !== undefined &&
           info.team_number !== undefined &&
           info.competition?.code !== undefined,
-      )
-      .map((info) => ({
+      );
+
+    // Get existing team info to preserve prescout data
+    const existingTeamInfo = await db.teamInfo
+      .where("competitionCode")
+      .equals(competitionCode)
+      .toArray();
+
+    // Create a map of existing prescout data by team number
+    const existingPrescoutMap = new Map(
+      existingTeamInfo.map((info) => [info.team_number, {
+        prescout_drivetrain: info.prescout_drivetrain,
+        prescout_hopper_size: info.prescout_hopper_size,
+        prescout_intake_type: info.prescout_intake_type,
+        prescout_rotate_yaw: info.prescout_rotate_yaw,
+        prescout_rotate_pitch: info.prescout_rotate_pitch,
+        prescout_range: info.prescout_range,
+        prescout_additional_comments: info.prescout_additional_comments,
+        picture: info.picture,
+      }])
+    );
+
+    // Merge API data with existing prescout data
+    const teamInfoArray = apiTeamInfoArray.map((info) => {
+      const existingPrescout = existingPrescoutMap.get(info.team_number);
+      return {
         ...info,
         competitionCode,
-      }));
+        // Preserve existing prescout data if API returns null/empty
+        prescout_drivetrain: info.prescout_drivetrain || existingPrescout?.prescout_drivetrain || "",
+        prescout_hopper_size: info.prescout_hopper_size || existingPrescout?.prescout_hopper_size || 0,
+        prescout_intake_type: info.prescout_intake_type || existingPrescout?.prescout_intake_type || "",
+        prescout_rotate_yaw: info.prescout_rotate_yaw ?? existingPrescout?.prescout_rotate_yaw ?? false,
+        prescout_rotate_pitch: info.prescout_rotate_pitch ?? existingPrescout?.prescout_rotate_pitch ?? false,
+        prescout_range: info.prescout_range || existingPrescout?.prescout_range || "",
+        prescout_additional_comments: info.prescout_additional_comments || existingPrescout?.prescout_additional_comments || "",
+        picture: info.picture || existingPrescout?.picture || "",
+      };
+    });
 
     // Clear existing team info for this competition and store new ones
     await db.teamInfo.where("competitionCode").equals(competitionCode).delete();
@@ -183,6 +217,60 @@ export async function getAllTeamInfo(): Promise<TeamInfo[]> {
     return teamInfo.sort((a, b) => a.rank - b.rank);
   } catch (error) {
     console.error("Failed to get all team info from cache:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update prescout data for a specific team in IndexedDB.
+ * @param teamNumber - The team number to update
+ * @param prescoutData - The prescout data to save
+ * @returns The updated team info
+ */
+export async function updateTeamPrescout(
+  teamNumber: number,
+  prescoutData: {
+    prescout_drivetrain: string;
+    prescout_hopper_size: number;
+    prescout_intake_type: string;
+    prescout_rotate_yaw: boolean;
+    prescout_rotate_pitch: boolean;
+    prescout_range: string;
+    prescout_additional_comments: string;
+    picture: string;
+  },
+): Promise<TeamInfo | undefined> {
+  if (!teamNumber) {
+    throw new NoTeamNumberError();
+  }
+
+  const compCode = (await db.config.get({ key: "compCode" }))?.value;
+
+  if (!compCode) {
+    throw new NoCompetitionCodeError();
+  }
+
+  try {
+    const existingTeamInfo = await db.teamInfo
+      .where("[competitionCode+team_number]")
+      .equals([compCode, teamNumber])
+      .first();
+
+    if (!existingTeamInfo) {
+      console.error("Team info not found for team:", teamNumber);
+      return undefined;
+    }
+
+    const updatedTeamInfo = {
+      ...existingTeamInfo,
+      ...prescoutData,
+    };
+
+    await db.teamInfo.put(updatedTeamInfo);
+
+    return updatedTeamInfo;
+  } catch (error) {
+    console.error("Failed to update team prescout data:", error);
     throw error;
   }
 }

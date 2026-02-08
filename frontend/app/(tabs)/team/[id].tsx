@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView, ActivityIndicator } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
@@ -27,6 +27,15 @@ import {
   Target,
   Truck,
 } from 'lucide-react-native';
+import { Image } from '@/components/ui/image';
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 
 type TabType = 'overview' | 'prescout';
 
@@ -42,6 +51,7 @@ export default function TeamDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [showPrescoutAlert, setShowPrescoutAlert] = useState(false);
 
   const getBackRoute = () => {
     if (from === 'match' && matchId) {
@@ -50,9 +60,11 @@ export default function TeamDetailScreen() {
     return '/(tabs)/teams';
   };
 
-  useEffect(() => {
-    loadTeamDetails();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      loadTeamDetails();
+    }, [id])
+  );
 
   async function loadTeamDetails() {
     try {
@@ -120,12 +132,14 @@ export default function TeamDetailScreen() {
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>
-          <Card
-            variant='outline'
-            className='p-4 mb-2 aspect-square justify-evenly items-center'
-          >
-            A Beautiful Robot Image
-          </Card>
+          {team.picture && (
+            <Card
+              variant='outline'
+              className='p-4 mb-2 aspect-square justify-evenly items-center'
+            >
+              <Image source={{ uri: team.picture }} size='full' />
+            </Card>
+          )}
           {/* Team Info */}
           <Card variant='outline' className='p-4 mb-2'>
             <VStack space='md'>
@@ -415,10 +429,39 @@ export default function TeamDetailScreen() {
                 size='lg'
                 action='primary'
                 className='mb-2'
-                onPress={() => router.push(`/(tabs)/team/prescout/${id}`)}
+                onPress={() => {
+                  if (team.prescout_drivetrain) {
+                    setShowPrescoutAlert(true);
+                  } else {
+                    router.push(`/(tabs)/team/prescout/${id}`);
+                  }
+                }}
               >
                 <ButtonText>Prescout Robot</ButtonText>
               </Button>
+
+              <AlertDialog
+                isOpen={showPrescoutAlert}
+                onClose={() => setShowPrescoutAlert(false)}
+              >
+                <AlertDialogBackdrop />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <Heading size='lg'>Already Prescouted</Heading>
+                  </AlertDialogHeader>
+                  <AlertDialogBody>
+                    <Text>
+                      This team has already been prescouted. You cannot submit
+                      prescout data again.
+                    </Text>
+                  </AlertDialogBody>
+                  <AlertDialogFooter className='mt-2'>
+                    <Button onPress={() => setShowPrescoutAlert(false)}>
+                      <ButtonText>OK</ButtonText>
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </ScrollView>
