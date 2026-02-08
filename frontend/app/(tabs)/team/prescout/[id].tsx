@@ -45,6 +45,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { Camera, CheckIcon } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
+import {
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+} from '@/components/ui/slider';
 
 export default function PrescoutFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -149,12 +155,13 @@ export default function PrescoutFormScreen() {
               ref={ref}
               style={{
                 width: '100%',
-                height: 1920,
-                marginTop: '0.5rem',
-                borderRadius: '10px',
+                height: 500,
+                marginTop: 8,
+                borderRadius: 10,
               }}
               facing={'back'}
-            ></CameraView>
+              mirror={false}
+            />
           )}
           <Button
             size='lg'
@@ -192,7 +199,7 @@ export default function PrescoutFormScreen() {
               <Card
                 variant='outline'
                 size='md'
-                className='aspect-square object-cover'
+                className='aspect-square object-cover max-w-full'
               >
                 <Image source={{ uri }} size='full' />
               </Card>
