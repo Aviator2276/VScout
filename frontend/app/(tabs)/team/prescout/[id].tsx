@@ -51,6 +51,14 @@ import {
   SliderFilledTrack,
   SliderThumb,
 } from '@/components/ui/slider';
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 
 export default function PrescoutFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -74,6 +82,8 @@ export default function PrescoutFormScreen() {
   const [uri, setUri] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
 
   useEffect(() => {
     // Reset form state when team ID changes
@@ -106,7 +116,23 @@ export default function PrescoutFormScreen() {
     }
   }
 
+  function validateForm(): string | null {
+    if (!drivetrain.trim()) return 'Drivetrain is required';
+    if (!intake.trim()) return 'Intake type is required';
+    if (!hopper.trim()) return 'Hopper size is required';
+    if (!driverExperience.trim()) return 'Driver experience is required';
+    if (!range.trim()) return 'Range is required';
+    return null;
+  }
+
   async function handleSubmit() {
+    const validationError = validateForm();
+    if (validationError) {
+      setValidationMessage(validationError);
+      setShowValidationAlert(true);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const teamNumber = parseInt(id || '0', 10);
@@ -415,6 +441,26 @@ export default function PrescoutFormScreen() {
           </VStack>
         </ScrollView>
       </Box>
+
+      <AlertDialog
+        isOpen={showValidationAlert}
+        onClose={() => setShowValidationAlert(false)}
+      >
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='lg'>Validation Error</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text>{validationMessage}</Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button onPress={() => setShowValidationAlert(false)}>
+              <ButtonText>OK</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdaptiveSafeArea>
   );
 }
