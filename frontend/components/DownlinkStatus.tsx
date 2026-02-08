@@ -76,7 +76,7 @@ function formatTimeSince(date: Date | null, currentTime: Date): string {
   }
 }
 
-export function DataStatus({ size = 'lg' }: DataStatusProps) {
+export function DownlinkStatus({ size = 'lg' }: DataStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
