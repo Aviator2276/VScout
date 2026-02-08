@@ -163,14 +163,14 @@ export default function TeamDetailScreen() {
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>
-          {team.picture && (
+          {team.picture ? (
             <Card
               variant='outline'
               className='aspect-square object-cover max-w-full mb-2'
             >
               <Image source={{ uri: team.picture }} size='full' />
             </Card>
-          )}
+          ) : null}
           {/* Team Info */}
           <Card variant='outline' className='p-4 mb-2'>
             <VStack space='md'>
@@ -448,7 +448,7 @@ export default function TeamDetailScreen() {
                 </VStack>
               </Card>
               {/* Comments */}
-              {team.prescout_additional_comments && (
+              {team.prescout_additional_comments ? (
                 <Card variant='outline' className='p-4 mb-2'>
                   <VStack space='md'>
                     <Heading size='lg'>Additional Comments</Heading>
@@ -457,9 +457,8 @@ export default function TeamDetailScreen() {
                     </Text>
                   </VStack>
                 </Card>
-              )}
-              {((team.picture && team.prescout_drivetrain) ||
-                team.prescout_drivetrain) && (
+              ) : null}
+              {team.prescout_drivetrain ? (
                 <Button
                   size='lg'
                   action='secondary'
@@ -468,7 +467,7 @@ export default function TeamDetailScreen() {
                 >
                   <ButtonText>Change Picture</ButtonText>
                 </Button>
-              )}
+              ) : null}
               <Button
                 size='lg'
                 action='primary'
