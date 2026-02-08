@@ -304,6 +304,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await db.config.put({ key: 'compCode', value: code });
       setCompetitionCodeState(code);
+      // Trigger data refresh when competition code is set
+      await performDataRefresh();
     } catch (error) {
       console.error('Failed to save competition code:', error);
       throw error;

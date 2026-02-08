@@ -18,6 +18,7 @@ import {
   CloudCheck,
   CloudBackup,
   CloudAlert,
+  CloudSync,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 
@@ -38,7 +39,7 @@ const STATUS_CONFIG: Record<
 > = {
   current: {
     action: 'success',
-    icon: CloudCheck,
+    icon: CloudSync,
     label: 'Current',
     description: 'Data was recently synchronized.',
   },

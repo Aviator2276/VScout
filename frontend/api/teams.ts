@@ -313,3 +313,47 @@ export async function getTeamInfo(
     throw error;
   }
 }
+
+export interface PrescoutData {
+  prescout_drivetrain: string;
+  prescout_hopper_size: number;
+  prescout_intake_type: string;
+  prescout_rotate_yaw: boolean;
+  prescout_rotate_pitch: boolean;
+  prescout_range: string;
+  prescout_additional_comments: string;
+}
+
+/**
+ * Upload prescout data to the server via PATCH request.
+ * @param teamNumber The team number to update
+ * @param prescoutData The prescout data to upload
+ * @returns The response from the server
+ */
+export async function uploadPrescout(
+  teamNumber: number,
+  prescoutData: PrescoutData,
+): Promise<void> {
+  const compCode = (await db.config.get({ key: "compCode" }))?.value;
+
+  if (!compCode) {
+    throw new NoCompetitionCodeError();
+  }
+
+  if (!teamNumber) {
+    throw new NoTeamNumberError();
+  }
+
+  try {
+    await apiRequest(
+      `/api/team-info/prescouting?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(prescoutData),
+      },
+    );
+  } catch (error) {
+    console.error("Failed to upload prescout data:", error);
+    throw error;
+  }
+}
