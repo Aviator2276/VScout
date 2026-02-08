@@ -14,14 +14,26 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Spinner } from '@/components/ui/spinner';
 import { Camera } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { db } from '@/utils/db';
+import { PictureRecord } from '@/types/record';
 
-interface CameraSheetProps {
+interface TeamPictureCameraProps {
   isOpen: boolean;
   onClose: () => void;
   onCapture: (uri: string) => void;
+  teamNumber: number;
+  teamName: string;
+  competitionCode: string;
 }
 
-export function CameraSheet({ isOpen, onClose, onCapture }: CameraSheetProps) {
+export function TeamPictureCamera({
+  isOpen,
+  onClose,
+  onCapture,
+  teamNumber,
+  teamName,
+  competitionCode,
+}: TeamPictureCameraProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -36,6 +48,24 @@ export function CameraSheet({ isOpen, onClose, onCapture }: CameraSheetProps) {
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
     if (photo?.uri) {
+      const now = Date.now();
+      const pictureRecord: PictureRecord = {
+        info: {
+          status: 'pending',
+          competitionCode,
+          created_at: now,
+          last_retry: now,
+          archived: false,
+        },
+        team: {
+          number: teamNumber,
+          name: teamName,
+          competitionCode,
+        },
+        picture: photo.uri,
+      };
+
+      await db.pictureRecords.put(pictureRecord);
       onCapture(photo.uri);
     }
     handleClose();
@@ -95,10 +125,7 @@ export function CameraSheet({ isOpen, onClose, onCapture }: CameraSheetProps) {
           onPress={takePicture}
           className='w-full mb-4 mt-4'
         >
-          <Icon
-            as={Camera}
-            className='color-slate-100 dark:color-slate-900'
-          />
+          <Icon as={Camera} className='color-slate-100 dark:color-slate-900' />
         </Button>
 
         <Button

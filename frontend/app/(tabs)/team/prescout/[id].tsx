@@ -31,8 +31,11 @@ import {
   CheckboxLabel,
 } from '@/components/ui/checkbox';
 import { getTeamName, updateTeamPrescout } from '@/api/teams';
+import { db } from '@/utils/db';
+import { PrescoutRecord } from '@/types/record';
 import { CheckIcon } from 'lucide-react-native';
-import { CameraSheet } from '@/components/CameraSheet';
+import { TeamPictureCamera } from '@/components/TeamPictureCamera';
+import { useApp } from '@/contexts/AppContext';
 import { Image } from '@/components/ui/image';
 import {
   Slider,
@@ -52,6 +55,7 @@ import {
 export default function PrescoutFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { competitionCode } = useApp();
   const [teamName, setTeamName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +104,7 @@ export default function PrescoutFormScreen() {
   }
 
   function validateForm(): string | null {
-    if (!drivetrain.trim()) return 'Drivetrain is required';
+    if (!drivetrain.trim()) return 'Drivetrain type is required';
     if (!intake.trim()) return 'Intake type is required';
     if (!hopper.trim()) return 'Hopper size is required';
     if (!driverExperience.trim()) return 'Driver experience is required';
@@ -119,7 +123,7 @@ export default function PrescoutFormScreen() {
     setSubmitting(true);
     try {
       const teamNumber = parseInt(id || '0', 10);
-      await updateTeamPrescout(teamNumber, {
+      const prescoutData = {
         prescout_drivetrain: drivetrain,
         prescout_hopper_size: parseInt(hopper, 10) || 0,
         prescout_intake_type: intake,
@@ -128,7 +132,36 @@ export default function PrescoutFormScreen() {
         prescout_range: range,
         prescout_additional_comments: notes,
         picture: uri || '',
-      });
+      };
+
+      // Store to local IndexedDB
+      await updateTeamPrescout(teamNumber, prescoutData);
+
+      // Store to PrescoutRecords for staging/upload
+      const now = Date.now();
+      const prescoutRecord: PrescoutRecord = {
+        info: {
+          status: 'pending',
+          competitionCode: competitionCode || '',
+          created_at: now,
+          last_retry: now,
+          archived: false,
+        },
+        team: {
+          number: teamNumber,
+          name: teamName || '',
+          competitionCode: competitionCode || '',
+        },
+        prescout_drivetrain: drivetrain,
+        prescout_hopper_size: parseInt(hopper, 10) || 0,
+        prescout_intake_type: intake,
+        prescout_rotate_yaw: turret,
+        prescout_rotate_pitch: hood,
+        prescout_range: range,
+        prescout_additional_comments: notes,
+      };
+      await db.prescoutRecords.put(prescoutRecord);
+
       router.replace(`/(tabs)/team/${id}`);
     } catch (error) {
       console.error('Failed to save prescout data:', error);
@@ -147,13 +180,15 @@ export default function PrescoutFormScreen() {
     );
   }
 
-
   return (
     <AdaptiveSafeArea>
-      <CameraSheet
+      <TeamPictureCamera
         isOpen={showCameraView}
         onClose={() => setShowCameraView(false)}
-        onCapture={(capturedUri) => setUri(capturedUri)}
+        onCapture={(capturedUri: string) => setUri(capturedUri)}
+        teamNumber={parseInt(id || '0', 10)}
+        teamName={teamName || ''}
+        competitionCode={competitionCode || ''}
       />
       <Box className='max-w-2xl self-center w-full'>
         <Header
@@ -357,7 +392,7 @@ export default function PrescoutFormScreen() {
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Heading size='lg'>Validation Error</Heading>
+            <Heading size='lg'>Empty Value</Heading>
           </AlertDialogHeader>
           <AlertDialogBody>
             <Text>{validationMessage}</Text>

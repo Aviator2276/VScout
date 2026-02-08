@@ -6,9 +6,10 @@ import { Center } from '@/components/ui/center';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { DataStatus } from '@/components/DataStatus';
+import { DownlinkStatus } from '@/components/DownlinkStatus';
 import { useApp } from '@/contexts/AppContext';
 import { parseCompetitionCode } from '@/utils/competitionCode';
+import { UplinkStatus } from './UplinkStatus';
 
 interface HeaderProps {
   title: string;
@@ -80,8 +81,9 @@ export function Header({
           />
         </Center>
         <Center>
-          <DataStatus size='lg' />
+          <DownlinkStatus size='lg' />
         </Center>
+        <UplinkStatus />
         <Badge size='lg' variant='solid' action='info'>
           <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
         </Badge>

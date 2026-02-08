@@ -22,9 +22,9 @@ import {
   Dice4,
   EyeOff,
   Forklift,
+  Goal,
   Move,
   MoveVertical,
-  Target,
   Truck,
 } from 'lucide-react-native';
 import { Image } from '@/components/ui/image';
@@ -36,7 +36,8 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
-import { CameraSheet } from '@/components/CameraSheet';
+import { TeamPictureCamera } from '@/components/TeamPictureCamera';
+import { useApp } from '@/contexts/AppContext';
 
 type TabType = 'overview' | 'prescout';
 
@@ -47,6 +48,7 @@ export default function TeamDetailScreen() {
     matchId?: string;
   }>();
   const router = useRouter();
+  const { competitionCode } = useApp();
   const [team, setTeam] = useState<TeamInfo | null>(null);
   const [teamName, setTeamName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,10 +146,13 @@ export default function TeamDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <CameraSheet
+      <TeamPictureCamera
         isOpen={showCameraView}
         onClose={() => setShowCameraView(false)}
         onCapture={handlePictureCapture}
+        teamNumber={team.team_number}
+        teamName={teamName || ''}
+        competitionCode={competitionCode || ''}
       />
       <Box className='max-w-2xl self-center w-full'>
         <Header
@@ -197,7 +202,6 @@ export default function TeamDetailScreen() {
               </VStack>
             </VStack>
           </Card>
-
           {/* Tab Navigation */}
           <HStack className='mb-2 p-1 rounded bg-secondary-100'>
             <Button
@@ -219,7 +223,6 @@ export default function TeamDetailScreen() {
               <Text className='text-center font-semibold'>Prescout Info</Text>
             </Button>
           </HStack>
-
           {activeTab === 'overview' && (
             <>
               {/* Overview Stats */}
@@ -303,7 +306,6 @@ export default function TeamDetailScreen() {
               </Card>
             </>
           )}
-
           {activeTab === 'prescout' && (
             <>
               {/* Robot Info */}
@@ -399,9 +401,15 @@ export default function TeamDetailScreen() {
                         action='muted'
                         className='justify-center items-center bg-rose-500/40'
                       >
-                        <BadgeIcon as={Target}></BadgeIcon>
+                        <BadgeIcon as={Goal}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          {team.prescout_range || 'Unknown'}
+                          {team.prescout_range === 'alliance'
+                            ? 'Alliance Zone Only'
+                            : team.prescout_range === 'neutral'
+                              ? 'Neutral to Alliance Zone'
+                              : team.prescout_range === 'opponent'
+                                ? 'Opponent to Alliance Zone'
+                                : 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
@@ -439,7 +447,6 @@ export default function TeamDetailScreen() {
                   </VStack>
                 </VStack>
               </Card>
-
               {/* Comments */}
               {team.prescout_additional_comments && (
                 <Card variant='outline' className='p-4 mb-2'>
@@ -451,14 +458,17 @@ export default function TeamDetailScreen() {
                   </VStack>
                 </Card>
               )}
-              <Button
-                size='lg'
-                action='secondary'
-                className='mb-2'
-                onPress={() => setShowCameraView(true)}
-              >
-                <ButtonText>Change Picture</ButtonText>
-              </Button>
+              {((team.picture && team.prescout_drivetrain) ||
+                team.prescout_drivetrain) && (
+                <Button
+                  size='lg'
+                  action='secondary'
+                  className='mb-2'
+                  onPress={() => setShowCameraView(true)}
+                >
+                  <ButtonText>Change Picture</ButtonText>
+                </Button>
+              )}
               <Button
                 size='lg'
                 action='primary'
@@ -473,7 +483,6 @@ export default function TeamDetailScreen() {
               >
                 <ButtonText>Prescout Robot</ButtonText>
               </Button>
-
               <AlertDialog
                 isOpen={showPrescoutAlert}
                 onClose={() => setShowPrescoutAlert(false)}
