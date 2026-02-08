@@ -11,7 +11,7 @@ import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { TeamInfo } from '@/types/team';
-import { getTeamInfo, getTeamName } from '@/api/teams';
+import { getTeamInfo, getTeamName, updateTeamPrescout } from '@/api/teams';
 import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
 import {
@@ -36,6 +36,7 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
+import { CameraSheet } from '@/components/CameraSheet';
 
 type TabType = 'overview' | 'prescout';
 
@@ -52,6 +53,8 @@ export default function TeamDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showPrescoutAlert, setShowPrescoutAlert] = useState(false);
+  const [showCameraView, setShowCameraView] = useState(false);
+  const [uri, setUri] = useState<string | null>(null);
 
   const getBackRoute = () => {
     if (from === 'match' && matchId) {
@@ -63,8 +66,26 @@ export default function TeamDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       loadTeamDetails();
-    }, [id])
+    }, [id]),
   );
+
+  async function handlePictureCapture(capturedUri: string) {
+    setUri(capturedUri);
+    const teamNumber = parseInt(id || '0', 10);
+    if (teamNumber && team) {
+      await updateTeamPrescout(teamNumber, {
+        prescout_drivetrain: team.prescout_drivetrain || '',
+        prescout_hopper_size: team.prescout_hopper_size || 0,
+        prescout_intake_type: team.prescout_intake_type || '',
+        prescout_rotate_yaw: team.prescout_rotate_yaw ?? false,
+        prescout_rotate_pitch: team.prescout_rotate_pitch ?? false,
+        prescout_range: team.prescout_range || '',
+        prescout_additional_comments: team.prescout_additional_comments || '',
+        picture: capturedUri,
+      });
+      setTeam({ ...team, picture: capturedUri });
+    }
+  }
 
   async function loadTeamDetails() {
     try {
@@ -123,6 +144,11 @@ export default function TeamDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <CameraSheet
+        isOpen={showCameraView}
+        onClose={() => setShowCameraView(false)}
+        onCapture={handlePictureCapture}
+      />
       <Box className='max-w-2xl self-center w-full'>
         <Header
           title={`Team ${team.team_number}`}
@@ -135,7 +161,7 @@ export default function TeamDetailScreen() {
           {team.picture && (
             <Card
               variant='outline'
-              className='p-4 mb-2 aspect-square justify-evenly items-center'
+              className='aspect-square object-cover max-w-full mb-2'
             >
               <Image source={{ uri: team.picture }} size='full' />
             </Card>
@@ -425,6 +451,14 @@ export default function TeamDetailScreen() {
                   </VStack>
                 </Card>
               )}
+              <Button
+                size='lg'
+                action='secondary'
+                className='mb-2'
+                onPress={() => setShowCameraView(true)}
+              >
+                <ButtonText>Change Picture</ButtonText>
+              </Button>
               <Button
                 size='lg'
                 action='primary'

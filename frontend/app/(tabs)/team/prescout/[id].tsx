@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, ActivityIndicator } from 'react-native';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
@@ -31,19 +31,8 @@ import {
   CheckboxLabel,
 } from '@/components/ui/checkbox';
 import { getTeamName, updateTeamPrescout } from '@/api/teams';
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from '@/components/ui/actionsheet';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Spinner } from '@/components/ui/spinner';
-import { Camera, CheckIcon } from 'lucide-react-native';
-import { Icon } from '@/components/ui/icon';
+import { CheckIcon } from 'lucide-react-native';
+import { CameraSheet } from '@/components/CameraSheet';
 import { Image } from '@/components/ui/image';
 import {
   Slider,
@@ -76,12 +65,8 @@ export default function PrescoutFormScreen() {
   const [turret, setTurret] = useState(false);
   const [hood, setHood] = useState(false);
   const [notes, setNotes] = useState<string>('');
-  const [showCameraView, setShowCameraView] = React.useState(false);
-  const [permission, requestPermission] = useCameraPermissions();
-  const ref = useRef<CameraView>(null);
+  const [showCameraView, setShowCameraView] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
 
@@ -96,8 +81,6 @@ export default function PrescoutFormScreen() {
     setHood(false);
     setNotes('');
     setUri(null);
-    setCameraReady(false);
-    setCameraError(null);
     loadTeamName();
   }, [id]);
 
@@ -164,89 +147,14 @@ export default function PrescoutFormScreen() {
     );
   }
 
-  const handleClose = () => {
-    setShowCameraView(false);
-    setCameraReady(false);
-    setCameraError(null);
-  };
-
-  const takePicture = async () => {
-    const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) setUri(photo.uri);
-    handleClose();
-  };
 
   return (
     <AdaptiveSafeArea>
-      <Actionsheet isOpen={showCameraView} onClose={handleClose}>
-        <ActionsheetBackdrop />
-        <ActionsheetContent className='w-full h-[calc(100%-4rem)]'>
-          <ActionsheetDragIndicatorWrapper>
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-          {!permission?.granted ? (
-            <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-              <VStack space='md'>
-                <Text>We need your permission to take pictures.</Text>
-                <Button onPress={requestPermission}>
-                  <ButtonText>Grant Permission</ButtonText>
-                </Button>
-              </VStack>
-            </Center>
-          ) : cameraError ? (
-            <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-              <VStack space='md'>
-                <Text className='text-error-500 text-center'>{cameraError}</Text>
-                <Button onPress={handleClose}>
-                  <ButtonText>Close</ButtonText>
-                </Button>
-              </VStack>
-            </Center>
-          ) : (
-            <>
-              {!cameraReady && (
-                <Center className='absolute inset-0 z-10'>
-                  <Spinner size='large' />
-                </Center>
-              )}
-              <CameraView
-                ref={ref}
-                style={{
-                  width: '100%',
-                  height: 1000,
-                  marginTop: 8,
-                  borderRadius: 10,
-                  opacity: cameraReady ? 1 : 0,
-                }}
-                facing={'back'}
-                mirror={false}
-                onCameraReady={() => setCameraReady(true)}
-                onMountError={(error) => setCameraError(error.message)}
-              />
-            </>
-          )}
-          <Button
-            size='lg'
-            action='primary'
-            onPress={takePicture}
-            className='w-full mb-4 mt-4'
-          >
-            <Icon
-              as={Camera}
-              className='color-slate-100 dark:color-slate-900'
-            />
-          </Button>
-
-          <Button
-            size='lg'
-            action='negative'
-            className='w-full mb-4'
-            onPress={handleClose}
-          >
-            <ButtonText>Cancel</ButtonText>
-          </Button>
-        </ActionsheetContent>
-      </Actionsheet>
+      <CameraSheet
+        isOpen={showCameraView}
+        onClose={() => setShowCameraView(false)}
+        onCapture={(capturedUri) => setUri(capturedUri)}
+      />
       <Box className='max-w-2xl self-center w-full'>
         <Header
           title={`Prescout ${id}`}
