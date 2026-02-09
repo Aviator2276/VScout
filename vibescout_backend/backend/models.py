@@ -47,6 +47,7 @@ class TeamInfo(models.Model):
     INTAKE_CHOICES = [
         ("inbumper", "In Bumper"),
         ("overbumper", "Over Bumper"),
+        ("dropin", "Drop In"),
     ]
 
     RANGE_CHOICES = [
@@ -77,6 +78,7 @@ class TeamInfo(models.Model):
     )
 
     picture = models.ImageField(upload_to="team_pictures/", blank=True, null=True)
+
     prescout_drivetrain = models.CharField(
         max_length=20, choices=DRIVETRAIN_CHOICES, blank=True, null=True
     )
@@ -89,6 +91,7 @@ class TeamInfo(models.Model):
     prescout_range = models.CharField(
         max_length=20, choices=RANGE_CHOICES, blank=True, null=True
     )
+    prescout_driver_years = models.IntegerField(default=0, blank=True, null=True)
     prescout_additional_comments = models.TextField(blank=True, null=True)
 
     # Basic stats
@@ -238,7 +241,9 @@ class Match(models.Model):
         blank=True,
         null=True,
     )
-
+    
+    blue_penalties = models.IntegerField(default=0)
+    red_penalties = models.IntegerField(default=0)
     # Additional match statistics
     blue_auto_points = models.IntegerField(default=0)
     red_auto_points = models.IntegerField(default=0)

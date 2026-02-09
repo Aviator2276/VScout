@@ -90,8 +90,41 @@ def update_prescouting(
     competition = get_object_or_404(Competition, code=competition_code)
     team = get_object_or_404(Team, number=team_number)
     team_info = get_object_or_404(TeamInfo, team=team, competition=competition)
+
+    # List of prescout fields that should not be overwritten if they already have data
+    protected_fields = [
+        "prescout_drivetrain",
+        "prescout_hopper_size",
+        "prescout_intake_type",
+        "prescout_rotate_yaw",
+        "prescout_rotate_pitch",
+        "prescout_range",
+        "prescout_driver_years",
+        "prescout_additional_comments",
+    ]
+
     for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(team_info, attr, value)
+        if attr in protected_fields:
+            # Get the current value
+            current_value = getattr(team_info, attr)
+
+            # Only update if current value is empty/null/default
+            # For strings: check if None or empty
+            # For integers: check if None or 0
+            # For booleans: check if False (default)
+            is_empty = (
+                current_value is None
+                or current_value == ""
+                or (isinstance(current_value, int) and current_value == 0)
+                or (isinstance(current_value, bool) and current_value is False)
+            )
+
+            if is_empty:
+                setattr(team_info, attr, value)
+        else:
+            # Non-protected fields can always be updated
+            setattr(team_info, attr, value)
+
     team_info.save()
     return TeamInfoSchema.from_orm(team_info)
 
@@ -166,12 +199,29 @@ def create_robot_action(
     team_number: int,
     payload: RobotActionCreateSchema,
 ):
+    from ninja.errors import HttpError
+
     competition = get_object_or_404(Competition, code=competition_code)
     match = get_object_or_404(Match, competition=competition, match_number=match_number)
     team = get_object_or_404(Team, number=team_number)
 
     # Get the user from the request if authenticated
     recorded_by = request.user if request.user.is_authenticated else None
+
+    # Check if there are existing robot actions for this team and match
+    existing_actions = RobotAction.objects.filter(match=match, team=team)
+
+    if existing_actions.exists():
+        # Get the first existing action to check who recorded it
+        first_action = existing_actions.first()
+
+        # If there's a different scouter (recorded_by user), don't allow the creation
+        if first_action.recorded_by != recorded_by:
+            raise HttpError(
+                403,
+                f"This team and match combination has already been scouted by another user. "
+                f"Only the original scouter can add more actions.",
+            )
 
     robot_action = RobotAction.objects.create(
         match=match,

@@ -162,6 +162,8 @@ class MatchSchema(Schema):
     red_teleop_points: int
     blue_endgame_points: int
     red_endgame_points: int
+    blue_penalties: int
+    red_penalties: int
 
     @staticmethod
     def from_orm(obj):
@@ -225,6 +227,8 @@ class MatchSchema(Schema):
             red_teleop_points=obj.red_teleop_points,
             blue_endgame_points=obj.blue_endgame_points,
             red_endgame_points=obj.red_endgame_points,
+            blue_penalties=obj.blue_penalties,
+            red_penalties=obj.red_penalties,
         )
 
 
