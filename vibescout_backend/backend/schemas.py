@@ -42,6 +42,7 @@ class TeamInfoSchema(Schema):
     prescout_rotate_yaw: bool
     prescout_rotate_pitch: bool
     prescout_range: Optional[str] = None
+    prescout_driver_years: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
 
     # Stats fields
@@ -75,6 +76,7 @@ class TeamInfoSchema(Schema):
             prescout_rotate_yaw=obj.prescout_rotate_yaw,
             prescout_rotate_pitch=obj.prescout_rotate_pitch,
             prescout_range=obj.prescout_range,
+            prescout_driver_years=obj.prescout_driver_years,
             prescout_additional_comments=obj.prescout_additional_comments,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
@@ -96,6 +98,7 @@ class PrescouttingUpdateSchema(Schema):
     prescout_rotate_yaw: Optional[bool] = None
     prescout_rotate_pitch: Optional[bool] = None
     prescout_range: Optional[str] = None
+    prescout_driver_years: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
 
 
