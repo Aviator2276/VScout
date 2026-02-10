@@ -139,6 +139,10 @@ STATICFILES_DIRS = [
     ROOT_DIR / "frontend" / "dist",  # Expo web build output
 ]
 
+# Media files (User-uploaded content)
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # CORS Configuration
 # For development: Allow all origins
 # For production: Uncomment CORS_ALLOWED_ORIGINS and add your production domains

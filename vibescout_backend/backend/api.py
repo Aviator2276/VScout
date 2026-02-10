@@ -129,6 +129,35 @@ def update_prescouting(
     return TeamInfoSchema.from_orm(team_info)
 
 
+@api.post("/team-info/picture")
+def upload_team_picture(request, competition_code: str, team_number: int):
+    """
+    Upload a picture for a team at a competition.
+    Expects multipart/form-data with a file field named 'picture'.
+    """
+    from ninja.errors import HttpError
+
+    competition = get_object_or_404(Competition, code=competition_code)
+    team = get_object_or_404(Team, number=team_number)
+    team_info = get_object_or_404(TeamInfo, team=team, competition=competition)
+
+    # Get the uploaded file
+    if "picture" not in request.FILES:
+        raise HttpError(400, "No picture file provided")
+
+    picture_file = request.FILES["picture"]
+
+    # Only overwrite if there's no existing picture
+    if not team_info.picture:
+        team_info.picture = picture_file
+        team_info.save()
+
+    return {
+        "success": True,
+        "picture_url": team_info.picture.url if team_info.picture else None,
+    }
+
+
 @api.get("/teams/{team_number}/competitions", response=List[CompetitionSchema])
 def get_team_competitions(request, team_number: int):
     team = get_object_or_404(Team, number=team_number)
