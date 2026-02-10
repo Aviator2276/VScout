@@ -132,8 +132,36 @@ def update_prescouting(
 @api.post("/team-info/picture")
 def upload_team_picture(request, competition_code: str, team_number: int):
     """
-    Upload a picture for a team at a competition.
-    Expects multipart/form-data with a file field named 'picture'.
+    Upload a robot picture for a team at a competition.
+
+    This endpoint accepts multipart/form-data with an image file for prescout documentation.
+
+    **Request Format:**
+    - Method: POST
+    - Content-Type: multipart/form-data
+    - Form field name: `picture`
+    - Supported formats: JPEG, PNG
+
+    **Query Parameters:**
+    - `competition_code`: Competition code (e.g., "2025gacmp")
+    - `team_number`: Team number (e.g., 254)
+
+    **Behavior:**
+    - Overwrites existing picture if one exists
+    - Saves to `media/team_pictures/` directory
+    - Returns the URL path to access the uploaded picture
+
+    **Example Response:**
+    ```json
+    {
+        "success": true,
+        "picture_url": "/media/team_pictures/team_254.jpg"
+    }
+    ```
+
+    **Error Responses:**
+    - 400: No picture file provided
+    - 404: Competition, team, or team info not found
     """
     from ninja.errors import HttpError
 
@@ -147,10 +175,9 @@ def upload_team_picture(request, competition_code: str, team_number: int):
 
     picture_file = request.FILES["picture"]
 
-    # Only overwrite if there's no existing picture
-    if not team_info.picture:
-        team_info.picture = picture_file
-        team_info.save()
+    # Save the picture (overwrites if exists)
+    team_info.picture = picture_file
+    team_info.save()
 
     return {
         "success": True,
