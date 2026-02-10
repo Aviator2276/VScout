@@ -6,7 +6,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
-from backend.models import Competition, Match, Team, TeamInfo
+from backend.models import Competition, Team, TeamInfo
+from backend.utils.match_utils import import_match_from_dict
 
 
 class Command(BaseCommand):
@@ -133,200 +134,18 @@ class Command(BaseCommand):
             )
 
     def import_match(self, match_data, competition):
-        alliances = match_data.get("alliances", {})
-        blue_alliance = alliances.get("blue", {})
-        red_alliance = alliances.get("red", {})
-
-        blue_team_keys = blue_alliance.get("team_keys", [])
-        red_team_keys = red_alliance.get("team_keys", [])
-
-        if len(blue_team_keys) < 3 or len(red_team_keys) < 3:
+        """Import a match using the shared utility function"""
+        try:
+            return import_match_from_dict(
+                match_data, competition, self.team_names_cache, self.stdout
+            )
+        except Exception as e:
             self.stdout.write(
                 self.style.WARNING(
-                    f"  Skipping match {match_data.get('key')} - incomplete teams"
+                    f"  Skipping match {match_data.get('key')} - {str(e)}"
                 )
             )
-            return
-
-        match_number = match_data.get("match_number", 0)
-        tba_key = match_data.get("key", "")
-
-        # Determine match type from TBA comp_level
-        comp_level = match_data.get("comp_level", "qm")
-        match_type_map = {
-            "qm": "qualification",
-            "qf": "quarterfinal",
-            "sf": "semifinal",
-            "f": "final",
-        }
-        match_type = match_type_map.get(comp_level, "qualification")
-
-        # Extract set_number from TBA key (e.g., qf1m1 -> set 1, qf2m1 -> set 2)
-        # For qualification matches, set_number is always 1
-        set_number = 1
-        if comp_level in ["qf", "sf", "f"]:
-            import re
-
-            # Match pattern like 'qf1', 'sf2', 'f1' in the key
-            match_pattern = re.search(r"_(" + comp_level + r")(\d+)m", tba_key)
-            if match_pattern:
-                set_number = int(match_pattern.group(2))
-
-        blue_teams = [self.get_or_create_team(key) for key in blue_team_keys[:3]]
-        red_teams = [self.get_or_create_team(key) for key in red_team_keys[:3]]
-
-        score_breakdown = match_data.get("score_breakdown", {})
-        blue_breakdown = score_breakdown.get("blue", {})
-        red_breakdown = score_breakdown.get("red", {})
-
-        blue_score = blue_alliance.get("score", 0) or 0
-        red_score = red_alliance.get("score", 0) or 0
-
-        # Extract year from event key to determine game-specific scoring
-        year = int(tba_key[:4])
-
-        # Initialize scoring variables
-        total_blue_fuels = 0
-        total_red_fuels = 0
-        blue_auto_cells = 0
-        red_auto_cells = 0
-        blue_teleop_cells = 0
-        red_teleop_cells = 0
-
-        if year == 2020:
-            # 2020 Infinite Recharge scoring
-            blue_auto_cells = (
-                blue_breakdown.get("autoCellsBottom", 0)
-                + blue_breakdown.get("autoCellsOuter", 0)
-                + blue_breakdown.get("autoCellsInner", 0)
-            )
-            red_auto_cells = (
-                red_breakdown.get("autoCellsBottom", 0)
-                + red_breakdown.get("autoCellsOuter", 0)
-                + red_breakdown.get("autoCellsInner", 0)
-            )
-
-            blue_teleop_cells = (
-                blue_breakdown.get("teleopCellsBottom", 0)
-                + blue_breakdown.get("teleopCellsOuter", 0)
-                + blue_breakdown.get("teleopCellsInner", 0)
-            )
-            red_teleop_cells = (
-                red_breakdown.get("teleopCellsBottom", 0)
-                + red_breakdown.get("teleopCellsOuter", 0)
-                + red_breakdown.get("teleopCellsInner", 0)
-            )
-
-            total_blue_fuels = blue_auto_cells + blue_teleop_cells
-            total_red_fuels = red_auto_cells + red_teleop_cells
-        elif year == 2025:
-            # 2025 Reefscape
-            blue_auto_cells = blue_breakdown.get("autoCoralCount", 0)
-            red_auto_cells = red_breakdown.get("autoCoralCount", 0)
-            blue_teleop_cells = blue_breakdown.get("teleopCoralCount", 0)
-            red_teleop_cells = red_breakdown.get("teleopCoralCount", 0)
-            total_blue_fuels = blue_auto_cells + blue_teleop_cells
-            total_red_fuels = red_auto_cells + red_teleop_cells
-        elif year == 2026:
-            # 2026 - Use hub score
-            hub_blue = blue_breakdown.get("hubScore", {})
-            hub_red = red_breakdown.get("hubScore", {})
-            blue_auto_cells = (
-                hub_blue.get("autoGamePieces", 0) if isinstance(hub_blue, dict) else 0
-            )
-            red_auto_cells = (
-                hub_red.get("autoGamePieces", 0) if isinstance(hub_red, dict) else 0
-            )
-            blue_teleop_cells = (
-                hub_blue.get("teleopGamePieces", 0) if isinstance(hub_blue, dict) else 0
-            )
-            red_teleop_cells = (
-                hub_red.get("teleopGamePieces", 0) if isinstance(hub_red, dict) else 0
-            )
-            total_blue_fuels = blue_auto_cells + blue_teleop_cells
-            total_red_fuels = red_auto_cells + red_teleop_cells
-
-        # Extract time fields from TBA API
-        predicted_match_time = match_data.get("predicted_time", 0) or 0
-        start_match_time = match_data.get("actual_time", 0) or 0
-        end_match_time = match_data.get("post_result_time", 0) or 0
-
-        # Map climb values based on year
-        def map_climb(endgame_value, year):
-            if year == 2020:
-                # 2020: Park->L1, Hang->L3
-                if endgame_value == "Park":
-                    return "L1"
-                elif endgame_value == "Hang":
-                    return "L3"
-            elif year == 2025:
-                # 2025 Reefscape: DeepCage, None, Parked, ShallowCage
-                if endgame_value == "Parked":
-                    return "L1"
-                elif endgame_value == "ShallowCage":
-                    return "L2"
-                elif endgame_value == "DeepCage":
-                    return "L3"
-            elif year == 2026:
-                # 2026: TowerRobot_2026
-                if isinstance(endgame_value, str):
-                    lower_val = endgame_value.lower()
-                    if "park" in lower_val or "low" in lower_val:
-                        return "L1"
-                    elif "mid" in lower_val or "shallow" in lower_val:
-                        return "L2"
-                    elif (
-                        "high" in lower_val
-                        or "deep" in lower_val
-                        or "cage" in lower_val
-                    ):
-                        return "L3"
-            return "None"
-
-        match, created = Match.objects.update_or_create(
-            competition=competition,
-            match_type=match_type,
-            set_number=set_number,
-            match_number=match_number,
-            defaults={
-                "predicted_match_time": predicted_match_time,
-                "start_match_time": start_match_time,
-                "end_match_time": end_match_time,
-                "blue_team_1": blue_teams[0],
-                "blue_team_2": blue_teams[1],
-                "blue_team_3": blue_teams[2],
-                "red_team_1": red_teams[0],
-                "red_team_2": red_teams[1],
-                "red_team_3": red_teams[2],
-                "total_points": blue_score + red_score,
-                "total_blue_fuels": total_blue_fuels,
-                "total_red_fuels": total_red_fuels,
-                "blue_1_climb": map_climb(
-                    blue_breakdown.get("endgameRobot1", "None"), year
-                ),
-                "blue_2_climb": map_climb(
-                    blue_breakdown.get("endgameRobot2", "None"), year
-                ),
-                "blue_3_climb": map_climb(
-                    blue_breakdown.get("endgameRobot3", "None"), year
-                ),
-                "red_1_climb": map_climb(
-                    red_breakdown.get("endgameRobot1", "None"), year
-                ),
-                "red_2_climb": map_climb(
-                    red_breakdown.get("endgameRobot2", "None"), year
-                ),
-                "red_3_climb": map_climb(
-                    red_breakdown.get("endgameRobot3", "None"), year
-                ),
-                "calculated_points": blue_score + red_score,
-            },
-        )
-
-        if created:
-            self.stdout.write(f"    Created match: {match_data.get('key')}")
-
-        return blue_teams + red_teams
+            return []
 
     def get_or_create_team(self, team_key):
         team_number = int(team_key.replace("frc", ""))
