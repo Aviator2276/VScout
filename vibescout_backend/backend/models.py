@@ -77,7 +77,7 @@ class TeamInfo(models.Model):
         Competition, on_delete=models.CASCADE, related_name="results"
     )
 
-    picture = models.ImageField(upload_to="team_pictures/", blank=True, null=True)
+    picture = models.TextField(blank=True, null=True)  # Base64 encoded image data URI
 
     prescout_drivetrain = models.CharField(
         max_length=20, choices=DRIVETRAIN_CHOICES, blank=True, null=True
@@ -241,7 +241,7 @@ class Match(models.Model):
         blank=True,
         null=True,
     )
-    
+
     blue_penalties = models.IntegerField(default=0)
     red_penalties = models.IntegerField(default=0)
     # Additional match statistics

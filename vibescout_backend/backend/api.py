@@ -135,6 +135,7 @@ def upload_team_picture(request, competition_code: str, team_number: int):
     Upload a robot picture for a team at a competition.
 
     This endpoint accepts multipart/form-data with an image file for prescout documentation.
+    The image is converted to a base64 data URI and stored directly in the database.
 
     **Request Format:**
     - Method: POST
@@ -148,14 +149,15 @@ def upload_team_picture(request, competition_code: str, team_number: int):
 
     **Behavior:**
     - Overwrites existing picture if one exists
-    - Saves to `media/team_pictures/` directory
-    - Returns the URL path to access the uploaded picture
+    - Converts image to base64 data URI format
+    - Stores data URI directly in database (no file system storage)
+    - Returns the data URI for direct use in img src attributes
 
     **Example Response:**
     ```json
     {
         "success": true,
-        "picture_url": "/media/team_pictures/team_254.jpg"
+        "picture_url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAA..."
     }
     ```
 
@@ -175,13 +177,25 @@ def upload_team_picture(request, competition_code: str, team_number: int):
 
     picture_file = request.FILES["picture"]
 
-    # Save the picture (overwrites if exists)
-    team_info.picture = picture_file
+    # Read the file and convert to base64
+    import base64
+
+    image_data = picture_file.read()
+    base64_encoded = base64.b64encode(image_data).decode("utf-8")
+
+    # Determine MIME type
+    content_type = picture_file.content_type or "image/jpeg"
+
+    # Create data URI
+    data_uri = f"data:{content_type};base64,{base64_encoded}"
+
+    # Save the base64 data URI (overwrites if exists)
+    team_info.picture = data_uri
     team_info.save()
 
     return {
         "success": True,
-        "picture_url": team_info.picture.url if team_info.picture else None,
+        "picture_url": team_info.picture,
     }
 
 

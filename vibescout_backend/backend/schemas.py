@@ -69,7 +69,7 @@ class TeamInfoSchema(Schema):
             lose=obj.lose,
             team_number=obj.team.number,
             competition=CompetitionSchema.from_orm(obj.competition),
-            picture=str(obj.picture) if obj.picture else None,
+            picture=obj.picture or None,
             prescout_drivetrain=obj.prescout_drivetrain,
             prescout_hopper_size=obj.prescout_hopper_size,
             prescout_intake_type=obj.prescout_intake_type,
