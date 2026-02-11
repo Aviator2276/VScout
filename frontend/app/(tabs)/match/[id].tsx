@@ -119,7 +119,7 @@ export default function MatchDetailScreen() {
           title={'Match ' + match.match_number}
           isMainScreen={false}
           showBackButton
-          fallbackRoute="/(tabs)/matches"
+          fallbackRoute='/(tabs)/matches'
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>
@@ -376,16 +376,13 @@ export default function MatchDetailScreen() {
                       </TableRow>
                       <TableRow>
                         <TableData className='text-center text-sm bg-blue-500/20'>
-                          {-1}
+                          {match.blue_penalties}
                         </TableData>
                         <TableData className='text-center text-sm'>
-                          Foul Points
-                          <Text className='text-xs text-typography-300'>
-                            Bryan add this.
-                          </Text>
+                          Penalties
                         </TableData>
                         <TableData className='text-center text-sm bg-red-500/20'>
-                          {-1}
+                          {match.red_penalties}
                         </TableData>
                       </TableRow>
                       <TableRow>

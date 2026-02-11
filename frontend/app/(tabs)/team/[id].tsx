@@ -375,7 +375,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Contact}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          {0 || 'Unknown'}
+                          {team.prescout_driver_years || 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>

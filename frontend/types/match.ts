@@ -72,4 +72,6 @@ export interface Match {
   red_teleop_points: number;
   blue_endgame_points: number;
   red_endgame_points: number;
+  blue_penalties: number;
+  red_penalties: number;
 }

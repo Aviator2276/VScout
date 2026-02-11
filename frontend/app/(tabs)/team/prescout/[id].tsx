@@ -157,6 +157,7 @@ export default function PrescoutFormScreen() {
         prescout_intake_type: intake,
         prescout_rotate_yaw: turret,
         prescout_rotate_pitch: hood,
+        prescout_driver_years: parseInt(driverExperience),
         prescout_range: range,
         prescout_additional_comments: notes,
       };

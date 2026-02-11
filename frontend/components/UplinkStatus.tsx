@@ -25,7 +25,7 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { db } from '@/utils/db';
-import { uploadPrescout } from '@/api/teams';
+import { uploadPrescout, uploadTeamPicture } from '@/api/teams';
 import { PrescoutRecord } from '@/types/record';
 
 interface UplinkStatusProps {
@@ -151,6 +151,7 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
             prescout_rotate_yaw: record.prescout_rotate_yaw,
             prescout_rotate_pitch: record.prescout_rotate_pitch,
             prescout_range: record.prescout_range,
+            prescout_driver_years: record.prescout_driver_years,
             prescout_additional_comments: record.prescout_additional_comments,
           });
 
@@ -171,7 +172,7 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
         }
       }
 
-      // Get pending picture records (placeholder for future implementation)
+      // Get pending picture records
       const pendingPictures = await db.pictureRecords
         .filter((r) => r.info.status === 'pending')
         .toArray();
@@ -189,9 +190,8 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
           });
           await updateCounts();
 
-          // TODO: Implement picture upload API
-          // For now, just mark as synced after a delay to simulate upload
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Upload picture to server
+          await uploadTeamPicture(record.team.number, record.picture);
 
           await db.pictureRecords.put({
             ...record,

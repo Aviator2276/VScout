@@ -1,7 +1,13 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { AdaptiveTabBar } from '@/components/AdaptiveTabBar';
-import { House, NotepadText, Swords, Users } from 'lucide-react-native';
+import {
+  Binoculars,
+  House,
+  NotepadText,
+  Swords,
+  Users,
+} from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 
 export default function TabLayout() {
@@ -13,43 +19,43 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name='index'
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => (
-            <Icon size="lg" as={House} color={color} />
+            <Icon size='lg' as={House} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="matches"
+        name='matches'
         options={{
           title: 'Matches',
           tabBarIcon: ({ color }) => <Icon as={Swords} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="teams"
+        name='teams'
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Icon as={Users} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="records"
+        name='scout'
         options={{
-          title: 'Records',
-          tabBarIcon: ({ color }) => <Icon as={NotepadText} color={color} />,
+          title: 'Scout',
+          tabBarIcon: ({ color }) => <Icon as={Binoculars} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="match/[id]"
+        name='match/[id]'
         options={{
           href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
-        name="team/[id]"
+        name='team/[id]'
         options={{
           href: null, // Hide from tab bar
         }}

@@ -28,6 +28,7 @@ export interface TeamInfo {
   prescout_rotate_yaw: boolean;
   prescout_rotate_pitch: boolean;
   prescout_range: string;
+  prescout_driver_years: number;
   prescout_additional_comments: string;
   accuracy: string;
   avg_fuel_scored: string;

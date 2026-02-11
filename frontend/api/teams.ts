@@ -1,18 +1,18 @@
-import { Team, TeamInfo } from "@/types/team";
-import { apiRequest } from "@/utils/api";
-import { db } from "@/utils/db";
+import { Team, TeamInfo } from '@/types/team';
+import { apiRequest } from '@/utils/api';
+import { db } from '@/utils/db';
 
 export class NoCompetitionCodeError extends Error {
   constructor() {
-    super("No competition code set");
-    this.name = "NoCompetitionCodeError";
+    super('No competition code set');
+    this.name = 'NoCompetitionCodeError';
   }
 }
 
 export class NoTeamNumberError extends Error {
   constructor() {
-    super("No team number provided");
-    this.name = "NoTeamNumberError";
+    super('No team number provided');
+    this.name = 'NoTeamNumberError';
   }
 }
 
@@ -22,7 +22,7 @@ export class NoTeamNumberError extends Error {
  * @returns The cached teams
  */
 export async function cacheTeams(): Promise<Team[]> {
-  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
+  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -40,12 +40,12 @@ export async function cacheTeams(): Promise<Team[]> {
     }));
 
     // Clear existing teams for this competition and store new ones
-    await db.teams.where("competitionCode").equals(competitionCode).delete();
+    await db.teams.where('competitionCode').equals(competitionCode).delete();
     await db.teams.bulkPut(teamsWithCompCode);
 
     return teams;
   } catch (error) {
-    console.error("Failed to cache teams:", error);
+    console.error('Failed to cache teams:', error);
     throw error;
   }
 }
@@ -56,7 +56,7 @@ export async function cacheTeams(): Promise<Team[]> {
  * @returns The team name or null if not found
  */
 export async function getTeamName(teamNumber: number): Promise<string | null> {
-  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
+  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     return null;
@@ -64,13 +64,13 @@ export async function getTeamName(teamNumber: number): Promise<string | null> {
 
   try {
     const team = await db.teams
-      .where("[competitionCode+number]")
+      .where('[competitionCode+number]')
       .equals([competitionCode, teamNumber])
       .first();
 
     return team?.name || null;
   } catch (error) {
-    console.error("Failed to get team name from cache:", error);
+    console.error('Failed to get team name from cache:', error);
     return null;
   }
 }
@@ -81,7 +81,7 @@ export async function getTeamName(teamNumber: number): Promise<string | null> {
  * @throws NoCompetitionCodeError if no competition code is set
  */
 export async function getTeams(): Promise<Team[]> {
-  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
+  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -89,13 +89,13 @@ export async function getTeams(): Promise<Team[]> {
 
   try {
     const teams = await db.teams
-      .where("competitionCode")
+      .where('competitionCode')
       .equals(competitionCode)
       .toArray();
 
     return teams;
   } catch (error) {
-    console.error("Failed to get teams from cache:", error);
+    console.error('Failed to get teams from cache:', error);
     throw error;
   }
 }
@@ -106,92 +106,99 @@ export async function getTeams(): Promise<Team[]> {
  * @returns The cached team info array
  */
 export async function cacheTeamInfo(): Promise<TeamInfo[]> {
-  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
+  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
   }
 
   try {
-    // First get all teams to know which team info to fetch
-    const teams = await db.teams
-      .where("competitionCode")
-      .equals(competitionCode)
-      .toArray();
-
-    // Fetch team info for all teams (API returns array)
-    const teamInfoPromises = teams.map((team) =>
-      apiRequest<TeamInfo[]>(
-        `/api/team-info?team_number=${team.number}&competition_code=${competitionCode}`,
-      ),
+    // Fetch all team info at once from the new API endpoint
+    const apiTeamInfoArray = await apiRequest<TeamInfo[]>(
+      `/api/competitions/${competitionCode}/team-info`,
     );
 
-    const teamInfoResults = await Promise.allSettled(teamInfoPromises);
+    // Filter out invalid entries
+    const validTeamInfoArray = apiTeamInfoArray.filter(
+      (info): info is TeamInfo =>
+        info !== undefined &&
+        info.team_number !== undefined &&
+        info.competition?.code !== undefined,
+    );
 
-    // Filter out failed requests, extract first element from array response, and validate
-    const apiTeamInfoArray = teamInfoResults
-      .filter(
-        (result): result is PromiseFulfilledResult<TeamInfo[]> =>
-          result.status === "fulfilled",
-      )
-      .map((result) => result.value[0])
-      .filter(
-        (info): info is TeamInfo =>
-          info !== undefined &&
-          info.team_number !== undefined &&
-          info.competition?.code !== undefined,
-      );
-
-    // Get existing team info to preserve prescout data
+    // Get existing team info to preserve local prescout data not yet synced
     const existingTeamInfo = await db.teamInfo
-      .where("competitionCode")
+      .where('competitionCode')
       .equals(competitionCode)
       .toArray();
 
-    // Create a map of existing prescout data by team number
-    const existingPrescoutMap = new Map(
-      existingTeamInfo.map((info) => [info.team_number, {
-        prescout_drivetrain: info.prescout_drivetrain,
-        prescout_hopper_size: info.prescout_hopper_size,
-        prescout_intake_type: info.prescout_intake_type,
-        prescout_rotate_yaw: info.prescout_rotate_yaw,
-        prescout_rotate_pitch: info.prescout_rotate_pitch,
-        prescout_range: info.prescout_range,
-        prescout_additional_comments: info.prescout_additional_comments,
-        picture: info.picture,
-      }])
+    // Create a map of existing local data by team number
+    const existingLocalMap = new Map(
+      existingTeamInfo.map((info) => [
+        info.team_number,
+        {
+          prescout_drivetrain: info.prescout_drivetrain,
+          prescout_hopper_size: info.prescout_hopper_size,
+          prescout_intake_type: info.prescout_intake_type,
+          prescout_rotate_yaw: info.prescout_rotate_yaw,
+          prescout_rotate_pitch: info.prescout_rotate_pitch,
+          prescout_range: info.prescout_range,
+          prescout_driver_years: info.prescout_driver_years,
+          prescout_additional_comments: info.prescout_additional_comments,
+          picture: info.picture,
+        },
+      ]),
     );
 
-    // Merge API data with existing prescout data
-    const teamInfoArray = apiTeamInfoArray.map((info) => {
-      const existingPrescout = existingPrescoutMap.get(info.team_number);
+    // Merge API data with existing local data (API takes precedence if it has data)
+    const teamInfoArray = validTeamInfoArray.map((info) => {
+      const existingLocal = existingLocalMap.get(info.team_number);
       return {
         ...info,
         competitionCode,
-        // Preserve existing prescout data if API returns null/empty
-        prescout_drivetrain: info.prescout_drivetrain || existingPrescout?.prescout_drivetrain || "",
-        prescout_hopper_size: info.prescout_hopper_size || existingPrescout?.prescout_hopper_size || 0,
-        prescout_intake_type: info.prescout_intake_type || existingPrescout?.prescout_intake_type || "",
-        prescout_rotate_yaw: info.prescout_rotate_yaw ?? existingPrescout?.prescout_rotate_yaw ?? false,
-        prescout_rotate_pitch: info.prescout_rotate_pitch ?? existingPrescout?.prescout_rotate_pitch ?? false,
-        prescout_range: info.prescout_range || existingPrescout?.prescout_range || "",
-        prescout_additional_comments: info.prescout_additional_comments || existingPrescout?.prescout_additional_comments || "",
-        picture: info.picture || existingPrescout?.picture || "",
+        // Use API data if available, otherwise preserve local data
+        prescout_drivetrain:
+          info.prescout_drivetrain || existingLocal?.prescout_drivetrain || '',
+        prescout_hopper_size:
+          info.prescout_hopper_size || existingLocal?.prescout_hopper_size || 0,
+        prescout_intake_type:
+          info.prescout_intake_type ||
+          existingLocal?.prescout_intake_type ||
+          '',
+        prescout_rotate_yaw:
+          info.prescout_rotate_yaw ??
+          existingLocal?.prescout_rotate_yaw ??
+          false,
+        prescout_rotate_pitch:
+          info.prescout_rotate_pitch ??
+          existingLocal?.prescout_rotate_pitch ??
+          false,
+        prescout_range:
+          info.prescout_range || existingLocal?.prescout_range || '',
+        prescout_driver_years:
+          info.prescout_driver_years ??
+          existingLocal?.prescout_driver_years ??
+          0,
+        prescout_additional_comments:
+          info.prescout_additional_comments ||
+          existingLocal?.prescout_additional_comments ||
+          '',
+        picture: info.picture || existingLocal?.picture || '',
       };
     });
 
     // Clear existing team info for this competition and store new ones
-    await db.teamInfo.where("competitionCode").equals(competitionCode).delete();
+    await db.teamInfo.where('competitionCode').equals(competitionCode).delete();
     if (teamInfoArray.length > 0) {
       await db.teamInfo.bulkPut(teamInfoArray);
-      console.log("Successfully stored team info");
+      console.log('Successfully stored team info');
     } else {
-      console.log("No valid team info to store");
+      console.log('No valid team info to store');
     }
 
     return teamInfoArray;
   } catch (error) {
-    console.error("Failed to cache team info:", error);
+    console.error('Failed to cache team info:', error);
     throw error;
   }
 }
@@ -202,7 +209,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
  * @throws NoCompetitionCodeError if no competition code is set
  */
 export async function getAllTeamInfo(): Promise<TeamInfo[]> {
-  const competitionCode = (await db.config.get({ key: "compCode" }))?.value;
+  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
@@ -210,13 +217,13 @@ export async function getAllTeamInfo(): Promise<TeamInfo[]> {
 
   try {
     const teamInfo = await db.teamInfo
-      .where("competitionCode")
+      .where('competitionCode')
       .equals(competitionCode)
       .toArray();
 
     return teamInfo.sort((a, b) => a.rank - b.rank);
   } catch (error) {
-    console.error("Failed to get all team info from cache:", error);
+    console.error('Failed to get all team info from cache:', error);
     throw error;
   }
 }
@@ -244,7 +251,7 @@ export async function updateTeamPrescout(
     throw new NoTeamNumberError();
   }
 
-  const compCode = (await db.config.get({ key: "compCode" }))?.value;
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!compCode) {
     throw new NoCompetitionCodeError();
@@ -252,12 +259,12 @@ export async function updateTeamPrescout(
 
   try {
     const existingTeamInfo = await db.teamInfo
-      .where("[competitionCode+team_number]")
+      .where('[competitionCode+team_number]')
       .equals([compCode, teamNumber])
       .first();
 
     if (!existingTeamInfo) {
-      console.error("Team info not found for team:", teamNumber);
+      console.error('Team info not found for team:', teamNumber);
       return undefined;
     }
 
@@ -270,7 +277,7 @@ export async function updateTeamPrescout(
 
     return updatedTeamInfo;
   } catch (error) {
-    console.error("Failed to update team prescout data:", error);
+    console.error('Failed to update team prescout data:', error);
     throw error;
   }
 }
@@ -294,7 +301,7 @@ export async function getTeamInfo(
   let compCode = competitionCode;
 
   if (!compCode) {
-    compCode = (await db.config.get({ key: "compCode" }))?.value;
+    compCode = (await db.config.get({ key: 'compCode' }))?.value;
   }
 
   if (!compCode) {
@@ -303,13 +310,13 @@ export async function getTeamInfo(
 
   try {
     const teamInfo = await db.teamInfo
-      .where("[competitionCode+team_number]")
+      .where('[competitionCode+team_number]')
       .equals([compCode, teamNumber])
       .first();
 
     return teamInfo;
   } catch (error) {
-    console.error("Failed to get team info from cache:", error);
+    console.error('Failed to get team info from cache:', error);
     throw error;
   }
 }
@@ -321,6 +328,7 @@ export interface PrescoutData {
   prescout_rotate_yaw: boolean;
   prescout_rotate_pitch: boolean;
   prescout_range: string;
+  prescout_driver_years: number;
   prescout_additional_comments: string;
 }
 
@@ -334,7 +342,7 @@ export async function uploadPrescout(
   teamNumber: number,
   prescoutData: PrescoutData,
 ): Promise<void> {
-  const compCode = (await db.config.get({ key: "compCode" }))?.value;
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!compCode) {
     throw new NoCompetitionCodeError();
@@ -348,12 +356,62 @@ export async function uploadPrescout(
     await apiRequest(
       `/api/team-info/prescouting?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
       {
-        method: "PATCH",
+        method: 'PATCH',
         body: JSON.stringify(prescoutData),
       },
     );
   } catch (error) {
-    console.error("Failed to upload prescout data:", error);
+    console.error('Failed to upload prescout data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload a team picture to the server.
+ * @param teamNumber The team number
+ * @param pictureUri The local URI of the picture to upload
+ * @returns The URL of the uploaded picture from the server
+ */
+export async function uploadTeamPicture(
+  teamNumber: number,
+  pictureUri: string,
+): Promise<string> {
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+
+  if (!compCode) {
+    throw new NoCompetitionCodeError();
+  }
+
+  if (!teamNumber) {
+    throw new NoTeamNumberError();
+  }
+
+  try {
+    // Fetch the image as a blob
+    const response = await fetch(pictureUri);
+    const blob = await response.blob();
+
+    // Create FormData with the picture
+    const formData = new FormData();
+    formData.append('picture', blob, `team_${teamNumber}.jpg`);
+
+    // Upload using fetch directly (not apiRequest) since we need multipart/form-data
+    const uploadResponse = await fetch(
+      `${process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/'}/api/team-info/picture?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+    );
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Failed to upload picture: ${uploadResponse.statusText}`);
+    }
+
+    const result = await uploadResponse.json();
+    return result.picture_url || '';
+  } catch (error) {
+    console.error('Failed to upload team picture:', error);
     throw error;
   }
 }
