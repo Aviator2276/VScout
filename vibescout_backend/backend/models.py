@@ -285,6 +285,10 @@ class RobotAction(models.Model):
     end_time = models.DecimalField(
         max_digits=10, decimal_places=2
     )  # Time in seconds from match start
+    is_playoff = models.BooleanField(default=False)  # Whether this is a playoff match
+    fuel = models.IntegerField(
+        default=0
+    )  # Number of fuel/game pieces scored during this action
     recorded_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

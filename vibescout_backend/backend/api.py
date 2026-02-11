@@ -12,6 +12,7 @@ from ninja import NinjaAPI
 
 from .models import Competition, Match, RobotAction, Team, TeamInfo
 from .schemas import (
+    BulkRobotActionsSchema,
     CompetitionSchema,
     MatchSchema,
     PrescouttingUpdateSchema,
@@ -320,6 +321,119 @@ def list_robot_actions(
         queryset = queryset.filter(team=team)
 
     return queryset
+
+
+@api.post("/robot-actions/bulk")
+def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
+    """
+    Bulk create robot actions from auto and teleop periods.
+
+    This endpoint accepts a structured format with auto and tele action arrays,
+    converts them to individual RobotAction records with proper start/end times.
+
+    **Request Format:**
+    ```json
+    {
+        "team_number": 254,
+        "competition_code": "2025gacmp",
+        "match_number": 1,
+        "is_playoff": false,
+        "notes": "General match notes",
+        "auto": [
+            {"duration": 2, "action": "shoot", "fuel": 2},
+            {"duration": 10, "action": "traverse", "fuel": 0}
+        ],
+        "tele": [
+            {"duration": 20, "action": "shoot", "fuel": 20},
+            {"duration": 120, "action": "traverse", "fuel": 0}
+        ]
+    }
+    ```
+
+    **Behavior:**
+    - Calculates start_time and end_time based on cumulative duration
+    - Auto period starts at 0 seconds
+    - Teleop period starts at 15 seconds (after auto)
+    - Creates individual RobotAction records for each action
+    - Prevents multiple scouts from recording the same team/match
+
+    **Returns:**
+    List of created RobotAction objects
+    """
+    from django.db import transaction
+    from ninja.errors import HttpError
+
+    competition = get_object_or_404(Competition, code=payload.competition_code)
+    match = get_object_or_404(
+        Match, competition=competition, match_number=payload.match_number
+    )
+    team = get_object_or_404(Team, number=payload.team_number)
+
+    # Get the user from the request if authenticated
+    recorded_by = request.user if request.user.is_authenticated else None
+
+    # Check if there are existing robot actions for this team and match
+    existing_actions = RobotAction.objects.filter(match=match, team=team)
+
+    if existing_actions.exists():
+        # Get the first existing action to check who recorded it
+        first_action = existing_actions.first()
+
+        # If there's a different scouter, don't allow the creation
+        if first_action.recorded_by != recorded_by:
+            raise HttpError(
+                403,
+                "This team and match combination has already been scouted by another user. "
+                "Only the original scouter can add more actions.",
+            )
+
+        # Delete existing actions to replace with new bulk upload
+        existing_actions.delete()
+
+    created_actions = []
+
+    with transaction.atomic():
+        # Process auto actions (start at 0 seconds)
+        current_time = 0.0
+        for action_item in payload.auto:
+            start_time = current_time
+            end_time = current_time + action_item.duration
+
+            robot_action = RobotAction.objects.create(
+                match=match,
+                team=team,
+                action_type=action_item.action,
+                start_time=start_time,
+                end_time=end_time,
+                is_playoff=payload.is_playoff,
+                fuel=action_item.fuel,
+                notes=payload.notes if payload.notes else None,
+                recorded_by=recorded_by,
+            )
+            created_actions.append(robot_action)
+            current_time = end_time
+
+        # Process teleop actions (start at 15 seconds - after auto period)
+        current_time = 15.0
+        for action_item in payload.tele:
+            start_time = current_time
+            end_time = current_time + action_item.duration
+
+            robot_action = RobotAction.objects.create(
+                match=match,
+                team=team,
+                action_type=action_item.action,
+                start_time=start_time,
+                end_time=end_time,
+                is_playoff=payload.is_playoff,
+                fuel=action_item.fuel,
+                notes=payload.notes if payload.notes else None,
+                recorded_by=recorded_by,
+            )
+            created_actions.append(robot_action)
+            current_time = end_time
+
+    return created_actions
 
 
 @api.get("/scary-api")

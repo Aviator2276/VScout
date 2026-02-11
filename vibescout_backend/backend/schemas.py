@@ -250,6 +250,8 @@ class RobotActionSchema(ModelSchema):
             "action_type",
             "start_time",
             "end_time",
+            "is_playoff",
+            "fuel",
             "recorded_by",
             "notes",
             "created_at",
@@ -261,3 +263,23 @@ class RobotActionCreateSchema(Schema):
     start_time: Decimal
     end_time: Decimal
     notes: Optional[str] = None
+
+
+class RobotActionItemSchema(Schema):
+    """Schema for individual action items in auto/tele arrays"""
+
+    duration: int  # Duration in seconds
+    action: str  # Action type (shoot, traverse, climb, etc.)
+    fuel: int  # Number of fuel/game pieces
+
+
+class BulkRobotActionsSchema(Schema):
+    """Schema for bulk robot action submission"""
+
+    team_number: int
+    competition_code: str
+    match_number: int
+    is_playoff: bool = False
+    notes: Optional[str] = None
+    auto: list[RobotActionItemSchema]  # List of autonomous actions
+    tele: list[RobotActionItemSchema]  # List of teleop actions
