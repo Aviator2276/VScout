@@ -14,19 +14,19 @@ os.environ["OMP_THREAD_LIMIT"] = "1"  # disable tesseracts internal threading
 # TODO: beat bryan with a rock
 # TODO: run tesseract without wrapper for significantly reduced IO overhead
 
-redX = 640
-redY = 970
-redW = 180
-redH = 100
+redX : int = 640
+redY : int = 970
+redW : int = 180
+redH : int = 100
 
-blueX = 1100
-blueY = 970
-blueW = 180
-blueH = 100
+blueX : int = 1100
+blueY : int = 970
+blueW : int = 180
+blueH : int = 100
 
-rootPath = os.path.dirname(os.path.abspath(__file__))
-videoDir = rootPath + "/matches/"
-fps = 15
+rootPath : str = os.path.dirname(os.path.abspath(__file__))
+videoDir: str = rootPath + "/matches/"
+fps : int = 15
 frame2sec = lambda frameNo, fps: frameNo / fps
 
 
@@ -41,10 +41,10 @@ def crop_video(filename):
         rootPath + "/" + filename.rsplit(".", 1)[0] + "/" + "red/", exist_ok=True
     )
 
-    contrast = 255  # all values either 255 or 0
-    sat = 0  # remove color
-    fmat = "image2"
-    pix_fmt = "yuvj420p"
+    contrast : int = 255  # all values either 255 or 0
+    sat: int = 0  # remove color
+    fmat: str = "image2"
+    pix_fmt: str = "yuvj420p"
     out = [None, None]
     expr = 'gt(p(X,Y),128)*255'
     out[0], err = (
@@ -88,8 +88,8 @@ def crop_video(filename):
     return out  # output isnt used lol
 
 
-def ocrThread(imageName, path):
-    frameNo = int(imageName[:-4:])
+def ocrThread(imageName, path) -> tuple[int,int]:
+    frameNo : int = int(imageName[:-4:])
     image = Image.open(path + "/" + imageName)
     text = re.sub(
         r"\D",
@@ -116,7 +116,7 @@ if __name__ == "__main__":
             continue
         result = crop_video(file)
         frameDir = rootPath + "/" + file.rsplit(".", 1)[0]
-        intlist = {"red": {}, "blue": {}}
+        intlist : dict[str,dict[int,int]] = {"red": {}, "blue": {}}
         redFutures = []
         blueFutures = []
         
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             print("blue OCR finished")
 
 
-            for frame in range(2,2690):
+            for frame in range(2,len(intlist['blue'].keys())-1):
                 if intlist['blue'][frame] == -1:
                     try:
                         intlist['blue'][frame] = intlist['blue'][frame-1]
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                         pass
 
 
-            for frame in range(2,2690):
+            for frame in range(2,len(intlist['red'].keys())-1):
                 if intlist['red'][frame] == -1:
                     try:
                         intlist['red'][frame] = intlist['red'][frame-1]
