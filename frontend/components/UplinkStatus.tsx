@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Pressable } from 'react-native';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import { useApp } from '@/contexts/AppContext';
 import { db } from '@/utils/db';
 import { uploadPrescout, uploadTeamPicture } from '@/api/teams';
 import { PrescoutRecord } from '@/types/record';
+import { useRecords } from '@/hooks/useRecords';
 
 interface UplinkStatusProps {
   size?: 'sm' | 'md' | 'lg';
@@ -71,52 +72,23 @@ const STATUS_CONFIG: Record<
 
 export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [uplinkState, setUplinkState] = useState<UplinkState>('idle');
-  const [pendingCount, setPendingCount] = useState(0);
-  const [uploadingCount, setUploadingCount] = useState(0);
-  const [syncedCount, setSyncedCount] = useState(0);
-  const [errorCount, setErrorCount] = useState(0);
   const [lastUploadTime, setLastUploadTime] = useState<Date | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const isProcessingRef = useRef(false);
 
   const { isOnline } = useApp();
+  const { counts } = useRecords();
 
-  const updateCounts = useCallback(async () => {
-    try {
-      const [prescoutRecords, pictureRecords] = await Promise.all([
-        db.prescoutRecords.toArray(),
-        db.pictureRecords.toArray(),
-      ]);
+  // Derive counts and state from useRecords hook
+  const { pending: pendingCount, uploading: uploadingCount, synced: syncedCount, error: errorCount } = counts;
 
-      const allRecords = [...prescoutRecords, ...pictureRecords];
-
-      setPendingCount(
-        allRecords.filter((r) => r.info.status === 'pending').length,
-      );
-      setUploadingCount(
-        allRecords.filter((r) => r.info.status === 'uploading').length,
-      );
-      setSyncedCount(
-        allRecords.filter((r) => r.info.status === 'synced').length,
-      );
-      setErrorCount(allRecords.filter((r) => r.info.status === 'error').length);
-
-      if (allRecords.some((r) => r.info.status === 'uploading')) {
-        setUplinkState('uploading');
-      } else if (allRecords.some((r) => r.info.status === 'error')) {
-        setUplinkState('error');
-      } else if (allRecords.some((r) => r.info.status === 'pending')) {
-        setUplinkState('idle');
-      } else if (allRecords.length > 0) {
-        setUplinkState('success');
-      } else {
-        setUplinkState('idle');
-      }
-    } catch (error) {
-      console.error('Failed to update record counts:', error);
-    }
-  }, []);
+  const uplinkState = useMemo((): UplinkState => {
+    if (uploadingCount > 0) return 'uploading';
+    if (errorCount > 0) return 'error';
+    if (pendingCount > 0) return 'idle';
+    if (syncedCount > 0) return 'success';
+    return 'idle';
+  }, [pendingCount, uploadingCount, syncedCount, errorCount]);
 
   const processUploadQueue = useCallback(async () => {
     if (!isOnline || isProcessingRef.current) return;
@@ -141,8 +113,6 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
               last_retry: Date.now(),
             },
           });
-          await updateCounts();
-
           // Upload to server
           await uploadPrescout(record.team.number, {
             prescout_drivetrain: record.prescout_drivetrain,
@@ -188,8 +158,6 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
               last_retry: Date.now(),
             },
           });
-          await updateCounts();
-
           // Upload picture to server
           await uploadTeamPicture(record.team.number, record.picture);
 
@@ -209,24 +177,18 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
         }
       }
 
-      await updateCounts();
     } finally {
       isProcessingRef.current = false;
       setIsProcessing(false);
     }
-  }, [isOnline, updateCounts]);
+  }, [isOnline]);
 
-  // Initial count update and periodic polling for status updates
+  const { registerUploadHandler } = useApp();
+
+  // Register upload handler with context so other components can trigger uploads
   useEffect(() => {
-    updateCounts();
-
-    // Poll for count updates every 2 seconds to keep UI in sync
-    const countInterval = setInterval(() => {
-      updateCounts();
-    }, 2000);
-
-    return () => clearInterval(countInterval);
-  }, [updateCounts]);
+    registerUploadHandler(processUploadQueue);
+  }, [registerUploadHandler, processUploadQueue]);
 
   // Periodic upload processing (every 30 seconds)
   useEffect(() => {
@@ -271,7 +233,6 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
       });
     }
 
-    await updateCounts();
     await processUploadQueue();
   };
 

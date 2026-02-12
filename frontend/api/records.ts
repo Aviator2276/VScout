@@ -9,7 +9,6 @@ export interface UnifiedRecord {
   status: string;
   created_at: number;
   last_retry: number;
-  archived: boolean;
   competitionCode: string;
   teamNumber: number;
   teamName: string;
@@ -31,9 +30,9 @@ function getStatusPriority(status: string): number {
 
 export async function getAllRecords(): Promise<UnifiedRecord[]> {
   const [matchRecords, prescoutRecords, pictureRecords] = await Promise.all([
-    db.matchRecords.filter((r) => !r.info.archived).toArray(),
-    db.prescoutRecords.filter((r) => !r.info.archived).toArray(),
-    db.pictureRecords.filter((r) => !r.info.archived).toArray(),
+    db.matchRecords.toArray(),
+    db.prescoutRecords.toArray(),
+    db.pictureRecords.toArray(),
   ]);
 
   const unifiedRecords: UnifiedRecord[] = [];
@@ -45,7 +44,6 @@ export async function getAllRecords(): Promise<UnifiedRecord[]> {
       status: record.info.status,
       created_at: record.info.created_at,
       last_retry: record.info.last_retry,
-      archived: record.info.archived,
       competitionCode: record.info.competitionCode,
       teamNumber: record.team.number,
       teamName: record.team.name,
@@ -60,7 +58,6 @@ export async function getAllRecords(): Promise<UnifiedRecord[]> {
       status: record.info.status,
       created_at: record.info.created_at,
       last_retry: record.info.last_retry,
-      archived: record.info.archived,
       competitionCode: record.info.competitionCode,
       teamNumber: record.team.number,
       teamName: record.team.name,
@@ -75,7 +72,6 @@ export async function getAllRecords(): Promise<UnifiedRecord[]> {
       status: record.info.status,
       created_at: record.info.created_at,
       last_retry: record.info.last_retry,
-      archived: record.info.archived,
       competitionCode: record.info.competitionCode,
       teamNumber: record.team.number,
       teamName: record.team.name,
@@ -94,21 +90,38 @@ export async function getAllRecords(): Promise<UnifiedRecord[]> {
   return unifiedRecords;
 }
 
-export async function archiveRecord(record: UnifiedRecord): Promise<void> {
-  const updatedData = {
-    ...record.data,
-    info: { ...record.data.info, archived: true },
-  };
-
+export async function deleteRecord(record: UnifiedRecord): Promise<void> {
+  const data = record.data;
   switch (record.type) {
-    case 'match':
-      await db.matchRecords.put(updatedData as MatchRecord);
+    case 'match': {
+      const matchData = data as MatchRecord;
+      await db.matchRecords
+        .where('[info.competitionCode+match_type+set_number+match_number+team.number]')
+        .equals([
+          matchData.info.competitionCode,
+          matchData.match_type,
+          matchData.set_number,
+          matchData.match_number,
+          matchData.team.number,
+        ])
+        .delete();
       break;
-    case 'prescout':
-      await db.prescoutRecords.put(updatedData as PrescoutRecord);
+    }
+    case 'prescout': {
+      const prescoutData = data as PrescoutRecord;
+      await db.prescoutRecords
+        .where('[info.competitionCode+team.number]')
+        .equals([prescoutData.info.competitionCode, prescoutData.team.number])
+        .delete();
       break;
-    case 'picture':
-      await db.pictureRecords.put(updatedData as PictureRecord);
+    }
+    case 'picture': {
+      const pictureData = data as PictureRecord;
+      await db.pictureRecords
+        .where('[info.competitionCode+team.number]')
+        .equals([pictureData.info.competitionCode, pictureData.team.number])
+        .delete();
       break;
+    }
   }
 }

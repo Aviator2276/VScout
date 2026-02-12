@@ -36,9 +36,9 @@ class IndexDb extends Dexie {
       matchRecords:
         '[info.competitionCode+match_type+set_number+match_number+team.number]',
       prescoutRecords:
-        '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, info.archived, team.number, team.name',
+        '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
       pictureRecords:
-        '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, info.archived, team.number, team.name',
+        '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
     });
   }
 }

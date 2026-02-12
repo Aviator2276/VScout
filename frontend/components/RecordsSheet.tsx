@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Text } from '@/components/ui/text';
 import { Box } from '@/components/ui/box';
 import { Heading } from '@/components/ui/heading';
-import { ActivityIndicator, FlatList } from 'react-native';
-import { Center } from '@/components/ui/center';
+import { FlatList, Pressable } from 'react-native';
 import { cssInterop } from 'nativewind';
-import { getAllRecords, UnifiedRecord, archiveRecord } from '@/api/records';
+import { deleteRecord } from '@/api/records';
+import { db } from '@/utils/db';
+import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
+import { useApp } from '@/contexts/AppContext';
 import { Button, ButtonText } from '@/components/ui/button';
 import {
   Actionsheet,
@@ -15,6 +17,8 @@ import {
   ActionsheetDragIndicatorWrapper,
 } from '@/components/ui/actionsheet';
 import { RecordCard } from '@/components/RecordCard';
+import { RecordDetailModal } from '@/components/RecordDetailModal';
+import { useRecords, UnifiedRecord } from '@/hooks/useRecords';
 
 cssInterop(FlatList, {
   className: {
@@ -28,62 +32,69 @@ interface RecordsSheetProps {
 }
 
 export function RecordsSheet({ isOpen, onClose }: RecordsSheetProps) {
-  const [records, setRecords] = useState<UnifiedRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+  const [selectedRecord, setSelectedRecord] = useState<UnifiedRecord | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const { triggerUpload } = useApp();
+  const { records, isLoading } = useRecords();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadRecords();
-      // Start polling when sheet opens
-      pollingIntervalRef.current = setInterval(async () => {
-        try {
-          const data = await getAllRecords();
-          setRecords(data);
-        } catch (err) {
-          console.error('Failed to refresh records:', err);
-        }
-      }, 2000);
-    } else {
-      // Stop polling when sheet closes
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    }
+  function handleRecordPress(record: UnifiedRecord) {
+    setSelectedRecord(record);
+    setIsDetailModalOpen(true);
+  }
 
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-  }, [isOpen]);
+  function handleDetailModalClose() {
+    setIsDetailModalOpen(false);
+    setSelectedRecord(null);
+  }
 
-  async function loadRecords() {
+  async function handleDelete(record: UnifiedRecord) {
     try {
-      setLoading(true);
-      setError(null);
-      const data = await getAllRecords();
-      setRecords(data);
+      await deleteRecord(record);
     } catch (err) {
-      console.error('Failed to load records:', err);
-      setError('Failed to load records');
-    } finally {
-      setLoading(false);
+      console.error('Failed to delete record:', err);
     }
   }
 
-  async function handleArchive(record: UnifiedRecord) {
+  async function handleRetry(record: UnifiedRecord) {
     try {
-      await archiveRecord(record);
-      const data = await getAllRecords();
-      setRecords(data);
+      const data = record.data;
+      const updatedInfo = {
+        ...data.info,
+        status: 'pending',
+        last_retry: Date.now(),
+      };
+
+      switch (record.type) {
+        case 'match': {
+          const matchData = data as MatchRecord;
+          await db.matchRecords.put({
+            ...matchData,
+            info: updatedInfo,
+          });
+          break;
+        }
+        case 'prescout': {
+          const prescoutData = data as PrescoutRecord;
+          await db.prescoutRecords.put({
+            ...prescoutData,
+            info: updatedInfo,
+          });
+          break;
+        }
+        case 'picture': {
+          const pictureData = data as PictureRecord;
+          await db.pictureRecords.put({
+            ...pictureData,
+            info: updatedInfo,
+          });
+          break;
+        }
+      }
+
+      // Trigger upload immediately
+      triggerUpload();
     } catch (err) {
-      console.error('Failed to archive record:', err);
+      console.error('Failed to retry record:', err);
     }
   }
 
@@ -98,21 +109,23 @@ export function RecordsSheet({ isOpen, onClose }: RecordsSheetProps) {
           <Heading size='lg' className='text-center mb-4 mt-2'>
             Uploaded Records
           </Heading>
-          {loading ? (
-            <Center className='flex-1 px-4'>
-              <ActivityIndicator size='large' />
-            </Center>
-          ) : error ? (
-            <Center className='flex-1 px-4'>
-              <Text className='text-center text-error-500 p-4'>{error}</Text>
-            </Center>
+          {isLoading ? (
+            <Box className='flex-1 items-center justify-center px-4'>
+              <Text className='text-typography-500'>Loading...</Text>
+            </Box>
           ) : (
             <FlatList
               className='flex-1'
               data={records}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <RecordCard record={item} onArchive={handleArchive} />
+                <Pressable onPress={() => handleRecordPress(item)}>
+                  <RecordCard
+                    record={item}
+                    onDelete={handleDelete}
+                    onRetry={handleRetry}
+                  />
+                </Pressable>
               )}
               ListEmptyComponent={() => (
                 <Text className='text-center text-typography-500 mt-8'>
@@ -131,6 +144,12 @@ export function RecordsSheet({ isOpen, onClose }: RecordsSheetProps) {
           </Button>
         </Box>
       </ActionsheetContent>
+      <RecordDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailModalClose}
+        record={selectedRecord}
+        onRecordUpdated={() => {}}
+      />
     </Actionsheet>
   );
 }

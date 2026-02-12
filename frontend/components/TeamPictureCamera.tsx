@@ -55,7 +55,6 @@ export function TeamPictureCamera({
           competitionCode,
           created_at: now,
           last_retry: now,
-          archived: false,
         },
         team: {
           number: teamNumber,

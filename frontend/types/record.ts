@@ -5,7 +5,6 @@ export interface RecordInfo {
   competitionCode: string;
   created_at: number;
   last_retry: number;
-  archived: boolean;
 }
 
 export interface MatchRecord {

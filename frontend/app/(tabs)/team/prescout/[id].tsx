@@ -145,7 +145,6 @@ export default function PrescoutFormScreen() {
           competitionCode: competitionCode || '',
           created_at: now,
           last_retry: now,
-          archived: false,
         },
         team: {
           number: teamNumber,

@@ -3,6 +3,8 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
+  useCallback,
   ReactNode,
 } from 'react';
 import { db } from '@/utils/db';
@@ -37,6 +39,9 @@ interface AppContextType {
   dataFreshnessStatus: DataFreshnessStatus;
   forceDataRefresh: () => Promise<void>;
   isRefreshingData: boolean;
+  // Upload trigger
+  triggerUpload: () => void;
+  registerUploadHandler: (handler: () => void) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dataRefreshTimerId, setDataRefreshTimerId] = useState<number | null>(
     null,
   );
+  const uploadHandlerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     loadCompetitionCode();
@@ -300,6 +306,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await performDataRefresh();
   }
 
+  const triggerUpload = useCallback(() => {
+    if (uploadHandlerRef.current) {
+      uploadHandlerRef.current();
+    }
+  }, []);
+
+  const registerUploadHandler = useCallback((handler: () => void) => {
+    uploadHandlerRef.current = handler;
+  }, []);
+
   async function setCompetitionCode(code: string) {
     try {
       await db.config.put({ key: 'compCode', value: code });
@@ -380,6 +396,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dataFreshnessStatus,
         forceDataRefresh,
         isRefreshingData,
+        triggerUpload,
+        registerUploadHandler,
       }}
     >
       {children}

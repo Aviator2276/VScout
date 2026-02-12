@@ -4,46 +4,28 @@ import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
 import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Pressable, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, View } from 'react-native';
 import {
   Bolt,
   NotebookTabs,
   NotepadText,
-  Scale,
-  WandSparkles,
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Header } from '@/components/Header';
 import { RecordsSheet } from '@/components/RecordsSheet';
 import { RecordCard } from '@/components/RecordCard';
-import { useState, useCallback } from 'react';
-import { getAllRecords, UnifiedRecord } from '@/api/records';
+import { useState, useMemo } from 'react';
 import { Text } from '@/components/ui/text';
+import { useRecords } from '@/hooks/useRecords';
 
 export default function HomeScreen() {
   const [showRecords, setShowRecords] = useState(false);
-  const [latestRecord, setLatestRecord] = useState<UnifiedRecord | null>(null);
   const router = useRouter();
+  const { records } = useRecords();
 
-  useFocusEffect(
-    useCallback(() => {
-      loadLatestRecord();
-    }, []),
-  );
-
-  async function loadLatestRecord() {
-    try {
-      const records = await getAllRecords();
-      if (records.length > 0) {
-        setLatestRecord(records[0]);
-      } else {
-        setLatestRecord(null);
-      }
-    } catch (err) {
-      console.error('Failed to load latest record:', err);
-    }
-  }
+  // Get the latest 3 records
+  const latestRecords = useMemo(() => records.slice(0, 3), [records]);
 
   return (
     <AdaptiveSafeArea>
@@ -79,8 +61,23 @@ export default function HomeScreen() {
                     <Heading size='md'>Latest Uploads</Heading>
                     <Icon as={NotepadText} size='md' />
                   </HStack>
-                  {latestRecord ? (
-                    <RecordCard record={latestRecord} compact />
+                  {latestRecords.length > 0 ? (
+                    <View className='relative'>
+                      {latestRecords.map((record, index) => (
+                        <View
+                          key={record.id}
+                          style={
+                            index === latestRecords.length - 1 &&
+                            latestRecords.length === 3
+                              ? { opacity: 0.4 }
+                              : undefined
+                          }
+                          className='only:mb-0 mb-2'
+                        >
+                          <RecordCard record={record} compact />
+                        </View>
+                      ))}
+                    </View>
                   ) : (
                     <Text className='text-typography-500 text-xs'>
                       No records yet
