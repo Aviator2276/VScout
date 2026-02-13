@@ -130,6 +130,54 @@ def update_prescouting(
     return TeamInfoSchema.from_orm(team_info)
 
 
+@api.get("/team-info/picture/sync")
+def sync_team_picture(request, competition_code: str, team_number: int):
+    """
+    Get a hash of the robot picture for a team at a competition.
+
+    This endpoint returns a hash to detect if the picture has changed,
+    useful for sync detection without downloading the entire image.
+
+    **Query Parameters:**
+    - `competition_code`: Competition code (e.g., "2025gacmp")
+    - `team_number`: Team number (e.g., 254)
+
+    **Returns:**
+    ```json
+    {
+        "hash": "abc123...",
+        "has_picture": true
+    }
+    ```
+
+    If no picture exists, returns:
+    ```json
+    {
+        "hash": null,
+        "has_picture": false
+    }
+    ```
+    """
+    competition = get_object_or_404(Competition, code=competition_code)
+    team = get_object_or_404(Team, number=team_number)
+    team_info = get_object_or_404(TeamInfo, team=team, competition=competition)
+
+    if team_info.picture:
+        # Generate SHA256 hash of the picture data
+        hash_object = hashlib.sha256(team_info.picture.encode())
+        picture_hash = hash_object.hexdigest()
+
+        return {
+            "hash": picture_hash,
+            "has_picture": True,
+        }
+    else:
+        return {
+            "hash": None,
+            "has_picture": False,
+        }
+
+
 @api.post("/team-info/picture")
 def upload_team_picture(request, competition_code: str, team_number: int):
     """
