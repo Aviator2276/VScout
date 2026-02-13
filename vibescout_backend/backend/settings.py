@@ -161,13 +161,56 @@ CORS_ALLOW_CREDENTIALS = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Logging Configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "backend.tasks": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "backend.schedule_setup": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
 # Django Q2 Configuration
+# BACKGROUND_DEV determines if tasks run asynchronously (False/prod) or synchronously (True/dev)
+# When True (dev mode), tasks run immediately in the same process without needing qcluster
+# When False (prod mode), tasks are queued and require running `python manage.py qcluster`
+BACKGROUND_DEV = os.getenv("BACKGROUND_DEV", "true").lower() == "true"
+
 Q_CLUSTER = {
     "name": "VibeScout",
-    "workers": 4,  # Number of worker processes
+    "workers": int(os.getenv("DJANGO_Q_WORKERS", "4")),  # Number of worker processes
     "recycle": 500,  # Recycle worker after this many tasks
-    "timeout": 300,  # Task timeout in seconds (5 minutes)
-    "retry": 360,  # Retry failed tasks after this many seconds (6 minutes)
+    "timeout": int(
+        os.getenv("DJANGO_Q_TIMEOUT", "300")
+    ),  # Task timeout in seconds (5 minutes)
+    "retry": int(
+        os.getenv("DJANGO_Q_RETRY", "360")
+    ),  # Retry failed tasks after this many seconds (6 minutes)
     "queue_limit": 50,  # Maximum tasks in queue
     "bulk": 10,  # Number of tasks to process in bulk
     "orm": "default",  # Use default database for task storage
@@ -175,5 +218,5 @@ Q_CLUSTER = {
     "ack_failures": True,  # Acknowledge failed tasks
     "max_attempts": 1,  # Number of retry attempts for failed tasks
     "cached": False,  # Don't use cache for broker (using ORM)
-    "sync": False,  # Run tasks asynchronously (set to True for testing/debugging)
+    "sync": BACKGROUND_DEV,  # Run tasks synchronously in dev, asynchronously in prod
 }

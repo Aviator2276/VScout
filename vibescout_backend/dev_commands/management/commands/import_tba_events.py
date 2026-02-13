@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
-from backend.models import Competition, Team, TeamInfo
+from backend.models import Competition, Match, Team, TeamInfo
 from backend.utils.match_utils import import_match_from_dict
 
 
