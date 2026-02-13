@@ -19,6 +19,7 @@ from .schemas import (
     RobotActionCreateSchema,
     RobotActionSchema,
     TeamInfoSchema,
+    TeamInfoWithoutPictureSchema,
     TeamSchema,
 )
 
@@ -263,10 +264,11 @@ def get_competition_teams(request, code: str):
     )
 
 
-@api.get("/competitions/{code}/team-info", response=List[TeamInfoSchema])
+@api.get("/competitions/{code}/team-info", response=List[TeamInfoWithoutPictureSchema])
 def get_competition_team_info(request, code: str):
     """
     Get all teams' full information for a competition including rankings, stats, and prescout data.
+    Note: Pictures are excluded from this endpoint to reduce response size. Use the picture sync endpoint to check for pictures.
     """
     competition = get_object_or_404(Competition, code=code)
     queryset = (
@@ -274,7 +276,7 @@ def get_competition_team_info(request, code: str):
         .filter(competition=competition)
         .order_by("rank")
     )
-    return [TeamInfoSchema.from_orm(obj) for obj in queryset]
+    return [TeamInfoWithoutPictureSchema.from_orm(obj) for obj in queryset]
 
 
 @api.get("/competitions/{code}/matches", response=List[MatchSchema])

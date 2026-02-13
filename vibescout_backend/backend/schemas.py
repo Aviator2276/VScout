@@ -91,6 +91,72 @@ class TeamInfoSchema(Schema):
         )
 
 
+class TeamInfoWithoutPictureSchema(Schema):
+    """TeamInfo schema without picture field for bulk queries"""
+
+    rank: Optional[int] = None
+    ranking_points: Decimal
+    tie: int
+    win: int
+    lose: int
+    team_number: int
+    competition: CompetitionSchema
+
+    # Prescout fields (without picture)
+    prescout_drivetrain: Optional[str] = None
+    prescout_hopper_size: Optional[int] = None
+    prescout_intake_type: Optional[str] = None
+    prescout_rotate_yaw: bool
+    prescout_rotate_pitch: bool
+    prescout_range: Optional[str] = None
+    prescout_driver_years: Optional[int] = None
+    prescout_additional_comments: Optional[str] = None
+
+    # Stats fields
+    accuracy: Optional[Decimal] = None
+    avg_fuel_scored: Optional[Decimal] = None
+    avg_shuttle: Optional[Decimal] = None
+    avg_auto_fuel: Optional[Decimal] = None
+    avg_climb_points: Optional[Decimal] = None
+
+    # Advanced stats
+    avg_auto_fuel_sd: Optional[Decimal] = None
+    avg_fuel_sd: Optional[Decimal] = None
+    avg_climb_points_sd: Optional[Decimal] = None
+    avg_points_contributed: Optional[Decimal] = None
+    consistency_rating: Optional[Decimal] = None
+
+    @staticmethod
+    def from_orm(obj):
+        return TeamInfoWithoutPictureSchema(
+            rank=obj.rank,
+            ranking_points=obj.ranking_points,
+            tie=obj.tie,
+            win=obj.win,
+            lose=obj.lose,
+            team_number=obj.team.number,
+            competition=CompetitionSchema.from_orm(obj.competition),
+            prescout_drivetrain=obj.prescout_drivetrain,
+            prescout_hopper_size=obj.prescout_hopper_size,
+            prescout_intake_type=obj.prescout_intake_type,
+            prescout_rotate_yaw=obj.prescout_rotate_yaw,
+            prescout_rotate_pitch=obj.prescout_rotate_pitch,
+            prescout_range=obj.prescout_range,
+            prescout_driver_years=obj.prescout_driver_years,
+            prescout_additional_comments=obj.prescout_additional_comments,
+            accuracy=obj.accuracy,
+            avg_fuel_scored=obj.avg_fuel_scored,
+            avg_shuttle=obj.avg_shuttle,
+            avg_auto_fuel=obj.avg_auto_fuel,
+            avg_climb_points=obj.avg_climb_points,
+            avg_auto_fuel_sd=obj.avg_auto_fuel_sd,
+            avg_fuel_sd=obj.avg_fuel_sd,
+            avg_climb_points_sd=obj.avg_climb_points_sd,
+            avg_points_contributed=obj.avg_points_contributed,
+            consistency_rating=obj.consistency_rating,
+        )
+
+
 class PrescouttingUpdateSchema(Schema):
     prescout_drivetrain: Optional[str] = None
     prescout_hopper_size: Optional[int] = None
