@@ -196,7 +196,6 @@ def upload_team_picture(request, competition_code: str, team_number: int):
 
     return {
         "success": True,
-        "picture_url": team_info.picture,
     }
 
 
