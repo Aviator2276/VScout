@@ -73,7 +73,7 @@ def get_competition(request, code: str):
     return get_object_or_404(Competition, code=code)
 
 
-@api.get("/team-info", response=List[TeamInfoSchema])
+@api.get("/team-info", response=List[TeamInfoWithoutPictureSchema])
 def list_team_info(request, competition_code: str, team_number: int = None):
     competition = get_object_or_404(Competition, code=competition_code)
     queryset = TeamInfo.objects.select_related("team", "competition").filter(
@@ -82,7 +82,7 @@ def list_team_info(request, competition_code: str, team_number: int = None):
     if team_number:
         team = get_object_or_404(Team, number=team_number)
         queryset = queryset.filter(team=team)
-    return [TeamInfoSchema.from_orm(obj) for obj in queryset]
+    return [TeamInfoWithoutPictureSchema.from_orm(obj) for obj in queryset]
 
 
 @api.patch("/team-info/prescouting", response=TeamInfoSchema)
@@ -129,6 +129,40 @@ def update_prescouting(
 
     team_info.save()
     return TeamInfoSchema.from_orm(team_info)
+
+
+@api.get("/team-info/picture")
+def get_team_picture(request, competition_code: str, team_number: int):
+    """
+    Get the robot picture for a team at a competition.
+
+    Returns the base64-encoded picture data URI that can be used directly in img src attributes.
+
+    **Query Parameters:**
+    - `competition_code`: Competition code (e.g., "2025gacmp")
+    - `team_number`: Team number (e.g., 254)
+
+    **Returns:**
+    ```json
+    {
+        "picture": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAA..."
+    }
+    ```
+
+    If no picture exists, returns:
+    ```json
+    {
+        "picture": null
+    }
+    ```
+    """
+    competition = get_object_or_404(Competition, code=competition_code)
+    team = get_object_or_404(Team, number=team_number)
+    team_info = get_object_or_404(TeamInfo, team=team, competition=competition)
+
+    return {
+        "picture": team_info.picture if team_info.picture else None,
+    }
 
 
 @api.get("/team-info/picture/sync")
