@@ -249,3 +249,59 @@ def cleanup_old_tasks() -> dict:
         "successful_tasks_deleted": success_deleted[0],
         "failed_tasks_deleted": failure_deleted[0],
     }
+
+
+def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
+    """
+    Background task to download a match video from YouTube stream.
+
+    This task is queued automatically when a match's has_played status changes to True.
+
+    Args:
+        match_id: Primary key of the Match to download video for
+        buffer: Buffer time in seconds before/after match (default: 30)
+
+    Returns:
+        dict with download status
+    """
+    from .models import Match
+    from .utils.video_downloader import download_match_video
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        logger.error(f"Match with id {match_id} not found")
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    logger.info(
+        f"Starting video download for match {match.match_number} "
+        f"({match.competition.code})"
+    )
+
+    # Download the video
+    success = download_match_video(match, buffer=buffer)
+
+    if success:
+        logger.info(
+            f"Successfully downloaded video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": True,
+            "message": f"Downloaded video for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }
+    else:
+        logger.warning(
+            f"Failed to download video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": False,
+            "error": f"Video download failed for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }

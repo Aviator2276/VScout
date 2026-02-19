@@ -1,5 +1,9 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.db import models
+
+logger = logging.getLogger(__name__)
 
 
 class Team(models.Model):
@@ -254,6 +258,69 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match {self.match_number} - {self.competition.name}"
+
+    def save(self, *args, **kwargs):
+        """Override save to trigger video download when match has_played changes to True"""
+        # Track if has_played just changed to True
+        should_download_video = False
+
+        if self.pk:
+            # If updating existing match, check if has_played changed from False to True
+            try:
+                old_match = Match.objects.get(pk=self.pk)
+                if not old_match.has_played and self.has_played:
+                    should_download_video = True
+                    logger.info(
+                        f"Match {self.match_number} ({self.competition.code}) "
+                        f"has_played changed from False to True"
+                    )
+            except Match.DoesNotExist:
+                pass
+        else:
+            # New match that's already played
+            if self.has_played:
+                should_download_video = True
+                logger.info(
+                    f"New match {self.match_number} ({self.competition.code}) "
+                    f"created with has_played=True"
+                )
+
+        # Save the match first
+        super().save(*args, **kwargs)
+
+        # Queue video download task if conditions are met
+        if should_download_video:
+            # Check if competition has any stream links configured
+            has_stream = any(
+                [
+                    self.competition.stream_link_day_1,
+                    self.competition.stream_link_day_2,
+                    self.competition.stream_link_day_3,
+                ]
+            )
+
+            if has_stream:
+                # Queue background task to download video
+                from django_q.tasks import async_task
+
+                task_name = (
+                    f"download_video_match_{self.match_number}_{self.competition.code}"
+                )
+                logger.info(
+                    f"Queueing video download task for match {self.match_number} "
+                    f"({self.competition.code}): {task_name}"
+                )
+
+                async_task(
+                    "backend.tasks.download_match_video_task",
+                    self.pk,
+                    task_name=task_name,
+                )
+            else:
+                logger.debug(
+                    f"No stream links configured for competition {self.competition.code}, "
+                    f"skipping video download for match {self.match_number}"
+                )
 
     class Meta:
         ordering = ["-id"]

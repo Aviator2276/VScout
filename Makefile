@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser
 
 init:
 	@echo "Installing backend dependencies..."
@@ -6,6 +6,11 @@ init:
 	@echo "Installing frontend dependencies..."
 	cd frontend && npm install
 	@echo "Dependencies installed successfully!"
+
+createsuperuser:
+	@echo "Creating admin user (username: admin, password: admin)..."
+	cd vibescout_backend && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | uv run python manage.py shell
+	@echo "Admin user created successfully!"
 
 backend:
 	cd vibescout_backend && uv run python manage.py runserver

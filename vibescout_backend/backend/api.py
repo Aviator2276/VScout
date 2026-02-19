@@ -166,51 +166,61 @@ def get_team_picture(request, competition_code: str, team_number: int):
 
 
 @api.get("/team-info/picture/sync")
-def sync_team_picture(request, competition_code: str, team_number: int):
+def sync_team_picture(request, competition_code: str):
     """
-    Get a hash of the robot picture for a team at a competition.
+    Get hashes of all robot pictures for a competition.
 
-    This endpoint returns a hash to detect if the picture has changed,
-    useful for sync detection without downloading the entire image.
+    This endpoint returns hashes for all teams at a competition to detect if pictures have changed,
+    useful for sync detection without downloading the entire images.
 
     **Query Parameters:**
     - `competition_code`: Competition code (e.g., "2025gacmp")
-    - `team_number`: Team number (e.g., 254)
 
     **Returns:**
     ```json
     {
-        "hash": "abc123...",
-        "has_picture": true
-    }
-    ```
-
-    If no picture exists, returns:
-    ```json
-    {
-        "hash": null,
-        "has_picture": false
+        "teams": {
+            "254": {
+                "hash": "abc123...",
+                "has_picture": true
+            },
+            "1323": {
+                "hash": "def456...",
+                "has_picture": true
+            },
+            "9999": {
+                "hash": null,
+                "has_picture": false
+            }
+        }
     }
     ```
     """
     competition = get_object_or_404(Competition, code=competition_code)
-    team = get_object_or_404(Team, number=team_number)
-    team_info = get_object_or_404(TeamInfo, team=team, competition=competition)
 
-    if team_info.picture:
-        # Generate SHA256 hash of the picture data
-        hash_object = hashlib.sha256(team_info.picture.encode())
-        picture_hash = hash_object.hexdigest()
+    # Get all team info for this competition
+    team_infos = TeamInfo.objects.select_related("team").filter(competition=competition)
 
-        return {
-            "hash": picture_hash,
-            "has_picture": True,
-        }
-    else:
-        return {
-            "hash": None,
-            "has_picture": False,
-        }
+    teams_data = {}
+    for team_info in team_infos:
+        team_number = str(team_info.team.number)
+
+        if team_info.picture:
+            # Generate SHA256 hash of the picture data
+            hash_object = hashlib.sha256(team_info.picture.encode())
+            picture_hash = hash_object.hexdigest()
+
+            teams_data[team_number] = {
+                "hash": picture_hash,
+                "has_picture": True,
+            }
+        else:
+            teams_data[team_number] = {
+                "hash": None,
+                "has_picture": False,
+            }
+
+    return {"teams": teams_data}
 
 
 @api.post("/team-info/picture")
