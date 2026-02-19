@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import {
+  Actionsheet,
+  ActionsheetBackdrop,
+  ActionsheetContent,
+  ActionsheetDragIndicator,
+  ActionsheetDragIndicatorWrapper,
+} from '@/components/ui/actionsheet';
+import { Switch } from '@/components/ui/switch';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -25,6 +33,15 @@ import {
 } from '@/components/ui/table';
 import { calculateAllianceClimbPoints } from '@/utils/climbPoints';
 import { MatchTeamCard } from '@/components/MatchTeamCard';
+import {
+  Popover,
+  PopoverArrow,
+  PopoverBackdrop,
+  PopoverBody,
+  PopoverContent,
+} from '@/components/ui/popover';
+import { TriangleAlert } from 'lucide-react-native';
+import { Icon } from '@/components/ui/icon';
 
 type TabType = 'overview' | 'scores';
 
@@ -35,6 +52,11 @@ export default function MatchDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
+  const [isLiveMode, setIsLiveMode] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+
+  const speedOptions = [1, 1.25, 1.5, 1.75, 2];
 
   useEffect(() => {
     loadMatchDetails();
@@ -123,105 +145,309 @@ export default function MatchDetailScreen() {
         />
 
         <ScrollView className='flex-1 px-4 pb-4'>
-          <>
-            {/* Match Info */}
-            <Card variant='outline' className='p-4 mb-2'>
-              <VStack space='md'>
-                <Heading size='2xl' className='capitalize'>
-                  {match.match_type} Match #{match.match_number}
+          <Card variant='outline' className='p-4 mb-2 aspect-video'>
+            <Center>
+              <Text>Video Here</Text>
+            </Center>
+          </Card>
+          {/* Match Info */}
+          <Card variant='outline' className='p-2 mb-2'>
+            <VStack space='md'>
+              <Heading size='2xl' className='capitalize'>
+                {match.match_type} #{match.match_number}
+              </Heading>
+              <VStack space='xs'>
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Set Number:</Text>
+                  <Text className='font-semibold'>{match.set_number}</Text>
+                </HStack>
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Competition:</Text>
+                  <Text className='font-semibold'>
+                    {match.competition.code}
+                  </Text>
+                </HStack>
+                <HStack className='justify-between'>
+                  <Text className='text-typography-700'>Start Time:</Text>
+                  <Badge
+                    size='sm'
+                    variant='solid'
+                    action={match.has_played ? 'success' : 'muted'}
+                  >
+                    <BadgeText>
+                      {match.has_played
+                        ? 'Done'
+                        : match.predicted_match_time
+                          ? formatMatchTime(match.predicted_match_time)
+                          : match.start_match_time
+                            ? formatMatchTime(match.start_match_time)
+                            : 'TBD'}
+                    </BadgeText>
+                  </Badge>
+                </HStack>
+              </VStack>
+            </VStack>
+            <HStack space='xs' className='w-full'>
+              <VStack space='xs' className='w-full'>
+                <Text className='font-semibold text-center text-blue-500'>
+                  Blue Alliance
+                </Text>
+                {blueTeams.map((team, index) => (
+                  <Pressable
+                    key={`blue-${index}`}
+                    onPress={() =>
+                      router.push(
+                        `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                      )
+                    }
+                  >
+                    <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
+                      <Text className='col-span-1 font-medium'>
+                        {team.number}
+                      </Text>
+                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                        {team.name}
+                      </Text>
+                    </HStack>
+                  </Pressable>
+                ))}
+              </VStack>
+              <VStack space='xs' className='w-full'>
+                <Text className='font-semibold text-center text-red-500'>
+                  Red Alliance
+                </Text>
+                {redTeams.map((team, index) => (
+                  <Pressable
+                    key={`red-${index}`}
+                    onPress={() =>
+                      router.push(
+                        `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                      )
+                    }
+                  >
+                    <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
+                      <Text className='col-span-1 font-medium'>
+                        {team.number}
+                      </Text>
+                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                        {team.name}
+                      </Text>
+                    </HStack>
+                  </Pressable>
+                ))}
+              </VStack>
+            </HStack>
+          </Card>
+
+          {/* Scout Button */}
+          <Button
+            size='lg'
+            action='primary'
+            className='mb-2'
+            onPress={() => setIsScoutSheetOpen(true)}
+          >
+            <ButtonText>Scout Match</ButtonText>
+          </Button>
+
+          {/* Scout Match Actionsheet */}
+          <Actionsheet
+            isOpen={isScoutSheetOpen}
+            onClose={() => setIsScoutSheetOpen(false)}
+          >
+            <ActionsheetBackdrop />
+            <ActionsheetContent className='p-4'>
+              <ActionsheetDragIndicatorWrapper>
+                <ActionsheetDragIndicator />
+              </ActionsheetDragIndicatorWrapper>
+              <VStack space='lg' className='w-full max-w-md self-center py-4'>
+                <Heading size='xl' className='text-center capitalize'>
+                  Scout {match.match_type} {match.match_number}
                 </Heading>
-                <VStack space='xs'>
-                  <HStack className='justify-between'>
-                    <Text className='text-typography-700'>Set Number:</Text>
-                    <Text className='font-semibold'>{match.set_number}</Text>
-                  </HStack>
-                  <HStack className='justify-between'>
-                    <Text className='text-typography-700'>Competition:</Text>
-                    <Text className='font-semibold'>
-                      {match.competition.code}
+                <Card variant='outline' className='p-4 border-warning-500'>
+                  <HStack className='items-center justify-between gap-2'>
+                    <Icon
+                      as={TriangleAlert}
+                      size='lg'
+                      className='w-12 text-warning-500'
+                    />
+                    <Text className='text-warning-500'>
+                      Match timer will start immediately after clicking start.
                     </Text>
                   </HStack>
-                  <HStack className='justify-between'>
-                    <Text className='text-typography-700'>Start Time:</Text>
-                    <Badge
-                      size='sm'
-                      variant='solid'
-                      action={match.has_played ? 'success' : 'muted'}
-                    >
-                      <BadgeText>
-                        {match.has_played
-                          ? 'Done'
-                          : match.predicted_match_time
-                            ? formatMatchTime(match.predicted_match_time)
-                            : match.start_match_time
-                              ? formatMatchTime(match.start_match_time)
-                              : 'TBD'}
-                      </BadgeText>
-                    </Badge>
+                </Card>
+
+                {/* Live/Video Mode Switch */}
+                <Card variant='outline' className='p-4'>
+                  <HStack className='justify-between items-center'>
+                    <VStack>
+                      <Text className='font-semibold'>Scout Live</Text>
+                      <Text className='text-typography-500 text-sm'>
+                        {isLiveMode
+                          ? 'Scout in real-time'
+                          : 'Scout from recording'}
+                      </Text>
+                    </VStack>
+                    <HStack space='sm' className='items-center'>
+                      <Switch
+                        value={isLiveMode}
+                        onValueChange={setIsLiveMode}
+                      />
+                    </HStack>
                   </HStack>
-                </VStack>
+                </Card>
+
+                {/* Playback Speed */}
+                <Popover
+                  placement='top'
+                  size='xs'
+                  trigger={(triggerProps) => (
+                    <Pressable {...triggerProps}>
+                      <Card variant='outline' className='p-4'>
+                        <VStack space='sm'>
+                          <VStack className='flex-1'>
+                            <Text
+                              className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                            >
+                              Playback Speed
+                            </Text>
+                            <Text
+                              className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
+                            >
+                              Cannot change during scouting
+                            </Text>
+                          </VStack>
+
+                          <HStack
+                            space='xs'
+                            className='flex-wrap justify-between'
+                          >
+                            {speedOptions.map((speed) => (
+                              <Button
+                                key={speed}
+                                size='sm'
+                                variant={
+                                  playbackSpeed === speed && !isLiveMode
+                                    ? 'solid'
+                                    : 'outline'
+                                }
+                                action={
+                                  playbackSpeed === speed && !isLiveMode
+                                    ? 'primary'
+                                    : 'secondary'
+                                }
+                                onPress={() =>
+                                  !isLiveMode && setPlaybackSpeed(speed)
+                                }
+                                className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
+                                disabled={isLiveMode}
+                              >
+                                <ButtonText
+                                  className={
+                                    isLiveMode ? 'text-typography-400' : ''
+                                  }
+                                >
+                                  {speed}x
+                                </ButtonText>
+                              </Button>
+                            ))}
+                          </HStack>
+                        </VStack>
+                      </Card>
+                    </Pressable>
+                  )}
+                >
+                  {isLiveMode && (
+                    <>
+                      <PopoverBackdrop />
+                      <PopoverContent>
+                        <PopoverArrow />
+                        <PopoverBody>
+                          <Text className='text-typography-900'>
+                            Speed controls are only available in video mode
+                          </Text>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </>
+                  )}
+                </Popover>
+
+                <Popover
+                  placement='top'
+                  size='xs'
+                  trigger={(triggerProps) => (
+                    <Pressable {...triggerProps}>
+                      <Card variant='outline' className='p-4'>
+                        <HStack className='justify-between items-center'>
+                          <VStack className='flex-1'>
+                            <Text
+                              className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                            >
+                              Match Video
+                            </Text>
+                            <Text
+                              className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
+                            >
+                              Download video for scouting
+                            </Text>
+                          </VStack>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            action='secondary'
+                            className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
+                            disabled={isLiveMode}
+                            onPress={() => {
+                              // TODO: Implement video download functionality
+                              console.log(
+                                'Download video for match',
+                                match.match_number,
+                              );
+                            }}
+                          >
+                            <ButtonText>Download</ButtonText>
+                          </Button>
+                        </HStack>
+                      </Card>
+                    </Pressable>
+                  )}
+                >
+                  {isLiveMode && (
+                    <>
+                      <PopoverBackdrop />
+                      <PopoverContent>
+                        <PopoverArrow />
+                        <PopoverBody>
+                          <Text className='text-typography-900'>
+                            Video downloads are only available in video mode
+                          </Text>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </>
+                  )}
+                </Popover>
+                <Button
+                  size='lg'
+                  action='positive'
+                  onPress={() => {
+                    setIsScoutSheetOpen(false);
+                    // TODO: Navigate to scouting screen
+                    // router.push(`/(tabs)/match/scout/${match.match_number}?mode=${isLiveMode ? 'live' : 'video'}&speed=${playbackSpeed}`);
+                  }}
+                >
+                  <ButtonText>Start Scouting</ButtonText>
+                </Button>
+
+                <Button
+                  size='md'
+                  variant='outline'
+                  action='secondary'
+                  onPress={() => setIsScoutSheetOpen(false)}
+                >
+                  <ButtonText>Cancel</ButtonText>
+                </Button>
               </VStack>
-            </Card>
-
-            {/* Scout Button */}
-            <Button size='lg' action='primary' className='mb-2'>
-              <ButtonText>Scout Match</ButtonText>
-            </Button>
-
-            {/* Teams */}
-            <Card variant='outline' className='p-1 mb-2'>
-              <HStack space='xs' className='w-full'>
-                <VStack space='xs' className='w-full'>
-                  <Text className='font-semibold text-center text-blue-500'>
-                    Blue Alliance
-                  </Text>
-                  {blueTeams.map((team, index) => (
-                    <Pressable
-                      key={`blue-${index}`}
-                      onPress={() =>
-                        router.push(
-                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                        )
-                      }
-                    >
-                      <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
-                        <Text className='col-span-1 font-medium'>
-                          {team.number}
-                        </Text>
-                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    </Pressable>
-                  ))}
-                </VStack>
-                <VStack space='xs' className='w-full'>
-                  <Text className='font-semibold text-center text-red-500'>
-                    Red Alliance
-                  </Text>
-                  {redTeams.map((team, index) => (
-                    <Pressable
-                      key={`red-${index}`}
-                      onPress={() =>
-                        router.push(
-                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                        )
-                      }
-                    >
-                      <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
-                        <Text className='col-span-1 font-medium'>
-                          {team.number}
-                        </Text>
-                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    </Pressable>
-                  ))}
-                </VStack>
-              </HStack>
-            </Card>
-          </>
+            </ActionsheetContent>
+          </Actionsheet>
 
           {/* Tab Navigation */}
           <HStack className=' mb-2 p-1 rounded bg-secondary-100'>

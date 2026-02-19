@@ -168,7 +168,11 @@ export default function TeamDetailScreen() {
               variant='outline'
               className='aspect-square object-cover max-w-full mb-2'
             >
-              <Image source={{ uri: team.picture }} size='full' />
+              <Image
+                source={{ uri: team.picture }}
+                size='full'
+                alt={team.team_number + "'s Robot Picture"}
+              />
             </Card>
           ) : null}
           {/* Team Info */}
