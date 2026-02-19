@@ -88,6 +88,23 @@ function formatTimestamp(timestamp: number): string {
   return date.toLocaleString();
 }
 
+function truncateLongValues(obj: unknown, maxLength = 50): unknown {
+  if (typeof obj === 'string') {
+    return obj.length > maxLength ? obj.slice(0, maxLength) + '...' : obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => truncateLongValues(item, maxLength));
+  }
+  if (obj !== null && typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = truncateLongValues(value, maxLength);
+    }
+    return result;
+  }
+  return obj;
+}
+
 export function RecordDetailModal({
   isOpen,
   onClose,
@@ -242,7 +259,7 @@ export function RecordDetailModal({
                   className='bg-background-100 rounded-md p-3'
                 >
                   <Text className='text-typography-700 font-mono text-xs'>
-                    {JSON.stringify(record.data, null, 2)}
+                    {JSON.stringify(truncateLongValues(record.data), null, 2)}
                   </Text>
                 </ScrollView>
               </VStack>

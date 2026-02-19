@@ -257,7 +257,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function performDataRefresh() {
+  async function fetchSyncHash(): Promise<string | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sync`, {
+        method: 'GET',
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.hash || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch sync hash:', error);
+      return null;
+    }
+  }
+
+  async function performDataRefresh(forceRefresh = false) {
     if (isRefreshingData) return;
 
     // Check if we have a competition code set
@@ -267,8 +286,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Check if we need to refresh based on hash (unless forced)
+    if (!forceRefresh) {
+      const serverHash = await fetchSyncHash();
+      const storedHash = (await db.config.get({ key: 'lastSyncHash' }))?.value;
+      const lastUpdate = (await db.config.get({ key: 'lastDataUpdate' }))?.value;
+
+      if (serverHash && storedHash && serverHash === storedHash && lastUpdate) {
+        const lastUpdateTime = new Date(lastUpdate).getTime();
+        const now = Date.now();
+        const intervalMs = dataRefreshInterval * 60 * 1000;
+
+        // Skip refresh if hash matches and we're within the interval
+        if (now - lastUpdateTime < intervalMs) {
+          console.log('Data unchanged (hash match), skipping refresh');
+          return;
+        }
+      }
+    }
+
     setIsRefreshingData(true);
     try {
+      // Fetch the current hash before refreshing
+      const newHash = await fetchSyncHash();
+
       // Cache teams first (needed for team info)
       console.log('Refreshing teams data...');
       await cacheTeams();
@@ -281,9 +322,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('Refreshing team info data...');
       await cacheTeamInfo();
 
-      // Update timestamp and store it in db for persistence
+      // Update timestamp and hash, store in db for persistence
       const now = new Date();
       await db.config.put({ key: 'lastDataUpdate', value: now.toISOString() });
+      if (newHash) {
+        await db.config.put({ key: 'lastSyncHash', value: newHash });
+      }
       setLastDataUpdate(now);
       setDataFreshnessStatus('current');
 
@@ -303,7 +347,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function forceDataRefresh() {
-    await performDataRefresh();
+    await performDataRefresh(true);
   }
 
   const triggerUpload = useCallback(() => {

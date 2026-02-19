@@ -22,6 +22,7 @@ export interface TeamInfo {
   competition: Competition;
   competitionCode?: string; // Flattened field for IndexedDB indexing
   picture: string;
+  pictureHash?: string; // Hash of the picture for sync detection
   prescout_drivetrain: string;
   prescout_hopper_size: number;
   prescout_intake_type: string;

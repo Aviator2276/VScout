@@ -192,6 +192,11 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
     if (teamInfoArray.length > 0) {
       await db.teamInfo.bulkPut(teamInfoArray);
       console.log('Successfully stored team info');
+
+      // Trigger async picture sync (fire-and-forget, does not block)
+      syncTeamPictures().catch((err) =>
+        console.error('Background picture sync failed:', err),
+      );
     } else {
       console.log('No valid team info to store');
     }
@@ -332,6 +337,144 @@ export interface PrescoutData {
   prescout_additional_comments: string;
 }
 
+interface PictureSyncResponse {
+  hash: string | null;
+  has_picture: boolean;
+}
+
+interface PictureResponse {
+  picture: string | null;
+}
+
+/**
+ * Fetch the picture hash for a team from the server.
+ * Used to detect if a picture has changed without downloading the full image.
+ * @param teamNumber The team number
+ * @returns The hash and has_picture status, or null if request fails
+ */
+export async function fetchPictureHash(
+  teamNumber: number,
+): Promise<PictureSyncResponse | null> {
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+
+  if (!compCode || !teamNumber) {
+    return null;
+  }
+
+  try {
+    return await apiRequest<PictureSyncResponse>(
+      `/api/team-info/picture/sync?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
+    );
+  } catch (error) {
+    console.error(`Failed to fetch picture hash for team ${teamNumber}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Fetch the picture for a team from the server.
+ * @param teamNumber The team number
+ * @returns The picture data URI or null
+ */
+export async function fetchTeamPicture(
+  teamNumber: number,
+): Promise<string | null> {
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+
+  if (!compCode || !teamNumber) {
+    return null;
+  }
+
+  try {
+    const response = await apiRequest<PictureResponse>(
+      `/api/team-info/picture?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
+    );
+    return response.picture;
+  } catch (error) {
+    console.error(`Failed to fetch picture for team ${teamNumber}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Sync pictures for all teams in the current competition.
+ * Checks hashes and only downloads pictures that have changed.
+ * Runs asynchronously and does not block.
+ */
+export async function syncTeamPictures(): Promise<void> {
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+
+  if (!compCode) {
+    console.log('No competition code set, skipping picture sync');
+    return;
+  }
+
+  try {
+    const teamInfoList = await db.teamInfo
+      .where('competitionCode')
+      .equals(compCode)
+      .toArray();
+
+    console.log(`Syncing pictures for ${teamInfoList.length} teams...`);
+
+    // Process teams in batches of 5 to avoid overwhelming the network
+    const batchSize = 5;
+    for (let i = 0; i < teamInfoList.length; i += batchSize) {
+      const batch = teamInfoList.slice(i, i + batchSize);
+
+      await Promise.allSettled(
+        batch.map(async (teamInfo) => {
+          try {
+            const syncResponse = await fetchPictureHash(teamInfo.team_number);
+
+            if (!syncResponse) return;
+
+            // Check if we need to download the picture
+            const needsDownload =
+              syncResponse.has_picture &&
+              syncResponse.hash !== teamInfo.pictureHash;
+
+            // Check if we need to clear the picture (server has none but we have one)
+            const needsClear =
+              !syncResponse.has_picture && teamInfo.picture;
+
+            if (needsDownload) {
+              console.log(`Downloading picture for team ${teamInfo.team_number}...`);
+              const picture = await fetchTeamPicture(teamInfo.team_number);
+
+              if (picture) {
+                await db.teamInfo.update(
+                  [compCode, teamInfo.team_number],
+                  {
+                    picture,
+                    pictureHash: syncResponse.hash || undefined,
+                  },
+                );
+                console.log(`Updated picture for team ${teamInfo.team_number}`);
+              }
+            } else if (needsClear) {
+              await db.teamInfo.update(
+                [compCode, teamInfo.team_number],
+                {
+                  picture: '',
+                  pictureHash: undefined,
+                },
+              );
+              console.log(`Cleared picture for team ${teamInfo.team_number}`);
+            }
+          } catch (error) {
+            console.error(`Failed to sync picture for team ${teamInfo.team_number}:`, error);
+          }
+        }),
+      );
+    }
+
+    console.log('Picture sync completed');
+  } catch (error) {
+    console.error('Failed to sync team pictures:', error);
+  }
+}
+
 /**
  * Upload prescout data to the server via PATCH request.
  * @param teamNumber The team number to update
@@ -368,9 +511,10 @@ export async function uploadPrescout(
 
 /**
  * Upload a team picture to the server.
+ * After successful upload, fetches the new hash and updates local DB.
  * @param teamNumber The team number
  * @param pictureUri The local URI of the picture to upload
- * @returns The URL of the uploaded picture from the server
+ * @returns The picture data URI stored locally
  */
 export async function uploadTeamPicture(
   teamNumber: number,
@@ -408,8 +552,18 @@ export async function uploadTeamPicture(
       throw new Error(`Failed to upload picture: ${uploadResponse.statusText}`);
     }
 
-    const result = await uploadResponse.json();
-    return result.picture_url || '';
+    // After successful upload, fetch the new hash from the server
+    const syncResponse = await fetchPictureHash(teamNumber);
+
+    // Update local DB with the picture and new hash
+    if (syncResponse?.hash) {
+      await db.teamInfo.update([compCode, teamNumber], {
+        picture: pictureUri,
+        pictureHash: syncResponse.hash,
+      });
+    }
+
+    return pictureUri;
   } catch (error) {
     console.error('Failed to upload team picture:', error);
     throw error;

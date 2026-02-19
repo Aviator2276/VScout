@@ -26,13 +26,13 @@ class IndexDb extends Dexie {
     });
 
     // Increment version number when changing table schema to migrate.
-    this.version(10).stores({
+    this.version(11).stores({
       config: '&key, value',
       matches:
         '[competitionCode+match_type+set_number+match_number], match_number, set_number, match_type, start_match_time, end_match_time, blue_team_1.number, blue_team_2.number, blue_team_3.number, red_team_1.number, red_team_2.number, red_team_3.number',
       teams: '[competitionCode+number], number, name',
       teamInfo:
-        '[competitionCode+team_number], team_number, rank, ranking_points, tie, win, lose, prescout_range, prescout_climber',
+        '[competitionCode+team_number], team_number, rank, ranking_points, tie, win, lose, prescout_range, prescout_climber, pictureHash',
       matchRecords:
         '[info.competitionCode+match_type+set_number+match_number+team.number]',
       prescoutRecords:

@@ -6,7 +6,16 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
 import { Match } from '@/types/match';
-import { Badge, BadgeText } from '@/components/ui/badge';
+import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverArrow,
+  PopoverBackdrop,
+  PopoverBody,
+  PopoverContent,
+} from './ui/popover';
+import { CircleDashed, ImageDown } from 'lucide-react-native';
+import { Icon } from './ui/icon';
 
 interface MatchCardProps {
   match: Match;
@@ -73,6 +82,55 @@ export function MatchCard({
                         : 'TBD'}
                 </BadgeText>
               </Badge>
+            </HStack>
+            <HStack className='flex-1 w-full justify-end items-center gap-2'>
+              <Popover
+                placement='bottom'
+                size='xs'
+                trigger={(triggerProps) => (
+                  <Pressable {...triggerProps}>
+                    <Badge
+                      size='lg'
+                      variant='solid'
+                      action='muted'
+                      className=' justify-center items-center'
+                    >
+                      <BadgeIcon as={ImageDown}></BadgeIcon>
+                    </Badge>
+                  </Pressable>
+                )}
+              >
+                <PopoverBackdrop />
+                <PopoverContent>
+                  <PopoverArrow />
+                  <PopoverBody>
+                    <Text className='text-typography-900'>
+                      Video Downloaded
+                    </Text>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
+              <Popover
+                placement='bottom'
+                size='xs'
+                trigger={(triggerProps) => (
+                  <Pressable {...triggerProps}>
+                    <Icon
+                      as={CircleDashed}
+                      size='md'
+                      className='text-warning-500'
+                    />
+                  </Pressable>
+                )}
+              >
+                <PopoverBackdrop />
+                <PopoverContent>
+                  <PopoverArrow />
+                  <PopoverBody>
+                    <Text className='text-typography-900'>Not Scouted</Text>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
             </HStack>
           </HStack>
 

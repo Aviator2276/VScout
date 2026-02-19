@@ -84,9 +84,9 @@ export function Header({
           <DownlinkStatus size='lg' />
         </Center>
         <UplinkStatus />
-        <Badge size='lg' variant='solid' action='info'>
+        {/* <Badge size='lg' variant='solid' action='info'>
           <BadgeText>{parseCompetitionCode(competitionCode)}</BadgeText>
-        </Badge>
+        </Badge> */}
       </HStack>
     </HStack>
   );
