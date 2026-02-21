@@ -1,4 +1,10 @@
-import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
+import React, {
+  useCallback,
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Text } from '@/components/ui/text';
 import { MatchCard } from '@/components/MatchCard';
@@ -9,11 +15,17 @@ import { Box } from '@/components/ui/box';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { SearchIcon } from '@/components/ui/icon';
 import { VStack } from '@/components/ui/vstack';
-import { ActivityIndicator, FlatList, FlatList as FlatListType } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  FlatList as FlatListType,
+} from 'react-native';
 import { useApp } from '@/contexts/AppContext';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
+import { Fab, FabIcon } from '@/components/ui/fab';
+import { Film, Video } from 'lucide-react-native';
 
 cssInterop(FlatList, {
   className: {
@@ -23,6 +35,7 @@ cssInterop(FlatList, {
 
 export default function MatchesScreen() {
   const { competitionCode } = useApp();
+  const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +46,7 @@ export default function MatchesScreen() {
   useFocusEffect(
     useCallback(() => {
       loadMatches();
-    }, [competitionCode])
+    }, [competitionCode]),
   );
 
   async function loadMatches() {
@@ -121,32 +134,33 @@ export default function MatchesScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Box className="flex-1 max-w-2xl self-center w-full">
-        <Header title="Matches" isMainScreen />
-        <VStack space="md" className="px-4">
-          <Input size="lg" className="mb-4">
-            <InputSlot className="pl-3">
+      {' '}
+      <Header title='Matches' isMainScreen />
+      <Box className='flex-1 max-w-2xl self-center w-full pt-4'>
+        <VStack space='md' className='px-4'>
+          <Input size='lg' className='mb-4'>
+            <InputSlot className='pl-3'>
               <InputIcon as={SearchIcon} />
             </InputSlot>
             <InputField
-              placeholder="Search Match # or @team"
+              placeholder='Search Match # or @team'
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </Input>
         </VStack>
         {loading ? (
-          <Center className="flex-1 px-4">
-            <ActivityIndicator size="large" />
+          <Center className='flex-1 px-4'>
+            <ActivityIndicator size='large' />
           </Center>
         ) : error ? (
-          <Center className="flex-1 px-4">
-            <Text className="text-center text-error-500 p-4">{error}</Text>
+          <Center className='flex-1 px-4'>
+            <Text className='text-center text-error-500 p-4'>{error}</Text>
           </Center>
         ) : (
           <FlatList
             ref={flatListRef}
-            className="flex-1 px-4"
+            className='flex-1 px-4'
             data={filteredMatches}
             keyExtractor={(item, index) =>
               `match-${item.match_number}-${index}`
@@ -159,7 +173,7 @@ export default function MatchesScreen() {
               />
             )}
             ListEmptyComponent={() => (
-              <Text className="text-center text-typography-500 mt-8">
+              <Text className='text-center text-typography-500 mt-8'>
                 {searchQuery ? 'No matches found' : 'No matches available'}
               </Text>
             )}
@@ -173,6 +187,13 @@ export default function MatchesScreen() {
             }}
           />
         )}
+        <Fab
+          size='lg'
+          placement='bottom right'
+          onPress={() => router.push('/videos')}
+        >
+          <FabIcon as={Film} size='md' />
+        </Fab>
       </Box>
     </AdaptiveSafeArea>
   );

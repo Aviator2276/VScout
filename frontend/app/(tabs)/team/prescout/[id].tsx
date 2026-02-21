@@ -182,6 +182,12 @@ export default function PrescoutFormScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <Header
+        title={`Prescout ${id}`}
+        isMainScreen={false}
+        showBackButton
+        fallbackRoute={`/(tabs)/team/${id}`}
+      />
       <TeamPictureCamera
         isOpen={showCameraView}
         onClose={() => setShowCameraView(false)}
@@ -191,13 +197,7 @@ export default function PrescoutFormScreen() {
         competitionCode={competitionCode || ''}
       />
       <Box className='max-w-2xl self-center w-full'>
-        <Header
-          title={`Prescout ${id}`}
-          isMainScreen={false}
-          showBackButton
-          fallbackRoute={`/(tabs)/team/${id}`}
-        />
-        <ScrollView className='flex-1 px-4 pb-4'>
+        <ScrollView className='flex-1 px-4 pb-4 pt-4'>
           <VStack space='lg' className='pb-8'>
             {/* Team Header */}
             {uri && (

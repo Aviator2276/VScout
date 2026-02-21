@@ -31,7 +31,7 @@ export default function TeamsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadTeams();
-    }, [competitionCode])
+    }, [competitionCode]),
   );
 
   async function loadTeams() {
@@ -59,45 +59,43 @@ export default function TeamsScreen() {
 
     const query = searchQuery.trim();
 
-    return teams.filter((team) =>
-      team.team_number.toString().includes(query),
-    );
+    return teams.filter((team) => team.team_number.toString().includes(query));
   }, [teams, searchQuery]);
 
   return (
     <AdaptiveSafeArea>
-      <Box className="flex-1 max-w-2xl self-center w-full">
-        <Header title="Teams" isMainScreen />
-        <VStack space="md" className="px-4">
-          <Input size="lg" className="mb-4">
-            <InputSlot className="pl-3">
+      <Header title='Teams' isMainScreen />
+      <Box className='flex-1 max-w-2xl self-center w-full pt-4'>
+        <VStack space='md' className='px-4'>
+          <Input size='lg' className='mb-4'>
+            <InputSlot className='pl-3'>
               <InputIcon as={SearchIcon} />
             </InputSlot>
             <InputField
-              placeholder="Search Team #"
+              placeholder='Search Team #'
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </Input>
         </VStack>
         {loading ? (
-          <Center className="flex-1 px-4">
-            <ActivityIndicator size="large" />
+          <Center className='flex-1 px-4'>
+            <ActivityIndicator size='large' />
           </Center>
         ) : error ? (
-          <Center className="flex-1 px-4">
-            <Text className="text-center text-error-500 p-4">{error}</Text>
+          <Center className='flex-1 px-4'>
+            <Text className='text-center text-error-500 p-4'>{error}</Text>
           </Center>
         ) : (
           <FlatList
-            className="flex-1 px-4"
+            className='flex-1 px-4'
             data={filteredTeams}
             keyExtractor={(item) => `team-${item.team_number}`}
             renderItem={({ item }) => (
               <TeamCard team={item} searchQuery={searchQuery} />
             )}
             ListEmptyComponent={() => (
-              <Text className="text-center text-typography-500 mt-8">
+              <Text className='text-center text-typography-500 mt-8'>
                 {searchQuery ? 'No teams found' : 'No teams available'}
               </Text>
             )}

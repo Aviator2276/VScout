@@ -74,4 +74,5 @@ export interface Match {
   red_endgame_points: number;
   blue_penalties: number;
   red_penalties: number;
+  isVideoAvailable?: boolean;
 }

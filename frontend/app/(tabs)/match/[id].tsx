@@ -42,6 +42,8 @@ import {
 } from '@/components/ui/popover';
 import { TriangleAlert } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
+import { useAssets } from 'expo-asset';
 
 type TabType = 'overview' | 'scores';
 
@@ -55,6 +57,9 @@ export default function MatchDetailScreen() {
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [testImage, testError] = useAssets([
+    require('/assets/images/test.png'),
+  ]);
 
   const speedOptions = [1, 1.25, 1.5, 1.75, 2];
 
@@ -136,21 +141,35 @@ export default function MatchDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <Header
+        title={'Match ' + match.match_number}
+        isMainScreen={false}
+        showBackButton
+        fallbackRoute='/(tabs)/matches'
+      />
       <Box className='max-w-2xl self-center w-full'>
-        <Header
-          title={'Match ' + match.match_number}
-          isMainScreen={false}
-          showBackButton
-          fallbackRoute='/(tabs)/matches'
-        />
-
-        <ScrollView className='flex-1 px-4 pb-4'>
-          <Card variant='outline' className='p-4 mb-2 aspect-video'>
-            <Center>
-              <Text>Video Here</Text>
-            </Center>
-          </Card>
-          {/* Match Info */}
+        <ScrollView className='flex-1 px-4 pb-4 pt-2'>
+          {testImage ? (
+            <Card
+              variant='outline'
+              className='w-lvw aspect-video p-0 -ml-4 mb-2 overflow-hidden'
+            >
+              <Image
+                source={{ uri: testImage[0].uri }}
+                alt='Match video'
+                className='w-lvw h-full'
+              />
+            </Card>
+          ) : (
+            <Card
+              variant='outline'
+              className='w-lvw aspect-video p-0 -ml-4 mb-2'
+            >
+              <Center className='items-center justify-center h-full'>
+                Video Not Available
+              </Center>
+            </Card>
+          )}
           <Card variant='outline' className='p-2 mb-2'>
             <VStack space='md'>
               <Heading size='2xl' className='capitalize'>
@@ -300,6 +319,7 @@ export default function MatchDetailScreen() {
                 <Popover
                   placement='top'
                   size='xs'
+                  isOpen={isLiveMode ? undefined : false}
                   trigger={(triggerProps) => (
                     <Pressable {...triggerProps}>
                       <Card variant='outline' className='p-4'>
@@ -374,6 +394,7 @@ export default function MatchDetailScreen() {
                 <Popover
                   placement='top'
                   size='xs'
+                  isOpen={isLiveMode ? undefined : false}
                   trigger={(triggerProps) => (
                     <Pressable {...triggerProps}>
                       <Card variant='outline' className='p-4'>
