@@ -160,8 +160,7 @@ export function RecordCard({
                   ? 'Prescouting form'
                   : record.type === 'picture'
                     ? 'Picture'
-                    : 'unknown'}{' '}
-              for {record.teamNumber}
+                    : 'unknown'} for {record.teamNumber}
             </Text>
             {record.last_retry !== record.created_at && (
               <Text className='text-typography-500 text-xs'>

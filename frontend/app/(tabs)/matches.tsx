@@ -134,7 +134,6 @@ export default function MatchesScreen() {
 
   return (
     <AdaptiveSafeArea>
-      {' '}
       <Header title='Matches' isMainScreen />
       <Box className='flex-1 max-w-2xl self-center w-full pt-4'>
         <VStack space='md' className='px-4'>

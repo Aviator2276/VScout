@@ -6,11 +6,11 @@ import '../global.css';
 
 function ThemedApp() {
   const { theme } = useApp();
-  
+
   return (
     <GluestackUIProvider mode={theme}>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name='(tabs)' />
       </Stack>
     </GluestackUIProvider>
   );
@@ -18,7 +18,7 @@ function ThemedApp() {
 
 export default function AppLayout() {
   return (
-    <GluestackUIProvider mode="system">
+    <GluestackUIProvider mode='system'>
       <AppProvider>
         <ThemedApp />
       </AppProvider>
