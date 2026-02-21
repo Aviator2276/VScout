@@ -1,7 +1,5 @@
 from django.core.management.base import BaseCommand
-from django.db import transaction
 import platform
-import os
 from pathlib import Path
 import yt_dlp
 from yt_dlp.utils import download_range_func
@@ -35,6 +33,11 @@ class Command(BaseCommand):
             default=30,
             help='Buffer time in seconds before/after match (default: 30)'
         )
+        parser.add_argument(
+            '--all',
+            action='store_true',
+            help='Download all matches with a start time, not just played ones'
+        )
 
     def handle(self, *args, **options):
         competition_code = options['competition_code']
@@ -57,28 +60,31 @@ class Command(BaseCommand):
             ))
             return
         
-        # Create output directory
-        output_path = Path(output_dir) / competition_code
+        # Create output directory using absolute path (same as api.py serves from)
+        output_path = Path(__file__).resolve().parent.parent.parent.parent / output_dir / competition_code
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Get matches to download
         matches_query = Match.objects.filter(
             competition=competition,
-            start_match_time__gt=0  # Only matches with actual start time
+            start_match_time__gt=0,
         ).select_related('competition')
-        
+
+        if not options['all']:
+            matches_query = matches_query.filter(has_played=True)
+
         if match_number is not None:
             matches_query = matches_query.filter(match_number=match_number)
-        
+
         matches = list(matches_query.order_by('start_match_time'))
-        
+
         if not matches:
             self.stdout.write(self.style.WARNING(
-                f'No matches found with start times for competition {competition_code}'
+                f'No matches found for competition {competition_code}'
             ))
             return
-        
-        self.stdout.write(f'Found {len(matches)} matches to download')
+
+        self.stdout.write(f'Found {len(matches)} matches to download (output: {output_path})')
         
         # Determine the first match time to calculate day boundaries
         first_match_time = matches[0].start_match_time
@@ -158,6 +164,8 @@ class Command(BaseCommand):
         else:
             tmp = 'C:\\tmp'
         
+        output_filename = f"match_{match.match_type}_{match.match_number}_day{day}"
+
         # Configure yt-dlp options using Python API
         ydl_opts = {
             'extractor_args': {
@@ -169,17 +177,22 @@ class Command(BaseCommand):
                 'home': str(output_path),
                 'temp': tmp
             },
-            'outtmpl': f"match_{match.match_type}_{match.match_number}_day{day}.%(ext)s",
+            'outtmpl': f"{output_filename}.%(ext)s",
             'download_ranges': download_range_func(None, [(video_start_time, video_end_time)]),
             'force_keyframes_at_cuts': True,
             'concurrent_fragment_downloads': 4,
+            'overwrites': True,
         }
-        
+
         try:
+            part_file = Path(tmp) / f"{output_filename}.mp4.part"
+            if part_file.exists():
+                part_file.unlink()
+
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([stream_link])
             self.stdout.write(self.style.SUCCESS(
-                f'    ✓ Downloaded: {output_file.name}'
+                f'    ✓ Downloaded: {output_filename}.mp4'
             ))
         except Exception as e:
             self.stdout.write(self.style.ERROR(

@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp
 
 init:
 	@echo "Installing backend dependencies..."
@@ -54,12 +54,20 @@ comp-setup:
 	@echo "Setting up competition WITHOUT playing matches (for step-through)..."
 	cd vibescout_backend && uv run python manage.py setup_competition
 
+comp-setup-gacmp:
+	@echo "Initializing 2025gacmp competition (Real Event, Blank Matches)..."
+	cd vibescout_backend && uv run python manage.py init_competition 2025gacmp --stream-time-day-1 1743699901 --stream-time-day-2 1743769816 --stream-time-day-3 1743856286 --stream-link-day-1 "https://www.youtube.com/watch?v=p-CZ4LRTTqQ" --stream-link-day-2 "https://www.youtube.com/watch?v=TJuzMzMi-g4&pp=2AaxDA%3D%3D" --stream-link-day-3 "https://www.youtube.com/watch?v=0oHvm-ZECB0"
+	@echo "Adding blank matches..."
+	cd vibescout_backend && uv run python manage.py add_blank_matches 2025gacmp
+
+init_gacmp: comp-setup-gacmp
+
 comp-reset:
 	@echo "Resetting database (deleting all data)..."
 	cd vibescout_backend && uv run python manage.py reset_database
 
 download-match-videos:
-	cd vibescout_backend && uv run python manage.py download_match_videos 2025gacmp --output-dir ../match_videos
+	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)
 
 export:
 	cd frontend && npm run build:web

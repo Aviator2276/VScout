@@ -552,7 +552,7 @@ def get_match_video(request, competition_code: str, match_number: int):
 
     # Construct the video directory path
     video_dir = (
-        Path(__file__).resolve().parent.parent.parent
+        Path(__file__).resolve().parent.parent
         / "match_videos"
         / competition_code
     )

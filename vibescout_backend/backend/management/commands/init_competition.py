@@ -24,6 +24,42 @@ class Command(BaseCommand):
             default="",
             help="TBA API key (or set TBA_API_KEY environment variable)",
         )
+        parser.add_argument(
+            "--stream-time-day-1",
+            type=int,
+            default=0,
+            help="Stream time offset day 1",
+        )
+        parser.add_argument(
+            "--stream-time-day-2",
+            type=int,
+            default=0,
+            help="Stream time offset day 2",
+        )
+        parser.add_argument(
+            "--stream-time-day-3",
+            type=int,
+            default=0,
+            help="Stream time offset day 3",
+        )
+        parser.add_argument(
+            "--stream-link-day-1",
+            type=str,
+            default="",
+            help="Stream link day 1",
+        )
+        parser.add_argument(
+            "--stream-link-day-2",
+            type=str,
+            default="",
+            help="Stream link day 2",
+        )
+        parser.add_argument(
+            "--stream-link-day-3",
+            type=str,
+            default="",
+            help="Stream link day 3",
+        )
 
     def handle(self, *args, **options):
         # Load environment variables
@@ -53,7 +89,7 @@ class Command(BaseCommand):
 
         try:
             tba = tbapy.TBA(api_key)
-            self.initialize_competition(tba, event_key)
+            self.initialize_competition(tba, event_key, options)
             self.stdout.write(
                 self.style.SUCCESS(f"\n✓ Successfully initialized {event_key}")
             )
@@ -64,29 +100,51 @@ class Command(BaseCommand):
             raise
 
     @transaction.atomic
-    def initialize_competition(self, tba, event_key):
-        # Check if competition already exists
-        if Competition.objects.filter(code=event_key).exists():
-            self.stdout.write(
-                self.style.ERROR(
-                    f"\nCompetition with code {event_key} already exists. Aborting."
-                )
-            )
-            return
+    def initialize_competition(self, tba, event_key, options=None):
+        if options is None:
+            options = {}
 
         # Fetch event info
         self.stdout.write("\nFetching event information from TBA...")
         event_info = tba.event(event_key)
 
+        defaults = {
+            "name": event_info["name"],
+            "offset_stream_time_to_unix_timestamp_day_1": options.get(
+                "stream_time_day_1", 0
+            ),
+            "offset_stream_time_to_unix_timestamp_day_2": options.get(
+                "stream_time_day_2", 0
+            ),
+            "offset_stream_time_to_unix_timestamp_day_3": options.get(
+                "stream_time_day_3", 0
+            ),
+        }
+
+        if options.get("stream_link_day_1"):
+            defaults["stream_link_day_1"] = options.get("stream_link_day_1")
+        if options.get("stream_link_day_2"):
+            defaults["stream_link_day_2"] = options.get("stream_link_day_2")
+        if options.get("stream_link_day_3"):
+            defaults["stream_link_day_3"] = options.get("stream_link_day_3")
+
         # Create competition
-        competition = Competition.objects.create(
-            code=event_key, name=event_info["name"]
+        competition, created = Competition.objects.update_or_create(
+            code=event_key, defaults=defaults
         )
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"✓ Created competition: {competition.name} ({event_key})"
+
+        if created:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"✓ Created competition: {competition.name} ({event_key})"
+                )
             )
-        )
+        else:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"✓ Updated competition: {competition.name} ({event_key})"
+                )
+            )
 
         # Fetch teams
         self.stdout.write("\nFetching teams from TBA...")
@@ -116,14 +174,16 @@ class Command(BaseCommand):
                     team.save()
 
             # Create TeamInfo entry
-            TeamInfo.objects.create(
+            TeamInfo.objects.get_or_create(
                 team=team,
                 competition=competition,
-                rank=0,
-                ranking_points=0.0,
-                tie=0,
-                win=0,
-                lose=0,
+                defaults={
+                    "rank": 0,
+                    "ranking_points": 0.0,
+                    "tie": 0,
+                    "win": 0,
+                    "lose": 0,
+                },
             )
 
         self.stdout.write(

@@ -153,9 +153,16 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         "concurrent_fragment_downloads": 4,
         "quiet": True,
         "no_warnings": True,
+        "overwrites": True,
     }
 
     try:
+        # Remove any leftover .part temp file from a previous failed attempt
+        part_file = Path(tmp) / f"{output_filename}.mp4.part"
+        if part_file.exists():
+            part_file.unlink()
+            logger.info(f"Removed stale temp file: {part_file}")
+
         logger.info(f"Starting yt-dlp download for {output_filename}...")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([stream_link])
