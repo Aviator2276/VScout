@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { Match } from '@/types/match';
 import { Team, TeamInfo } from '@/types/team';
 import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
+import { MatchVideo } from '@/types/video';
 
 export interface Config {
   key: string;
@@ -17,6 +18,7 @@ class IndexDb extends Dexie {
   matchRecords!: Table<MatchRecord>;
   prescoutRecords!: Table<PrescoutRecord>;
   pictureRecords!: Table<PictureRecord>;
+  matchVideos!: Table<MatchVideo>;
 
   constructor() {
     super('vscout', {
@@ -26,7 +28,7 @@ class IndexDb extends Dexie {
     });
 
     // Increment version number when changing table schema to migrate.
-    this.version(11).stores({
+    this.version(12).stores({
       config: '&key, value',
       matches:
         '[competitionCode+match_type+set_number+match_number], match_number, set_number, match_type, start_match_time, end_match_time, blue_team_1.number, blue_team_2.number, blue_team_3.number, red_team_1.number, red_team_2.number, red_team_3.number',
@@ -39,6 +41,8 @@ class IndexDb extends Dexie {
         '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
       pictureRecords:
         '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
+      matchVideos:
+        '[competitionCode+match_number], match_number, match_type, isAvailable, isDownloaded',
     });
   }
 }
@@ -77,7 +81,7 @@ function formatBytes(bytes: number): string {
  * @returns StorageInfo object with usage, quota, and formatted values
  */
 export async function getStorageInfo(): Promise<StorageInfo> {
-  if (typeof navigator === 'undefined' || !navigator.storage?.estimate) {
+  if (typeof navigator === 'undefined' || !navigator.storage?.estimate()) {
     return {
       usage: 0,
       quota: 0,

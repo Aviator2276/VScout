@@ -8,8 +8,8 @@ import { Center } from '@/components/ui/center';
 export default function ScoutingScreen() {
   return (
     <AdaptiveSafeArea>
-      <Box className='flex-1 max-w-2xl self-center w-full'>
-        <Header title='Scouting' isMainScreen />
+      <Header title='Scouting' isMainScreen />
+      <Box className='flex-1 max-w-2xl self-center w-full pt-4'>
         <Center className='flex-1 px-4'>
           <Text className='text-center text-typography-500'>
             Scouting screen coming soon

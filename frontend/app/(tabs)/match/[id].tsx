@@ -40,8 +40,10 @@ import {
   PopoverBody,
   PopoverContent,
 } from '@/components/ui/popover';
-import { TriangleAlert } from 'lucide-react-native';
+import { Download, TriangleAlert } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
+import { useAssets } from 'expo-asset';
 
 type TabType = 'overview' | 'scores';
 
@@ -55,6 +57,9 @@ export default function MatchDetailScreen() {
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [testImage, testError] = useAssets([
+    require('/assets/images/test.png'),
+  ]);
 
   const speedOptions = [1, 1.25, 1.5, 1.75, 2];
 
@@ -136,23 +141,41 @@ export default function MatchDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <Header
+        title={'Match ' + match.match_number}
+        isMainScreen={false}
+        showBackButton
+        fallbackRoute='/(tabs)/matches'
+      />
       <Box className='max-w-2xl self-center w-full'>
-        <Header
-          title={'Match ' + match.match_number}
-          isMainScreen={false}
-          showBackButton
-          fallbackRoute='/(tabs)/matches'
-        />
-
-        <ScrollView className='flex-1 px-4 pb-4'>
-          <Card variant='outline' className='p-4 mb-2 aspect-video'>
-            <Center>
-              <Text>Video Here</Text>
-            </Center>
-          </Card>
-          {/* Match Info */}
+        <ScrollView className='flex-1 px-4 pb-4 pt-2'>
+          {testImage ? (
+            <Card
+              variant='outline'
+              className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2 overflow-hidden'
+            >
+              <Image
+                source={{ uri: testImage[0].uri }}
+                alt='Match video'
+                className='w-svw h-full aspect-video'
+              />
+            </Card>
+          ) : (
+            <Card
+              variant='outline'
+              className='w-lvw aspect-video p-0 -ml-4 mb-2'
+            >
+              <Center className='items-center justify-center h-full'>
+                Video Not Available
+                <Button size='sm' variant='solid' action='secondary'>
+                  <Icon as={Download} size='md' className={``} />
+                  <ButtonText>Download</ButtonText>
+                </Button>
+              </Center>
+            </Card>
+          )}
           <Card variant='outline' className='p-2 mb-2'>
-            <VStack space='md'>
+            <VStack space='md' className='mb-2'>
               <Heading size='2xl' className='capitalize'>
                 {match.match_type} #{match.match_number}
               </Heading>
@@ -192,49 +215,53 @@ export default function MatchDetailScreen() {
                 <Text className='font-semibold text-center text-blue-500'>
                   Blue Alliance
                 </Text>
-                {blueTeams.map((team, index) => (
-                  <Pressable
-                    key={`blue-${index}`}
-                    onPress={() =>
-                      router.push(
-                        `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                      )
-                    }
-                  >
-                    <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
-                      <Text className='col-span-1 font-medium'>
-                        {team.number}
-                      </Text>
-                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                        {team.name}
-                      </Text>
-                    </HStack>
-                  </Pressable>
-                ))}
+                <VStack className='gap-1'>
+                  {blueTeams.map((team, index) => (
+                    <Pressable
+                      key={`blue-${index}`}
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                        )
+                      }
+                    >
+                      <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
+                        <Text className='col-span-1 font-medium'>
+                          {team.number}
+                        </Text>
+                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                          {team.name}
+                        </Text>
+                      </HStack>
+                    </Pressable>
+                  ))}
+                </VStack>
               </VStack>
               <VStack space='xs' className='w-full'>
                 <Text className='font-semibold text-center text-red-500'>
                   Red Alliance
                 </Text>
-                {redTeams.map((team, index) => (
-                  <Pressable
-                    key={`red-${index}`}
-                    onPress={() =>
-                      router.push(
-                        `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                      )
-                    }
-                  >
-                    <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
-                      <Text className='col-span-1 font-medium'>
-                        {team.number}
-                      </Text>
-                      <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                        {team.name}
-                      </Text>
-                    </HStack>
-                  </Pressable>
-                ))}
+                <VStack className='gap-1'>
+                  {redTeams.map((team, index) => (
+                    <Pressable
+                      key={`red-${index}`}
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                        )
+                      }
+                    >
+                      <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
+                        <Text className='col-span-1 font-medium'>
+                          {team.number}
+                        </Text>
+                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
+                          {team.name}
+                        </Text>
+                      </HStack>
+                    </Pressable>
+                  ))}
+                </VStack>
               </VStack>
             </HStack>
           </Card>
@@ -300,6 +327,7 @@ export default function MatchDetailScreen() {
                 <Popover
                   placement='top'
                   size='xs'
+                  isOpen={isLiveMode ? undefined : false}
                   trigger={(triggerProps) => (
                     <Pressable {...triggerProps}>
                       <Card variant='outline' className='p-4'>
@@ -374,6 +402,7 @@ export default function MatchDetailScreen() {
                 <Popover
                   placement='top'
                   size='xs'
+                  isOpen={isLiveMode ? undefined : false}
                   trigger={(triggerProps) => (
                     <Pressable {...triggerProps}>
                       <Card variant='outline' className='p-4'>

@@ -146,6 +146,12 @@ export default function TeamDetailScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <Header
+        title={`Team ${team.team_number}`}
+        isMainScreen={false}
+        showBackButton
+        fallbackRoute={getBackRoute()}
+      />
       <TeamPictureCamera
         isOpen={showCameraView}
         onClose={() => setShowCameraView(false)}
@@ -155,14 +161,7 @@ export default function TeamDetailScreen() {
         competitionCode={competitionCode || ''}
       />
       <Box className='max-w-2xl self-center w-full'>
-        <Header
-          title={`Team ${team.team_number}`}
-          isMainScreen={false}
-          showBackButton
-          fallbackRoute={getBackRoute()}
-        />
-
-        <ScrollView className='flex-1 px-4 pb-4'>
+        <ScrollView className='flex-1 px-4 pb-4 pt-4'>
           {team.picture ? (
             <Card
               variant='outline'

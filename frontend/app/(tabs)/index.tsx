@@ -6,11 +6,7 @@ import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
-import {
-  Bolt,
-  NotebookTabs,
-  NotepadText,
-} from 'lucide-react-native';
+import { Bolt, NotebookTabs, NotepadText } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Header } from '@/components/Header';
 import { RecordsSheet } from '@/components/RecordsSheet';
@@ -29,11 +25,11 @@ export default function HomeScreen() {
 
   return (
     <AdaptiveSafeArea>
+      <Header title='Home' isMainScreen />
       <Box className='flex-1 max-w-2xl self-center w-full'>
-        <Header title='Home' isMainScreen />
         <ScrollView
           showsVerticalScrollIndicator={false}
-          className='flex-1 px-4'
+          className='flex-1 px-4 pt-4'
         >
           <VStack className='gap-2'>
             <VStack space='lg' className='grid grid-cols-2 gap-2'>

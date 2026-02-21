@@ -1,0 +1,10 @@
+/* Global header spacing - automatically add top margin to first content elements */
+.header-content-spacing > *:first-child {
+  margin-top: 0.5rem; /* 2 in Tailwind units */
+}
+
+/* Alternative: target specific containers */
+.max-w-2xl.self-center > *:first-child,
+.flex-1.max-w-2xl.self-center > *:first-child {
+  margin-top: 0.5rem;
+}
