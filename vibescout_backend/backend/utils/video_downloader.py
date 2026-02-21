@@ -162,6 +162,12 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         logger.info(
             f"Successfully downloaded video for match {match.match_number} -> {output_filename}.mp4"
         )
+
+        # Update match video_available to True
+        match.video_available = True
+        match.save(update_fields=["video_available"])
+        logger.info(f"Set video_available=True for match {match.match_number}")
+
         return True
     except Exception as e:
         logger.error(

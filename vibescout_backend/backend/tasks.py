@@ -284,7 +284,7 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
     if success:
         logger.info(
             f"Successfully downloaded video for match {match.match_number} "
-            f"({match.competition.code})"
+            f"({match.competition.code}), video_available set to True"
         )
         return {
             "success": True,
@@ -292,6 +292,7 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             "match_id": match_id,
             "match_number": match.match_number,
             "competition_code": match.competition.code,
+            "video_available": True,
         }
     else:
         logger.warning(
@@ -304,4 +305,5 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             "match_id": match_id,
             "match_number": match.match_number,
             "competition_code": match.competition.code,
+            "video_available": False,
         }

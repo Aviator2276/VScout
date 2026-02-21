@@ -256,6 +256,8 @@ class Match(models.Model):
     blue_endgame_points = models.IntegerField(default=0)
     red_endgame_points = models.IntegerField(default=0)
 
+    video_available = models.BooleanField(default=False)
+
     def __str__(self):
         return f"Match {self.match_number} - {self.competition.name}"
 

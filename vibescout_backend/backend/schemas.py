@@ -230,6 +230,7 @@ class MatchSchema(Schema):
     red_endgame_points: int
     blue_penalties: int
     red_penalties: int
+    video_available: bool
 
     @staticmethod
     def from_orm(obj):
@@ -295,6 +296,7 @@ class MatchSchema(Schema):
             red_endgame_points=obj.red_endgame_points,
             blue_penalties=obj.blue_penalties,
             red_penalties=obj.red_penalties,
+            video_available=obj.video_available,
         )
 
 
