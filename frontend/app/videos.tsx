@@ -43,7 +43,7 @@ export default function VideosScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Header title='Match Videos' showBackButton goHome />
+      <Header title='Match Videos' showBackButton />
       <Box className='flex-1 max-w-2xl self-center w-full'>
         <VideoStatusHeader
           networkQuality={networkQuality}
@@ -60,7 +60,7 @@ export default function VideosScreen() {
           </Center>
         ) : (
           <FlatList
-            className='flex-1 px-4 pt-2'
+            className='flex-1 px-4 pt-4'
             data={videos}
             keyExtractor={(item) => `video-${item.match_number}`}
             renderItem={({ item }) => (
@@ -72,7 +72,7 @@ export default function VideosScreen() {
             )}
             ListEmptyComponent={() => (
               <Text className='text-center text-typography-500 mt-8'>
-                No matches available
+                No match videos available
               </Text>
             )}
           />

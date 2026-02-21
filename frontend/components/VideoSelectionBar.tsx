@@ -20,7 +20,7 @@ export function VideoSelectionBar({
   if (selectedCount === 0) return null;
 
   return (
-    <Box className='border-t border-outline-100 bg-background-50 px-4 py-3'>
+    <Box className='border-t border-outline-100 bg-background-50 px-4 py-3 pb-8'>
       <HStack className='items-center justify-between max-w-2xl self-center w-full'>
         <Text className='font-semibold text-typography-700'>
           {selectedCount} selected

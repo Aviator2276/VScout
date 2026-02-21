@@ -108,7 +108,6 @@ export default function SettingsScreen() {
       videoConfigRef.current &&
       scrollViewRef.current
     ) {
-      // Delay to ensure layout is complete
       setTimeout(() => {
         videoConfigRef.current?.measureLayout(
           scrollViewRef.current?.getInnerViewNode(),
@@ -117,7 +116,7 @@ export default function SettingsScreen() {
           },
           () => {},
         );
-      }, 300);
+      }, 150);
     }
   }, [scrollTo, storage]);
 
@@ -373,7 +372,7 @@ export default function SettingsScreen() {
                 <VStack space='md'>
                   <VStack space='xs'>
                     <Heading size='md'>Selection Mode</Heading>
-                    <Text className='text-primary-500 text-sm'>
+                    <Text className='text-primary-500 text-sm mb-2'>
                       Control which videos are downloaded. Auto will download
                       all available matches once.
                     </Text>
@@ -416,7 +415,7 @@ export default function SettingsScreen() {
 
                   <VStack space='xs'>
                     <Heading size='md'>Dynamic Downloading</Heading>
-                    <Text className='text-primary-500 text-sm'>
+                    <Text className='text-primary-500 text-sm mb-2'>
                       Control when videos are downloaded. Always will download
                       regardless of network stability. Optimal will try to
                       download when the network is stable.
@@ -466,7 +465,7 @@ export default function SettingsScreen() {
 
                   <VStack space='xs'>
                     <Heading size='md'>Auto Delete</Heading>
-                    <Text className='text-primary-500 text-sm'>
+                    <Text className='text-primary-500 text-sm mb-2'>
                       Automatically delete videos older than 10 matches from the
                       current match.
                     </Text>
