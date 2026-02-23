@@ -22,8 +22,6 @@ def setup_scheduled_tasks():
 
     Environment Variables:
         TASK_CHECK_MATCHES_INTERVAL_MINUTES: How often to check for new matches (default: 5)
-        TASK_CLEANUP_INTERVAL_MINUTES: How often to clean up old tasks (default: 1440 = 24h)
-        TASK_RETENTION_DAYS: How many days to keep completed tasks (default: 7)
         COMPCODE: Competition code to monitor for new matches
         BACKGROUND_DEV: If true, tasks run immediately; if false, queued for qcluster
     """
@@ -43,43 +41,48 @@ def setup_scheduled_tasks():
         Schedule.objects.all().delete()
         logger.info(f"Cleared {existing_count} existing scheduled task(s)")
 
-    # Get schedule intervals from environment (in minutes)
+    # Clear all queued, completed, and failed tasks on startup
+    from django_q.models import Failure, OrmQ, Success
+
+    queued = OrmQ.objects.all().delete()[0]
+    success = Success.objects.all().delete()[0]
+    failure = Failure.objects.all().delete()[0]
+    logger.info(f"Cleared task history on startup: {queued} queued, {success} completed, {failure} failed")
+
+    # Get schedule interval from environment (in minutes)
     check_matches_interval = int(os.getenv("TASK_CHECK_MATCHES_INTERVAL_MINUTES", "5"))
-    cleanup_interval = int(
-        os.getenv("TASK_CLEANUP_INTERVAL_MINUTES", "1440")
-    )  # 24 hours default
 
     # Get competition code
     competition_code = os.getenv("COMPCODE")
 
     if not competition_code:
-        logger.warning("COMPCODE not set - match checking task will not be scheduled")
+        logger.warning("COMPCODE not set - match checking and video download tasks will not be scheduled")
     else:
-        # Schedule periodic task to check for new matches
-        # Note: args must be a string that can be parsed as a Python literal
         Schedule.objects.create(
             name="check_new_matches_periodic",
             func="backend.tasks.check_and_sync_new_matches",
-            args=f'"{competition_code}"',  # Properly quote the string argument
+            args=f'"{competition_code}"',
             schedule_type=Schedule.MINUTES,
             minutes=check_matches_interval,
-            repeats=-1,  # Repeat indefinitely
+            repeats=-1,
         )
         logger.info(
             f"Scheduled match checking task every {check_matches_interval} minutes for {competition_code}"
         )
 
-    # Schedule periodic cleanup task
-    Schedule.objects.create(
-        name="cleanup_old_tasks_periodic",
-        func="backend.tasks.cleanup_old_tasks",
-        schedule_type=Schedule.MINUTES,
-        minutes=cleanup_interval,
-        repeats=-1,  # Repeat indefinitely
-    )
-    logger.info(f"Scheduled cleanup task every {cleanup_interval} minutes")
+        Schedule.objects.create(
+            name="check_video_downloads_periodic",
+            func="backend.tasks.check_and_download_videos",
+            args=f'"{competition_code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            repeats=-1,
+        )
+        logger.info(
+            f"Scheduled video download task every {check_matches_interval} minutes for {competition_code}"
+        )
 
-    logger.info("All scheduled tasks configured successfully")
+    logger.info("Scheduled tasks configured successfully")
 
 
 def clear_all_scheduled_tasks():

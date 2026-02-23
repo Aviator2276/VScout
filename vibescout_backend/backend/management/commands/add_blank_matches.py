@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
 from backend.models import Competition, Match, Team
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -52,7 +52,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Competition: {competition_code}")
 
         try:
-            tba = tbapy.TBA(api_key)
+            tba = TBAClient(api_key)
             self.add_blank_matches(tba, competition_code)
             self.stdout.write(
                 self.style.SUCCESS(

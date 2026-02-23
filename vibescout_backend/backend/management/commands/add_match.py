@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 
 from backend.utils.match_utils import add_match_from_tba
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -71,7 +71,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Match: {match_type.upper()}{match_number}")
 
         try:
-            tba = tbapy.TBA(api_key)
+            tba = TBAClient(api_key)
             add_match_from_tba(
                 tba, competition_code, match_number, match_type, set_number, self.stdout
             )

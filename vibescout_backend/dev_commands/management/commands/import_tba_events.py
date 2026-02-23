@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
-from backend.models import Competition, Match, Team, TeamInfo
+from backend.models import Competition, Team, TeamInfo
 from backend.utils.match_utils import import_match_from_dict
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -44,7 +44,7 @@ class Command(BaseCommand):
             )
             return
 
-        tba = tbapy.TBA(api_key)
+        tba = TBAClient(api_key)
 
         for event_key in options["event_keys"]:
             self.stdout.write(f"Processing event: {event_key}")
@@ -74,38 +74,9 @@ class Command(BaseCommand):
 
         defaults = {"name": event_info["name"]}
 
-        # Add stream links for specific competitions
-        if event_key == "2025gacmp":
-            # Stream timestamps where first match of each day starts:
-            # Day 1: 3:56:03, Day 2: 35:25, Day 3: 27:31
-            stream_time_day_1 = (3 * 3600) + (56 * 60) + 3  # 14125 seconds
-            stream_time_day_2 = (35 * 60) + 25  # 2087 seconds
-            stream_time_day_3 = (27 * 60) + 31  # 1613 seconds
-
-            defaults.update(
-                {
-                    "stream_link_day_1": "https://www.youtube.com/watch?v=p-CZ4LRTTqQ",
-                    "stream_link_day_2": "https://www.youtube.com/watch?v=TJuzMzMi-g4&pp=2AaxDA%3D%3D",
-                    "stream_link_day_3": "https://www.youtube.com/watch?v=0oHvm-ZECB0",
-                }
-            )
-
         competition, created = Competition.objects.get_or_create(
             code=event_key, defaults=defaults
         )
-
-        # Update stream links if competition already exists
-        if not created and event_key == "2025gacmp":
-            competition.stream_link_day_1 = (
-                "https://www.youtube.com/watch?v=p-CZ4LRTTqQ"
-            )
-            competition.stream_link_day_2 = (
-                "https://www.youtube.com/watch?v=TJuzMzMi-g4&pp=2AaxDA%3D%3D"
-            )
-            competition.stream_link_day_3 = (
-                "https://www.youtube.com/watch?v=0oHvm-ZECB0"
-            )
-            competition.save()
 
         if created:
             self.stdout.write(f"  Created competition: {competition.name}")
@@ -126,12 +97,6 @@ class Command(BaseCommand):
         self.stdout.write(
             f"  Created/verified TeamInfo records for {len(teams_in_event)} teams"
         )
-
-        # Calculate and set offsets for 2025gacmp
-        if event_key == "2025gacmp":
-            self.calculate_and_set_offsets(
-                competition, stream_time_day_1, stream_time_day_2, stream_time_day_3
-            )
 
     def import_match(self, match_data, competition):
         """Import a match using the shared utility function"""
@@ -163,65 +128,6 @@ class Command(BaseCommand):
             team.save()
 
         return team
-
-    def calculate_and_set_offsets(
-        self, competition, stream_time_day_1, stream_time_day_2, stream_time_day_3
-    ):
-        """Calculate offsets based on first match of each day and stream timestamps"""
-        from django.db.models import Min
-
-        # Get all matches with start times, ordered by start time
-        matches = Match.objects.filter(
-            competition=competition, start_match_time__gt=0
-        ).order_by("start_match_time")
-
-        if not matches.exists():
-            self.stdout.write(
-                self.style.WARNING(
-                    "  No matches with start times found, cannot calculate offsets"
-                )
-            )
-            return
-
-        # Get first match time to determine day boundaries
-        first_match_time = matches.first().start_match_time
-        day_1_end = first_match_time + (12 * 3600)  # 12 hours after first match
-        day_2_end = day_1_end + (24 * 3600)  # 24 hours after day 1 end
-
-        # Find first match of each day
-        first_match_day_1 = matches.filter(start_match_time__lt=day_1_end).first()
-        first_match_day_2 = matches.filter(
-            start_match_time__gte=day_1_end, start_match_time__lt=day_2_end
-        ).first()
-        first_match_day_3 = matches.filter(start_match_time__gte=day_2_end).first()
-
-        # Calculate offsets: offset = unix_timestamp - stream_time
-        if first_match_day_1:
-            competition.offset_stream_time_to_unix_timestamp_day_1 = (
-                first_match_day_1.start_match_time - stream_time_day_1
-            )
-            self.stdout.write(
-                f"  Set day 1 offset: {competition.offset_stream_time_to_unix_timestamp_day_1}"
-            )
-
-        if first_match_day_2:
-            competition.offset_stream_time_to_unix_timestamp_day_2 = (
-                first_match_day_2.start_match_time - stream_time_day_2
-            )
-            self.stdout.write(
-                f"  Set day 2 offset: {competition.offset_stream_time_to_unix_timestamp_day_2}"
-            )
-
-        if first_match_day_3:
-            competition.offset_stream_time_to_unix_timestamp_day_3 = (
-                first_match_day_3.start_match_time - stream_time_day_3
-            )
-            self.stdout.write(
-                f"  Set day 3 offset: {competition.offset_stream_time_to_unix_timestamp_day_3}"
-            )
-
-        competition.save()
-        self.stdout.write(self.style.SUCCESS("  ✓ Offsets calculated and saved"))
 
     def create_team_infos(self, teams, competition):
         for team in teams:

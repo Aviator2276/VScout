@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
 from backend.models import Competition, Team, TeamInfo
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Event key: {event_key}")
 
         try:
-            tba = tbapy.TBA(api_key)
+            tba = TBAClient(api_key)
             self.initialize_competition(tba, event_key, options)
             self.stdout.write(
                 self.style.SUCCESS(f"\n✓ Successfully initialized {event_key}")

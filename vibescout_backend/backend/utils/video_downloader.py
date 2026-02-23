@@ -138,6 +138,29 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
 
     # Configure yt-dlp options
     output_filename = f"match_{match.match_type}_{match.match_number}_day{day}"
+
+    last_logged_percent = [-1]
+
+    def progress_hook(d):
+        if d["status"] == "downloading":
+            pct_str = d.get("_percent_str", "").strip()
+            speed_str = d.get("_speed_str", "").strip()
+            eta_str = d.get("_eta_str", "").strip()
+            downloaded = d.get("downloaded_bytes", 0)
+            total = d.get("total_bytes") or d.get("total_bytes_estimate", 0)
+            if total:
+                pct = int(downloaded / total * 100)
+                if pct >= last_logged_percent[0] + 10:
+                    last_logged_percent[0] = pct
+                    logger.info(
+                        f"  Downloading {output_filename}: {pct_str} "
+                        f"at {speed_str}, ETA {eta_str}"
+                    )
+        elif d["status"] == "finished":
+            logger.info(f"  Download finished, processing {d.get('filename', output_filename)}...")
+        elif d["status"] == "error":
+            logger.error(f"  Download error for {output_filename}")
+
     ydl_opts = {
         "extractor_args": {
             "youtube": {
@@ -146,17 +169,28 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         },
         "paths": {"home": str(output_path), "temp": tmp},
         "outtmpl": f"{output_filename}.%(ext)s",
-        "download_ranges": download_range_func(
-            None, [(video_start_time, video_end_time)]
-        ),
+        "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/137+140/136+140/18",
+        "download_ranges": download_range_func(None, [(video_start_time, video_end_time)]),
         "force_keyframes_at_cuts": True,
         "concurrent_fragment_downloads": 4,
         "quiet": True,
         "no_warnings": True,
         "overwrites": True,
+        "progress_hooks": [progress_hook],
     }
 
     try:
+        # Check if the stream is still live - live streams have only a short DVR window
+        # and cannot seek to past timestamps; must wait until stream becomes a VOD
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True}) as ydl_check:
+            info = ydl_check.extract_info(stream_link, download=False)
+            if info.get("is_live"):
+                logger.info(
+                    f"Stream is still live for match {match.match_number}, "
+                    f"will retry after stream ends"
+                )
+                return False
+
         # Remove any leftover .part temp file from a previous failed attempt
         part_file = Path(tmp) / f"{output_filename}.mp4.part"
         if part_file.exists():

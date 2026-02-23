@@ -9,7 +9,6 @@ import logging
 import os
 from typing import Optional
 
-import tbapy
 from django.db.models import Max
 
 logger = logging.getLogger(__name__)
@@ -59,7 +58,9 @@ def check_and_sync_new_matches(competition_code: Optional[str] = None) -> dict:
         return {"success": False, "error": f"Competition {competition_code} not found"}
 
     # Initialize TBA client
-    tba = tbapy.TBA(tba_api_key)
+    from .utils.tba_api import TBAClient
+
+    tba = TBAClient(tba_api_key)
 
     # Get the lowest match number with has_played=False, or the next match after the highest
     unplayed_match = (
@@ -185,7 +186,9 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Competition {competition_code} not found"}
 
     # Initialize TBA client
-    tba = tbapy.TBA(tba_api_key)
+    from .utils.tba_api import TBAClient
+
+    tba = TBAClient(tba_api_key)
 
     try:
         # Fetch all matches for the event
@@ -215,40 +218,61 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Error syncing matches: {str(e)}"}
 
 
-def cleanup_old_tasks() -> dict:
+def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
     """
-    Clean up old completed tasks from Django Q to prevent database bloat.
-
-    Returns:
-        dict with cleanup status
+    Scheduled task: queue a download for the first played match without a video.
+    Runs independently of match syncing. Only queues one download at a time.
     """
-    from datetime import timedelta
+    from .models import Competition, Match
 
-    from django.utils import timezone
-    from django_q.models import Failure, Success
+    if not competition_code:
+        competition_code = os.getenv("COMPCODE")
+        if not competition_code:
+            return {"success": False, "error": "No competition code available"}
 
-    # Keep tasks for the number of days specified in env (default 7 days)
-    retention_days = int(os.getenv("TASK_RETENTION_DAYS", "7"))
-    cutoff_date = timezone.now() - timedelta(days=retention_days)
+    try:
+        competition = Competition.objects.get(code=competition_code)
+    except Competition.DoesNotExist:
+        return {"success": False, "error": f"Competition {competition_code} not found"}
 
-    logger.info(f"Cleaning up tasks older than {retention_days} days ({cutoff_date})")
+    if not any([competition.stream_link_day_1, competition.stream_link_day_2, competition.stream_link_day_3]):
+        return {"success": True, "message": "No stream links configured, skipping"}
 
-    # Delete old successful tasks
-    success_deleted = Success.objects.filter(stopped__lt=cutoff_date).delete()
-
-    # Delete old failed tasks (you might want to keep these longer)
-    failure_deleted = Failure.objects.filter(stopped__lt=cutoff_date).delete()
-
-    logger.info(
-        f"Deleted {success_deleted[0]} successful tasks and {failure_deleted[0]} failed tasks"
+    match = (
+        Match.objects.filter(
+            competition=competition,
+            has_played=True,
+            video_available=False,
+            match_type="qualification",
+        )
+        .order_by("match_number")
+        .first()
     )
 
-    return {
-        "success": True,
-        "message": f"Cleaned up tasks older than {retention_days} days",
-        "successful_tasks_deleted": success_deleted[0],
-        "failed_tasks_deleted": failure_deleted[0],
-    }
+    if not match:
+        return {"success": True, "message": "No pending video downloads"}
+
+    # Check if a download task is already queued for this competition
+    from django_q.models import OrmQ
+
+    task_prefix = f"download_video_{competition_code}"
+    already_queued = any(task_prefix in (q.name() or "") for q in OrmQ.objects.all())
+
+    if already_queued:
+        logger.info(f"Download task already queued for {competition_code}, skipping")
+        return {"success": True, "message": "Download already queued"}
+
+    from django_q.tasks import async_task
+
+    task_name = f"download_video_{competition_code}_match_{match.match_number}"
+    logger.info(f"Queuing video download for match {match.match_number} ({competition_code})")
+    async_task(
+        "backend.tasks.download_match_video_task",
+        match.pk,
+        task_name=task_name,
+    )
+    return {"success": True, "message": f"Queued download for match {match.match_number}"}
+
 
 
 def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
