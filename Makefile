@@ -75,10 +75,6 @@ dev-reset-2026week0:
 	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
 	@echo "Done! Ready to run."
 
-export-cookies:
-	cd vibescout_backend && uv run yt-dlp --cookies-from-browser firefox --cookies ../cookies.txt --skip-download "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
-	@echo "Cookies saved to cookies.txt"
-
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)
 

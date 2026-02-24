@@ -360,7 +360,7 @@ def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
     )
     logger.info(f"Scheduled normal match sync and video download tasks for {competition_code}")
 
-    return {"success": True, "message": f"Offset computed and normal tasks scheduled"}
+    return {"success": True, "message": "Offset computed and normal tasks scheduled"}
 
 
 def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
@@ -419,3 +419,5 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             "competition_code": match.competition.code,
             "video_available": False,
         }
+
+
