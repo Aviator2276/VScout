@@ -110,15 +110,9 @@ class Command(BaseCommand):
 
         defaults = {
             "name": event_info["name"],
-            "offset_stream_time_to_unix_timestamp_day_1": options.get(
-                "stream_time_day_1", 0
-            ),
-            "offset_stream_time_to_unix_timestamp_day_2": options.get(
-                "stream_time_day_2", 0
-            ),
-            "offset_stream_time_to_unix_timestamp_day_3": options.get(
-                "stream_time_day_3", 0
-            ),
+            "first_match_video_position_day_1": options.get("stream_time_day_1", 0),
+            "first_match_video_position_day_2": options.get("stream_time_day_2", 0),
+            "first_match_video_position_day_3": options.get("stream_time_day_3", 0),
         }
 
         if options.get("stream_link_day_1"):

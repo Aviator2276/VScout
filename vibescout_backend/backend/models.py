@@ -32,6 +32,9 @@ class Competition(models.Model):
     stream_link_day_1 = models.CharField(max_length=255, blank=True, null=True)
     stream_link_day_2 = models.CharField(max_length=255, blank=True, null=True)
     stream_link_day_3 = models.CharField(max_length=255, blank=True, null=True)
+    first_match_video_position_day_1 = models.IntegerField(default=0)  # seconds into stream where match 1 starts
+    first_match_video_position_day_2 = models.IntegerField(default=0)
+    first_match_video_position_day_3 = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name

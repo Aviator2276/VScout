@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 dev-reset-2026week0 export-cookies
 
 init:
 	@echo "Installing backend dependencies..."
@@ -59,6 +59,25 @@ comp-setup-2026week0:
 comp-reset:
 	@echo "Resetting database (deleting all data)..."
 	cd vibescout_backend && uv run python manage.py reset_database
+
+dev-reset-2026week0:
+	@echo "Resetting database..."
+	rm -f vibescout_backend/db.sqlite3
+	@echo "Clearing match videos..."
+	rm -rf vibescout_backend/match_videos/2026week0
+	@echo "Running migrations..."
+	cd vibescout_backend && uv run python manage.py migrate
+	@echo "Creating admin user..."
+	cd vibescout_backend && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | uv run python manage.py shell
+	@echo "Initializing 2026week0 competition..."
+	cd vibescout_backend && uv run python manage.py init_competition 2026week0 --stream-time-day-1 2117 --stream-link-day-1 "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
+	@echo "Adding blank matches..."
+	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
+	@echo "Done! Ready to run."
+
+export-cookies:
+	cd vibescout_backend && uv run yt-dlp --cookies-from-browser firefox --cookies ../cookies.txt --skip-download "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
+	@echo "Cookies saved to cookies.txt"
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)

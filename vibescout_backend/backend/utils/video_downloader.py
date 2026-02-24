@@ -2,10 +2,10 @@
 
 import logging
 import platform
+import subprocess
 from pathlib import Path
 
 import yt_dlp
-from yt_dlp.utils import download_range_func
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +109,9 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         )
         return False
 
-    # Calculate video timestamps
+    # Calculate video timestamps (seconds into the stream)
     video_start_time = match.start_match_time - offset - buffer
-    video_end_time = video_start_time + 150 + (2 * buffer)  # 2:30 + buffers
+    clip_duration = 150 + (2 * buffer)  # 2:30 + buffers
 
     # Ensure times are positive
     if video_start_time < 0:
@@ -126,18 +126,21 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
 
     logger.info(
         f"Downloading match {match.match_number} ({match.match_type}) from day {day} "
-        f"[{_format_timestamp(video_start_time)} - {_format_timestamp(video_end_time)}] "
+        f"[{_format_timestamp(video_start_time)} + {clip_duration}s] "
         f"(buffer: {buffer}s)"
     )
 
     # Determine temp directory based on platform
     if platform.system() == "Linux":
-        tmp = "/tmp"
+        tmp = Path("/tmp/vibescout")
     else:
-        tmp = "C:\\tmp"
+        tmp = Path("C:\\tmp\\vibescout")
 
-    # Configure yt-dlp options
+    tmp.mkdir(parents=True, exist_ok=True)
+
     output_filename = f"match_{match.match_type}_{match.match_number}_day{day}"
+    temp_file = tmp / f"{output_filename}_raw.mp4"
+    final_file = output_path / f"{output_filename}.mp4"
 
     last_logged_percent = [-1]
 
@@ -157,32 +160,34 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
                         f"at {speed_str}, ETA {eta_str}"
                     )
         elif d["status"] == "finished":
-            logger.info(f"  Download finished, processing {d.get('filename', output_filename)}...")
+            logger.info(f"  Download finished, trimming {d.get('filename', output_filename)}...")
         elif d["status"] == "error":
             logger.error(f"  Download error for {output_filename}")
 
+    # Path to cookies file (relative to repo root, one level above vibescout_backend)
+    cookies_file = Path(__file__).resolve().parent.parent.parent.parent / "cookies.txt"
+    cookies_opts = {"cookiefile": str(cookies_file)} if cookies_file.exists() else {}
+    if not cookies_file.exists():
+        logger.warning("cookies.txt not found — YouTube downloads may fail without authentication")
+
     ydl_opts = {
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android"],
-            }
-        },
-        "paths": {"home": str(output_path), "temp": tmp},
-        "outtmpl": f"{output_filename}.%(ext)s",
-        "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/137+140/136+140/18",
-        "download_ranges": download_range_func(None, [(video_start_time, video_end_time)]),
-        "force_keyframes_at_cuts": True,
+        "paths": {"home": str(tmp), "temp": str(tmp)},
+        "outtmpl": f"{output_filename}_raw.%(ext)s",
+        "format": "bestvideo[height=1080]+bestaudio/bestvideo[height<=1080]+bestaudio/best",
+        "merge_output_format": "mp4",
+        "download_ranges": lambda info, ydl: [{"start_time": video_start_time, "end_time": video_start_time + clip_duration}],
         "concurrent_fragment_downloads": 4,
         "quiet": True,
         "no_warnings": True,
         "overwrites": True,
         "progress_hooks": [progress_hook],
+        "remote_components": ["ejs:github"],
+        **cookies_opts,
     }
 
     try:
-        # Check if the stream is still live - live streams have only a short DVR window
-        # and cannot seek to past timestamps; must wait until stream becomes a VOD
-        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True}) as ydl_check:
+        # Check if the stream is still live
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True, "remote_components": ["ejs:github"], **cookies_opts}) as ydl_check:
             info = ydl_check.extract_info(stream_link, download=False)
             if info.get("is_live"):
                 logger.info(
@@ -191,15 +196,41 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
                 )
                 return False
 
-        # Remove any leftover .part temp file from a previous failed attempt
-        part_file = Path(tmp) / f"{output_filename}.mp4.part"
-        if part_file.exists():
-            part_file.unlink()
-            logger.info(f"Removed stale temp file: {part_file}")
+        # Clean up any leftover temp files
+        for leftover in tmp.glob(f"{output_filename}_raw*"):
+            leftover.unlink()
+            logger.info(f"Removed stale temp file: {leftover}")
 
         logger.info(f"Starting yt-dlp download for {output_filename}...")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([stream_link])
+
+        if not temp_file.exists():
+            logger.error(f"Expected temp file not found after download: {temp_file}")
+            return False
+
+        # Trim with ffmpeg from local file — no URLs, no 403
+        logger.info(f"Trimming {temp_file.name} with ffmpeg -> {final_file.name}")
+        ffmpeg_result = subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", str(temp_file),
+                "-ss", "0",
+                "-t", str(clip_duration),
+                "-c", "copy",
+                str(final_file),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        if ffmpeg_result.returncode != 0:
+            logger.error(f"ffmpeg trim failed: {ffmpeg_result.stderr}")
+            return False
+
+        temp_file.unlink()
+        logger.info(f"Removed temp file: {temp_file}")
+
         logger.info(
             f"Successfully downloaded video for match {match.match_number} -> {output_filename}.mp4"
         )

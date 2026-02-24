@@ -275,6 +275,94 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
 
 
 
+def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
+    """
+    Compute stream offsets for a competition once match 1 has a start_match_time.
+
+    Waits until the first played qualification match has a start_match_time, then
+    computes offset = start_match_time - first_match_video_position and saves it.
+    Once done, unschedules itself and schedules the normal match sync + video tasks.
+    """
+    from .models import Competition, Match
+
+    if not competition_code:
+        competition_code = os.getenv("COMPCODE")
+        if not competition_code:
+            return {"success": False, "error": "No competition code available"}
+
+    try:
+        competition = Competition.objects.get(code=competition_code)
+    except Competition.DoesNotExist:
+        return {"success": False, "error": f"Competition {competition_code} not found"}
+
+    # Find the first played qualification match with a start_match_time
+    first_match = (
+        Match.objects.filter(
+            competition=competition,
+            match_type="qualification",
+            has_played=True,
+            start_match_time__gt=0,
+        )
+        .order_by("match_number")
+        .first()
+    )
+
+    if not first_match:
+        logger.info(
+            f"No played matches with start_match_time yet for {competition_code}, will retry"
+        )
+        return {"success": True, "message": "Waiting for first match start_match_time"}
+
+    # Determine which day the first match is on and compute offset
+    updated = False
+    if competition.first_match_video_position_day_1 > 0 and competition.offset_stream_time_to_unix_timestamp_day_1 == 0:
+        offset = first_match.start_match_time - competition.first_match_video_position_day_1
+        competition.offset_stream_time_to_unix_timestamp_day_1 = offset
+        competition.save(update_fields=["offset_stream_time_to_unix_timestamp_day_1"])
+        logger.info(f"Computed day 1 offset for {competition_code}: {offset}")
+        updated = True
+
+    if not updated:
+        logger.info(f"No offset to compute for {competition_code} (position not set or offset already set)")
+        return {"success": True, "message": "Nothing to compute"}
+
+    # Unschedule this task and schedule the normal tasks
+    from datetime import timedelta
+
+    from django.utils import timezone
+    from django_q.models import Schedule
+
+    Schedule.objects.filter(name="compute_stream_offsets_periodic").delete()
+    logger.info(f"Unscheduled compute_stream_offsets for {competition_code}")
+
+    check_matches_interval = int(os.getenv("TASK_CHECK_MATCHES_INTERVAL_MINUTES", "5"))
+
+    Schedule.objects.get_or_create(
+        name="check_new_matches_periodic",
+        defaults=dict(
+            func="backend.tasks.check_and_sync_new_matches",
+            args=f'"{competition_code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            repeats=-1,
+        ),
+    )
+    Schedule.objects.get_or_create(
+        name="check_video_downloads_periodic",
+        defaults=dict(
+            func="backend.tasks.check_and_download_videos",
+            args=f'"{competition_code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
+            repeats=-1,
+        ),
+    )
+    logger.info(f"Scheduled normal match sync and video download tasks for {competition_code}")
+
+    return {"success": True, "message": f"Offset computed and normal tasks scheduled"}
+
+
 def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
     """
     Background task to download a match video from YouTube stream.
