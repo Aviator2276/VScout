@@ -51,7 +51,7 @@ export function Header({
   };
 
   return (
-    <HStack className='items-center justify-between px-4 py-2 bg-orange-500/80 dark:bg-orange-400/70 w-full relative z-10 min-h-[52px]'>
+    <HStack className='items-center justify-between px-4 py-2 bg-tertiary-500/90 dark:bg-tertiary-700/90 w-full relative z-10 min-h-[52px]'>
       <HStack className='gap-2 items-center'>
         {showBackButton && (
           <Button
