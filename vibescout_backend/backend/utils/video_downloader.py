@@ -2,6 +2,7 @@
 
 import logging
 import platform
+import subprocess
 from pathlib import Path
 
 import yt_dlp
@@ -197,4 +198,174 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
             f"Failed to download video for match {match.match_number}: {str(e)}",
             exc_info=True,
         )
+        return False
+
+
+# Timer crop constants (at 640x360): crop=W:H:X:Y
+_TIMER_CROP_W = 36
+_TIMER_CROP_H = 20
+_TIMER_CROP_X = 301
+_TIMER_CROP_Y = 24
+_SCAN_FPS = 5
+_MATCH_START_OFFSET = 1  # seconds before 0:19 to start clip
+_MATCH_DURATION = 170  # 150s match + 3s transition + 10s end buffer + 1s start offset + 5s FMS counter lag
+_MATCH_START_THRESHOLD = 700  # MSE threshold for template match
+
+
+def _load_reference_019():
+    """Load the 0:19 reference image as raw RGB bytes."""
+    from PIL import Image
+    ref_path = Path(__file__).resolve().parent / "timer_019_reference.png"
+    img = Image.open(ref_path).convert("RGB")
+    return img.tobytes(), img.size
+
+
+def _mse(bytes_a, bytes_b):
+    """Mean squared error between two equal-length byte sequences."""
+    total = 0
+    for a, b in zip(bytes_a, bytes_b):
+        diff = int(a) - int(b)
+        total += diff * diff
+    return total / len(bytes_a)
+
+
+_SCAN_MAX_SECONDS = 120  # only scan first 120s of video
+
+
+def find_match_start_timestamp(video_path: Path) -> float | None:
+    """
+    Scan video for the first frame where the scoreboard timer shows 0:19.
+
+    Returns the timestamp in seconds, or None if not found.
+    """
+    ref_bytes, ref_size = _load_reference_019()
+    w, h = ref_size
+
+    max_frames = _SCAN_MAX_SECONDS * _SCAN_FPS
+
+    # Pipe timer-region frames from ffmpeg as raw RGB
+    cmd = [
+        "ffmpeg", "-i", str(video_path),
+        "-vf", f"fps={_SCAN_FPS},crop={_TIMER_CROP_W}:{_TIMER_CROP_H}:{_TIMER_CROP_X}:{_TIMER_CROP_Y}",
+        "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1",
+        "-loglevel", "error",
+    ]
+
+    frame_size = w * h * 3
+    frame_num = 0
+    found_timestamp = None
+
+    logger.info(f"Scanning {video_path.name} for match start (0:19 timer, max {_SCAN_MAX_SECONDS}s)...")
+
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        while frame_num < max_frames:
+            raw = proc.stdout.read(frame_size)
+            if len(raw) < frame_size:
+                break
+            error = _mse(raw, ref_bytes)
+            if error < _MATCH_START_THRESHOLD:
+                found_timestamp = frame_num / _SCAN_FPS
+                logger.info(
+                    f"Found 0:19 at frame {frame_num} = {found_timestamp:.2f}s "
+                    f"(MSE={error:.1f}) in {video_path.name}"
+                )
+                break
+            frame_num += 1
+    except Exception as e:
+        logger.error(f"Error scanning {video_path.name} for match start: {e}")
+        return None
+    finally:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+        try:
+            proc.communicate(timeout=5)  # drain both stdout+stderr, prevent deadlock
+        except Exception:
+            proc.kill()
+
+    if found_timestamp is None:
+        logger.warning(f"0:19 timer frame not found in {video_path.name}")
+    return found_timestamp
+
+
+def _get_video_path(match, competition, output_dir="match_videos") -> Path:
+    """Return the expected video file path for a match."""
+    from backend.models import Match as MatchModel
+    output_path = Path(__file__).resolve().parent.parent.parent / output_dir / competition.code
+    first_match = (
+        MatchModel.objects.filter(competition=competition, start_match_time__gt=0)
+        .order_by("start_match_time")
+        .first()
+    )
+    if not first_match:
+        return output_path / f"match_{match.match_type}_{match.match_number}_day1.mp4"
+    first_match_time = first_match.start_match_time
+    day_1_end = first_match_time + (12 * 3600)
+    day_2_end = day_1_end + (24 * 3600)
+    match_time = match.start_match_time
+    if match_time < day_1_end:
+        day = 1
+    elif match_time < day_2_end:
+        day = 2
+    else:
+        day = 3
+    return output_path / f"match_{match.match_type}_{match.match_number}_day{day}.mp4"
+
+
+def clip_match_video(match, output_dir="match_videos") -> bool:
+    """
+    Clip a downloaded match video to start at the first 0:19 timer frame.
+
+    Finds the match start by scanning the downloaded video for the scoreboard
+    timer showing 0:19, then clips from that point for _MATCH_DURATION seconds.
+    Overwrites the original file in place.
+
+    Returns True on success, False on failure.
+    """
+    competition = match.competition
+    video_path = _get_video_path(match, competition, output_dir)
+    filename = video_path.name
+
+    if not video_path.exists():
+        logger.error(f"Video file not found: {video_path}")
+        return False
+
+    start_ts = find_match_start_timestamp(video_path)
+    if start_ts is None:
+        logger.error(f"Could not find match start in {filename}")
+        return False
+
+    # Clip in place: write to temp file then replace
+    clip_start = max(0, start_ts - _MATCH_START_OFFSET)
+    tmp_path = video_path.with_suffix(".tmp.mp4")
+    cmd = [
+        "ffmpeg",
+        "-ss", str(clip_start),
+        "-i", str(video_path),
+        "-t", str(_MATCH_DURATION),
+        "-c", "copy",
+        str(tmp_path),
+        "-y", "-loglevel", "error",
+    ]
+
+    logger.info(
+        f"Clipping {filename} from {start_ts:.2f}s for {_MATCH_DURATION}s..."
+    )
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            logger.error(f"ffmpeg clip failed for {filename}: {result.stderr}")
+            tmp_path.unlink(missing_ok=True)
+            return False
+
+        tmp_path.replace(video_path)
+        match.video_clipped = True
+        match.save(update_fields=["video_clipped"])
+        logger.info(f"Clipped {filename} successfully, video_clipped=True")
+        return True
+    except Exception as e:
+        logger.error(f"Error clipping {filename}: {e}", exc_info=True)
+        tmp_path.unlink(missing_ok=True)
         return False

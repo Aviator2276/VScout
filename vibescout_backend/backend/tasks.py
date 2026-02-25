@@ -218,6 +218,55 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Error syncing matches: {str(e)}"}
 
 
+def clip_match_video_task(match_id: int) -> dict:
+    """
+    Background task to clip a downloaded match video to exact match start.
+
+    Scans the video for the first frame where the scoreboard timer shows 0:19,
+    then trims from that point for 153 seconds (150s match + 3s buffer).
+    """
+    from .models import Match
+    from .utils.video_downloader import clip_match_video
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        logger.error(f"Match with id {match_id} not found")
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    logger.info(
+        f"Starting video clip for match {match.match_number} "
+        f"({match.competition.code})"
+    )
+
+    success = clip_match_video(match)
+
+    if success:
+        logger.info(
+            f"Successfully clipped video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": True,
+            "message": f"Clipped video for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }
+    else:
+        logger.warning(
+            f"Failed to clip video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": False,
+            "error": f"Video clip failed for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }
+
+
 def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
     """
     Scheduled task: queue a download for the first played match without a video.
@@ -249,20 +298,53 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
         .first()
     )
 
+    from django_q.models import OrmQ
+    from django_q.tasks import async_task
+
+    # Check for downloaded-but-not-clipped matches first
+    unclipped = (
+        Match.objects.filter(
+            competition=competition,
+            has_played=True,
+            video_available=True,
+            video_clipped=False,
+            match_type="qualification",
+        )
+        .order_by("match_number")
+        .first()
+    )
+    if unclipped:
+        from pathlib import Path
+        from .utils.video_downloader import _get_video_path
+        video_path = _get_video_path(unclipped, competition)
+        if not video_path.exists():
+            logger.warning(
+                f"Match {unclipped.match_number} marked video_available but file missing, resetting"
+            )
+            unclipped.video_available = False
+            unclipped.save(update_fields=["video_available"])
+        else:
+            clip_task_name = f"clip_video_{competition_code}_match_{unclipped.match_number}"
+            already_queued = any(clip_task_name in (q.name() or "") for q in OrmQ.objects.all())
+            if not already_queued:
+                logger.info(f"Queuing clip task for match {unclipped.match_number} ({competition_code})")
+                async_task(
+                    "backend.tasks.clip_match_video_task",
+                    unclipped.pk,
+                    task_name=clip_task_name,
+                )
+                return {"success": True, "message": f"Queued clip for match {unclipped.match_number}"}
+
     if not match:
         return {"success": True, "message": "No pending video downloads"}
 
     # Check if a download task is already queued for this competition
-    from django_q.models import OrmQ
-
     task_prefix = f"download_video_{competition_code}"
     already_queued = any(task_prefix in (q.name() or "") for q in OrmQ.objects.all())
 
     if already_queued:
         logger.info(f"Download task already queued for {competition_code}, skipping")
         return {"success": True, "message": "Download already queued"}
-
-    from django_q.tasks import async_task
 
     task_name = f"download_video_{competition_code}_match_{match.match_number}"
     logger.info(f"Queuing video download for match {match.match_number} ({competition_code})")
@@ -398,6 +480,17 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             f"Successfully downloaded video for match {match.match_number} "
             f"({match.competition.code}), video_available set to True"
         )
+
+        # Queue clip task
+        from django_q.tasks import async_task
+        clip_task_name = f"clip_video_{match.competition.code}_match_{match.match_number}"
+        async_task(
+            "backend.tasks.clip_match_video_task",
+            match.pk,
+            task_name=clip_task_name,
+        )
+        logger.info(f"Queued clip task for match {match.match_number}")
+
         return {
             "success": True,
             "message": f"Downloaded video for match {match.match_number}",

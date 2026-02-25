@@ -34,6 +34,16 @@ class BackendConfig(AppConfig):
             logger.debug(f"Could not check migrations: {e}")
             # Continue anyway - this is just a safety check
 
+        # Clean up any leftover .part files from interrupted downloads
+        try:
+            from pathlib import Path
+            match_videos_dir = Path(__file__).resolve().parent.parent / "match_videos"
+            for part_file in match_videos_dir.rglob("*.part"):
+                part_file.unlink()
+                logger.info(f"Cleaned up leftover download: {part_file.name}")
+        except Exception as e:
+            logger.warning(f"Could not clean up .part files: {e}")
+
         # Setup scheduled tasks
         try:
             from .schedule_setup import setup_scheduled_tasks
