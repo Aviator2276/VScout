@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
 from backend.models import Competition, Team, TeamInfo
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Event key: {event_key}")
 
         try:
-            tba = tbapy.TBA(api_key)
+            tba = TBAClient(api_key)
             self.initialize_competition(tba, event_key, options)
             self.stdout.write(
                 self.style.SUCCESS(f"\n✓ Successfully initialized {event_key}")
@@ -110,15 +110,9 @@ class Command(BaseCommand):
 
         defaults = {
             "name": event_info["name"],
-            "offset_stream_time_to_unix_timestamp_day_1": options.get(
-                "stream_time_day_1", 0
-            ),
-            "offset_stream_time_to_unix_timestamp_day_2": options.get(
-                "stream_time_day_2", 0
-            ),
-            "offset_stream_time_to_unix_timestamp_day_3": options.get(
-                "stream_time_day_3", 0
-            ),
+            "first_match_video_position_day_1": options.get("stream_time_day_1", 0),
+            "first_match_video_position_day_2": options.get("stream_time_day_2", 0),
+            "first_match_video_position_day_3": options.get("stream_time_day_3", 0),
         }
 
         if options.get("stream_link_day_1"):

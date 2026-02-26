@@ -9,7 +9,6 @@ import logging
 import os
 from typing import Optional
 
-import tbapy
 from django.db.models import Max
 
 logger = logging.getLogger(__name__)
@@ -59,7 +58,9 @@ def check_and_sync_new_matches(competition_code: Optional[str] = None) -> dict:
         return {"success": False, "error": f"Competition {competition_code} not found"}
 
     # Initialize TBA client
-    tba = tbapy.TBA(tba_api_key)
+    from .utils.tba_api import TBAClient
+
+    tba = TBAClient(tba_api_key)
 
     # Get the lowest match number with has_played=False, or the next match after the highest
     unplayed_match = (
@@ -185,7 +186,9 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Competition {competition_code} not found"}
 
     # Initialize TBA client
-    tba = tbapy.TBA(tba_api_key)
+    from .utils.tba_api import TBAClient
+
+    tba = TBAClient(tba_api_key)
 
     try:
         # Fetch all matches for the event
@@ -215,40 +218,231 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Error syncing matches: {str(e)}"}
 
 
-def cleanup_old_tasks() -> dict:
+def clip_match_video_task(match_id: int) -> dict:
     """
-    Clean up old completed tasks from Django Q to prevent database bloat.
+    Background task to clip a downloaded match video to exact match start.
 
-    Returns:
-        dict with cleanup status
+    Scans the video for the first frame where the scoreboard timer shows 0:19,
+    then trims from that point for 153 seconds (150s match + 3s buffer).
     """
+    from .models import Match
+    from .utils.video_downloader import clip_match_video
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        logger.error(f"Match with id {match_id} not found")
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    logger.info(
+        f"Starting video clip for match {match.match_number} "
+        f"({match.competition.code})"
+    )
+
+    success = clip_match_video(match)
+
+    if success:
+        logger.info(
+            f"Successfully clipped video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": True,
+            "message": f"Clipped video for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }
+    else:
+        logger.warning(
+            f"Failed to clip video for match {match.match_number} "
+            f"({match.competition.code})"
+        )
+        return {
+            "success": False,
+            "error": f"Video clip failed for match {match.match_number}",
+            "match_id": match_id,
+            "match_number": match.match_number,
+            "competition_code": match.competition.code,
+        }
+
+
+def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
+    """
+    Scheduled task: queue a download for the first played match without a video.
+    Runs independently of match syncing. Only queues one download at a time.
+    """
+    from .models import Competition, Match
+
+    if not competition_code:
+        competition_code = os.getenv("COMPCODE")
+        if not competition_code:
+            return {"success": False, "error": "No competition code available"}
+
+    try:
+        competition = Competition.objects.get(code=competition_code)
+    except Competition.DoesNotExist:
+        return {"success": False, "error": f"Competition {competition_code} not found"}
+
+    if not any([competition.stream_link_day_1, competition.stream_link_day_2, competition.stream_link_day_3]):
+        return {"success": True, "message": "No stream links configured, skipping"}
+
+    match = (
+        Match.objects.filter(
+            competition=competition,
+            has_played=True,
+            video_available=False,
+            match_type="qualification",
+        )
+        .order_by("match_number")
+        .first()
+    )
+
+    from django_q.models import OrmQ
+    from django_q.tasks import async_task
+
+    # Check for downloaded-but-not-clipped matches first
+    unclipped = (
+        Match.objects.filter(
+            competition=competition,
+            has_played=True,
+            video_available=True,
+            video_clipped=False,
+            match_type="qualification",
+        )
+        .order_by("match_number")
+        .first()
+    )
+    if unclipped:
+        from pathlib import Path
+        from .utils.video_downloader import _get_video_path
+        video_path = _get_video_path(unclipped, competition)
+        if not video_path.exists():
+            logger.warning(
+                f"Match {unclipped.match_number} marked video_available but file missing, resetting"
+            )
+            unclipped.video_available = False
+            unclipped.save(update_fields=["video_available"])
+        else:
+            clip_task_name = f"clip_video_{competition_code}_match_{unclipped.match_number}"
+            already_queued = any(clip_task_name in (q.name() or "") for q in OrmQ.objects.all())
+            if not already_queued:
+                logger.info(f"Queuing clip task for match {unclipped.match_number} ({competition_code})")
+                async_task(
+                    "backend.tasks.clip_match_video_task",
+                    unclipped.pk,
+                    task_name=clip_task_name,
+                )
+                return {"success": True, "message": f"Queued clip for match {unclipped.match_number}"}
+
+    if not match:
+        return {"success": True, "message": "No pending video downloads"}
+
+    # Check if a download task is already queued for this competition
+    task_prefix = f"download_video_{competition_code}"
+    already_queued = any(task_prefix in (q.name() or "") for q in OrmQ.objects.all())
+
+    if already_queued:
+        logger.info(f"Download task already queued for {competition_code}, skipping")
+        return {"success": True, "message": "Download already queued"}
+
+    task_name = f"download_video_{competition_code}_match_{match.match_number}"
+    logger.info(f"Queuing video download for match {match.match_number} ({competition_code})")
+    async_task(
+        "backend.tasks.download_match_video_task",
+        match.pk,
+        task_name=task_name,
+    )
+    return {"success": True, "message": f"Queued download for match {match.match_number}"}
+
+
+
+def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
+    """
+    Compute stream offsets for a competition once match 1 has a start_match_time.
+
+    Waits until the first played qualification match has a start_match_time, then
+    computes offset = start_match_time - first_match_video_position and saves it.
+    Once done, unschedules itself and schedules the normal match sync + video tasks.
+    """
+    from .models import Competition, Match
+
+    if not competition_code:
+        competition_code = os.getenv("COMPCODE")
+        if not competition_code:
+            return {"success": False, "error": "No competition code available"}
+
+    try:
+        competition = Competition.objects.get(code=competition_code)
+    except Competition.DoesNotExist:
+        return {"success": False, "error": f"Competition {competition_code} not found"}
+
+    # Find the first played qualification match with a start_match_time
+    first_match = (
+        Match.objects.filter(
+            competition=competition,
+            match_type="qualification",
+            has_played=True,
+            start_match_time__gt=0,
+        )
+        .order_by("match_number")
+        .first()
+    )
+
+    if not first_match:
+        logger.info(
+            f"No played matches with start_match_time yet for {competition_code}, will retry"
+        )
+        return {"success": True, "message": "Waiting for first match start_match_time"}
+
+    # Determine which day the first match is on and compute offset
+    updated = False
+    if competition.first_match_video_position_day_1 > 0 and competition.offset_stream_time_to_unix_timestamp_day_1 == 0:
+        offset = first_match.start_match_time - competition.first_match_video_position_day_1
+        competition.offset_stream_time_to_unix_timestamp_day_1 = offset
+        competition.save(update_fields=["offset_stream_time_to_unix_timestamp_day_1"])
+        logger.info(f"Computed day 1 offset for {competition_code}: {offset}")
+        updated = True
+
+    if not updated:
+        logger.info(f"No offset to compute for {competition_code} (position not set or offset already set)")
+        return {"success": True, "message": "Nothing to compute"}
+
+    # Unschedule this task and schedule the normal tasks
     from datetime import timedelta
 
     from django.utils import timezone
-    from django_q.models import Failure, Success
+    from django_q.models import Schedule
 
-    # Keep tasks for the number of days specified in env (default 7 days)
-    retention_days = int(os.getenv("TASK_RETENTION_DAYS", "7"))
-    cutoff_date = timezone.now() - timedelta(days=retention_days)
+    Schedule.objects.filter(name="compute_stream_offsets_periodic").delete()
+    logger.info(f"Unscheduled compute_stream_offsets for {competition_code}")
 
-    logger.info(f"Cleaning up tasks older than {retention_days} days ({cutoff_date})")
+    check_matches_interval = int(os.getenv("TASK_CHECK_MATCHES_INTERVAL_MINUTES", "5"))
 
-    # Delete old successful tasks
-    success_deleted = Success.objects.filter(stopped__lt=cutoff_date).delete()
-
-    # Delete old failed tasks (you might want to keep these longer)
-    failure_deleted = Failure.objects.filter(stopped__lt=cutoff_date).delete()
-
-    logger.info(
-        f"Deleted {success_deleted[0]} successful tasks and {failure_deleted[0]} failed tasks"
+    Schedule.objects.get_or_create(
+        name="check_new_matches_periodic",
+        defaults=dict(
+            func="backend.tasks.check_and_sync_new_matches",
+            args=f'"{competition_code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            repeats=-1,
+        ),
     )
+    Schedule.objects.get_or_create(
+        name="check_video_downloads_periodic",
+        defaults=dict(
+            func="backend.tasks.check_and_download_videos",
+            args=f'"{competition_code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
+            repeats=-1,
+        ),
+    )
+    logger.info(f"Scheduled normal match sync and video download tasks for {competition_code}")
 
-    return {
-        "success": True,
-        "message": f"Cleaned up tasks older than {retention_days} days",
-        "successful_tasks_deleted": success_deleted[0],
-        "failed_tasks_deleted": failure_deleted[0],
-    }
+    return {"success": True, "message": "Offset computed and normal tasks scheduled"}
 
 
 def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
@@ -286,6 +480,17 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             f"Successfully downloaded video for match {match.match_number} "
             f"({match.competition.code}), video_available set to True"
         )
+
+        # Queue clip task
+        from django_q.tasks import async_task
+        clip_task_name = f"clip_video_{match.competition.code}_match_{match.match_number}"
+        async_task(
+            "backend.tasks.clip_match_video_task",
+            match.pk,
+            task_name=clip_task_name,
+        )
+        logger.info(f"Queued clip task for match {match.match_number}")
+
         return {
             "success": True,
             "message": f"Downloaded video for match {match.match_number}",
@@ -307,3 +512,5 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
             "competition_code": match.competition.code,
             "video_available": False,
         }
+
+

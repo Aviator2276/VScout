@@ -2,15 +2,15 @@
 Utility functions for match management.
 """
 
-import tbapy
 from django.db import transaction
 
 from backend.models import Competition, Match, Team
+from backend.utils.tba_api import TBAClient
 
 
 @transaction.atomic
 def add_match_from_tba(
-    tba_client: tbapy.TBA,
+    tba_client: TBAClient,
     competition_code: str,
     match_number: int,
     match_type_code: str,
@@ -22,7 +22,7 @@ def add_match_from_tba(
 
     Args:
         tba_client: Initialized TBA API client
-        competition_code: Competition code (e.g., '2025gagai')
+        competition_code: Competition code (e.g., '2026week0')
         match_number: Match number
         match_type_code: Match type code ('qm', 'qf', 'sf', 'f')
         set_number: Set number for playoff matches
@@ -98,93 +98,34 @@ def add_match_from_tba(
     blue_score = blue_alliance.get("score", 0) or 0
     red_score = red_alliance.get("score", 0) or 0
 
-    # Extract year from event key
-    year = int(competition_code[:4])
-
-    # Calculate game piece counts based on year
-    blue_auto_cells = 0
-    red_auto_cells = 0
-    blue_teleop_cells = 0
-    red_teleop_cells = 0
-
-    if year == 2020:
-        blue_auto_cells = (
-            blue_breakdown.get("autoCellsBottom", 0)
-            + blue_breakdown.get("autoCellsOuter", 0)
-            + blue_breakdown.get("autoCellsInner", 0)
-        )
-        red_auto_cells = (
-            red_breakdown.get("autoCellsBottom", 0)
-            + red_breakdown.get("autoCellsOuter", 0)
-            + red_breakdown.get("autoCellsInner", 0)
-        )
-        blue_teleop_cells = (
-            blue_breakdown.get("teleopCellsBottom", 0)
-            + blue_breakdown.get("teleopCellsOuter", 0)
-            + blue_breakdown.get("teleopCellsInner", 0)
-        )
-        red_teleop_cells = (
-            red_breakdown.get("teleopCellsBottom", 0)
-            + red_breakdown.get("teleopCellsOuter", 0)
-            + red_breakdown.get("teleopCellsInner", 0)
-        )
-    elif year == 2025:
-        # 2025 Reefscape
-        blue_auto_cells = blue_breakdown.get("autoCoralCount", 0)
-        red_auto_cells = red_breakdown.get("autoCoralCount", 0)
-        blue_teleop_cells = blue_breakdown.get("teleopCoralCount", 0)
-        red_teleop_cells = red_breakdown.get("teleopCoralCount", 0)
-    elif year == 2026:
-        # 2026 - Use hub score
-        hub_blue = blue_breakdown.get("hubScore", {})
-        hub_red = red_breakdown.get("hubScore", {})
-        blue_auto_cells = (
-            hub_blue.get("autoGamePieces", 0) if isinstance(hub_blue, dict) else 0
-        )
-        red_auto_cells = (
-            hub_red.get("autoGamePieces", 0) if isinstance(hub_red, dict) else 0
-        )
-        blue_teleop_cells = (
-            hub_blue.get("teleopGamePieces", 0) if isinstance(hub_blue, dict) else 0
-        )
-        red_teleop_cells = (
-            hub_red.get("teleopGamePieces", 0) if isinstance(hub_red, dict) else 0
-        )
-
-    total_blue_fuels = blue_auto_cells + blue_teleop_cells
-    total_red_fuels = red_auto_cells + red_teleop_cells
+    # Calculate game piece counts from hub score
+    hub_blue = blue_breakdown.get("hubScore", {})
+    hub_red = red_breakdown.get("hubScore", {})
+    total_blue_fuels = hub_blue.get("totalCount", 0) if isinstance(hub_blue, dict) else 0
+    total_red_fuels = hub_red.get("totalCount", 0) if isinstance(hub_red, dict) else 0
 
     # Extract time fields
     predicted_match_time = match_data.get("predicted_time", 0) or 0
     start_match_time = match_data.get("actual_time", 0) or 0
     end_match_time = match_data.get("post_result_time", 0) or 0
 
-    # Map climb values
-    def map_climb(endgame_value, year):
-        if year == 2020:
-            if endgame_value == "Park":
+    # Map climb values for 2026 endGameTowerRobot fields
+    def map_climb(endgame_value):
+        if isinstance(endgame_value, str):
+            lower_val = endgame_value.lower()
+            if "park" in lower_val or "low" in lower_val:
                 return "L1"
-            elif endgame_value == "Hang":
-                return "L3"
-        elif year == 2025:
-            # 2025 Reefscape
-            if endgame_value == "Parked":
-                return "L1"
-            elif endgame_value == "ShallowCage":
+            elif "mid" in lower_val or "shallow" in lower_val:
                 return "L2"
-            elif endgame_value == "DeepCage":
+            elif "high" in lower_val or "deep" in lower_val or "cage" in lower_val:
                 return "L3"
-        elif year == 2026:
-            # 2026
-            if isinstance(endgame_value, str):
-                lower_val = endgame_value.lower()
-                if "park" in lower_val or "low" in lower_val:
-                    return "L1"
-                elif "mid" in lower_val or "shallow" in lower_val:
-                    return "L2"
-                elif "high" in lower_val or "deep" in lower_val or "cage" in lower_val:
-                    return "L3"
         return "None"
+
+    # Map auto tower values to boolean
+    def has_auto_climb(auto_tower_value):
+        if isinstance(auto_tower_value, str):
+            return auto_tower_value.lower() != "none"
+        return False
 
     # Create or update match
     match, created = Match.objects.update_or_create(
@@ -202,21 +143,52 @@ def add_match_from_tba(
             "red_team_1": red_teams[0],
             "red_team_2": red_teams[1],
             "red_team_3": red_teams[2],
+            "blue_total_score": blue_score,
+            "red_total_score": red_score,
             "total_points": blue_score + red_score,
             "total_blue_fuels": total_blue_fuels,
             "total_red_fuels": total_red_fuels,
+            "blue_auto_points": blue_breakdown.get("totalAutoPoints", 0),
+            "red_auto_points": red_breakdown.get("totalAutoPoints", 0),
+            "blue_teleop_points": blue_breakdown.get("totalTeleopPoints", 0),
+            "red_teleop_points": red_breakdown.get("totalTeleopPoints", 0),
+            "blue_endgame_points": blue_breakdown.get("endGameTowerPoints", 0),
+            "red_endgame_points": red_breakdown.get("endGameTowerPoints", 0),
+            "blue_penalties": blue_breakdown.get("foulPoints", 0),
+            "red_penalties": red_breakdown.get("foulPoints", 0),
+            "blue_ranking_points": blue_breakdown.get("rp", 0),
+            "red_ranking_points": red_breakdown.get("rp", 0),
             "blue_1_climb": map_climb(
-                blue_breakdown.get("endgameRobot1", "None"), year
+                blue_breakdown.get("endGameTowerRobot1", "None")
             ),
             "blue_2_climb": map_climb(
-                blue_breakdown.get("endgameRobot2", "None"), year
+                blue_breakdown.get("endGameTowerRobot2", "None")
             ),
             "blue_3_climb": map_climb(
-                blue_breakdown.get("endgameRobot3", "None"), year
+                blue_breakdown.get("endGameTowerRobot3", "None")
             ),
-            "red_1_climb": map_climb(red_breakdown.get("endgameRobot1", "None"), year),
-            "red_2_climb": map_climb(red_breakdown.get("endgameRobot2", "None"), year),
-            "red_3_climb": map_climb(red_breakdown.get("endgameRobot3", "None"), year),
+            "red_1_climb": map_climb(red_breakdown.get("endGameTowerRobot1", "None")),
+            "red_2_climb": map_climb(red_breakdown.get("endGameTowerRobot2", "None")),
+            "red_3_climb": map_climb(red_breakdown.get("endGameTowerRobot3", "None")),
+            "blue_1_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot1", "None")
+            ),
+            "blue_2_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot2", "None")
+            ),
+            "blue_3_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot3", "None")
+            ),
+            "red_1_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot1", "None")
+            ),
+            "red_2_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot2", "None")
+            ),
+            "red_3_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot3", "None")
+            ),
+            "winning_alliance": match_data.get("winning_alliance", ""),
             "calculated_points": blue_score + red_score,
             "has_played": True,
         },
@@ -350,86 +322,34 @@ def import_match_from_dict(
     blue_score = blue_alliance.get("score", 0) or 0
     red_score = red_alliance.get("score", 0) or 0
 
-    # Extract year
-    year = int(tba_key[:4])
-
-    # Calculate game piece counts based on year
-    if year == 2020:
-        blue_auto_cells = (
-            blue_breakdown.get("autoCellsBottom", 0)
-            + blue_breakdown.get("autoCellsOuter", 0)
-            + blue_breakdown.get("autoCellsInner", 0)
-        )
-        red_auto_cells = (
-            red_breakdown.get("autoCellsBottom", 0)
-            + red_breakdown.get("autoCellsOuter", 0)
-            + red_breakdown.get("autoCellsInner", 0)
-        )
-        blue_teleop_cells = (
-            blue_breakdown.get("teleopCellsBottom", 0)
-            + blue_breakdown.get("teleopCellsOuter", 0)
-            + blue_breakdown.get("teleopCellsInner", 0)
-        )
-        red_teleop_cells = (
-            red_breakdown.get("teleopCellsBottom", 0)
-            + red_breakdown.get("teleopCellsOuter", 0)
-            + red_breakdown.get("teleopCellsInner", 0)
-        )
-    elif year == 2025:
-        blue_auto_cells = blue_breakdown.get("autoCoralCount", 0)
-        red_auto_cells = red_breakdown.get("autoCoralCount", 0)
-        blue_teleop_cells = blue_breakdown.get("teleopCoralCount", 0)
-        red_teleop_cells = red_breakdown.get("teleopCoralCount", 0)
-    elif year == 2026:
-        hub_blue = blue_breakdown.get("hubScore", {})
-        hub_red = red_breakdown.get("hubScore", {})
-        blue_auto_cells = (
-            hub_blue.get("autoGamePieces", 0) if isinstance(hub_blue, dict) else 0
-        )
-        red_auto_cells = (
-            hub_red.get("autoGamePieces", 0) if isinstance(hub_red, dict) else 0
-        )
-        blue_teleop_cells = (
-            hub_blue.get("teleopGamePieces", 0) if isinstance(hub_blue, dict) else 0
-        )
-        red_teleop_cells = (
-            hub_red.get("teleopGamePieces", 0) if isinstance(hub_red, dict) else 0
-        )
-    else:
-        blue_auto_cells = red_auto_cells = blue_teleop_cells = red_teleop_cells = 0
-
-    total_blue_fuels = blue_auto_cells + blue_teleop_cells
-    total_red_fuels = red_auto_cells + red_teleop_cells
+    # Calculate game piece counts from hub score
+    hub_blue = blue_breakdown.get("hubScore", {})
+    hub_red = red_breakdown.get("hubScore", {})
+    total_blue_fuels = hub_blue.get("totalCount", 0) if isinstance(hub_blue, dict) else 0
+    total_red_fuels = hub_red.get("totalCount", 0) if isinstance(hub_red, dict) else 0
 
     # Extract time fields
     predicted_match_time = match_data.get("predicted_time", 0) or 0
     start_match_time = match_data.get("actual_time", 0) or 0
     end_match_time = match_data.get("post_result_time", 0) or 0
 
-    # Map climb values
-    def map_climb(endgame_value, year):
-        if year == 2020:
-            if endgame_value == "Park":
+    # Map climb values for 2026 endGameTowerRobot fields
+    def map_climb(endgame_value):
+        if isinstance(endgame_value, str):
+            lower_val = endgame_value.lower()
+            if "park" in lower_val or "low" in lower_val:
                 return "L1"
-            elif endgame_value == "Hang":
-                return "L3"
-        elif year == 2025:
-            if endgame_value == "Parked":
-                return "L1"
-            elif endgame_value == "ShallowCage":
+            elif "mid" in lower_val or "shallow" in lower_val:
                 return "L2"
-            elif endgame_value == "DeepCage":
+            elif "high" in lower_val or "deep" in lower_val or "cage" in lower_val:
                 return "L3"
-        elif year == 2026:
-            if isinstance(endgame_value, str):
-                lower_val = endgame_value.lower()
-                if "park" in lower_val or "low" in lower_val:
-                    return "L1"
-                elif "mid" in lower_val or "shallow" in lower_val:
-                    return "L2"
-                elif "high" in lower_val or "deep" in lower_val or "cage" in lower_val:
-                    return "L3"
         return "None"
+
+    # Map auto tower values to boolean
+    def has_auto_climb(auto_tower_value):
+        if isinstance(auto_tower_value, str):
+            return auto_tower_value.lower() != "none"
+        return False
 
     # Create or update match
     match, created = Match.objects.update_or_create(
@@ -447,21 +367,52 @@ def import_match_from_dict(
             "red_team_1": red_teams[0],
             "red_team_2": red_teams[1],
             "red_team_3": red_teams[2],
+            "blue_total_score": blue_score,
+            "red_total_score": red_score,
             "total_points": blue_score + red_score,
             "total_blue_fuels": total_blue_fuels,
             "total_red_fuels": total_red_fuels,
+            "blue_auto_points": blue_breakdown.get("totalAutoPoints", 0),
+            "red_auto_points": red_breakdown.get("totalAutoPoints", 0),
+            "blue_teleop_points": blue_breakdown.get("totalTeleopPoints", 0),
+            "red_teleop_points": red_breakdown.get("totalTeleopPoints", 0),
+            "blue_endgame_points": blue_breakdown.get("endGameTowerPoints", 0),
+            "red_endgame_points": red_breakdown.get("endGameTowerPoints", 0),
+            "blue_penalties": blue_breakdown.get("foulPoints", 0),
+            "red_penalties": red_breakdown.get("foulPoints", 0),
+            "blue_ranking_points": blue_breakdown.get("rp", 0),
+            "red_ranking_points": red_breakdown.get("rp", 0),
             "blue_1_climb": map_climb(
-                blue_breakdown.get("endgameRobot1", "None"), year
+                blue_breakdown.get("endGameTowerRobot1", "None")
             ),
             "blue_2_climb": map_climb(
-                blue_breakdown.get("endgameRobot2", "None"), year
+                blue_breakdown.get("endGameTowerRobot2", "None")
             ),
             "blue_3_climb": map_climb(
-                blue_breakdown.get("endgameRobot3", "None"), year
+                blue_breakdown.get("endGameTowerRobot3", "None")
             ),
-            "red_1_climb": map_climb(red_breakdown.get("endgameRobot1", "None"), year),
-            "red_2_climb": map_climb(red_breakdown.get("endgameRobot2", "None"), year),
-            "red_3_climb": map_climb(red_breakdown.get("endgameRobot3", "None"), year),
+            "red_1_climb": map_climb(red_breakdown.get("endGameTowerRobot1", "None")),
+            "red_2_climb": map_climb(red_breakdown.get("endGameTowerRobot2", "None")),
+            "red_3_climb": map_climb(red_breakdown.get("endGameTowerRobot3", "None")),
+            "blue_1_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot1", "None")
+            ),
+            "blue_2_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot2", "None")
+            ),
+            "blue_3_auto_climb": has_auto_climb(
+                blue_breakdown.get("autoTowerRobot3", "None")
+            ),
+            "red_1_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot1", "None")
+            ),
+            "red_2_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot2", "None")
+            ),
+            "red_3_auto_climb": has_auto_climb(
+                red_breakdown.get("autoTowerRobot3", "None")
+            ),
+            "winning_alliance": match_data.get("winning_alliance", ""),
             "calculated_points": blue_score + red_score,
             "has_played": True,
         },

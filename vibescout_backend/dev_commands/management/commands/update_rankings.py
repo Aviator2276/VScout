@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 
-import tbapy
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dotenv import load_dotenv
 
 from backend.models import Competition, Team, TeamInfo
+from backend.utils.tba_api import TBAClient
 
 
 class Command(BaseCommand):
@@ -43,7 +43,7 @@ class Command(BaseCommand):
             )
             return
 
-        tba = tbapy.TBA(api_key)
+        tba = TBAClient(api_key)
 
         for event_key in options["event_keys"]:
             self.stdout.write(f"Updating rankings for: {event_key}")

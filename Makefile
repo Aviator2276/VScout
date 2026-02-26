@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 dev-reset-2026week0 export-cookies
 
 init:
 	@echo "Installing backend dependencies..."
@@ -41,7 +41,7 @@ qcluster:
 	cd vibescout_backend && uv run python manage.py qcluster
 
 import-tba:
-	cd vibescout_backend && uv run python manage.py import_tba_events 2020gagai 2020gadal 2025gacmp
+	cd vibescout_backend && uv run python manage.py import_tba_events 2026week0
 
 update-rankings:
 	cd vibescout_backend && uv run python manage.py update_rankings 2025gacmp
@@ -50,21 +50,30 @@ generate-competition:
 	@echo "Generating competition and playing all matches..."
 	cd vibescout_backend && uv run python manage.py generate_competition
 
-comp-setup:
-	@echo "Setting up competition WITHOUT playing matches (for step-through)..."
-	cd vibescout_backend && uv run python manage.py setup_competition
-
-comp-setup-gacmp:
-	@echo "Initializing 2025gacmp competition (Real Event, Blank Matches)..."
-	cd vibescout_backend && uv run python manage.py init_competition 2025gacmp --stream-time-day-1 1743699901 --stream-time-day-2 1743769816 --stream-time-day-3 1743856286 --stream-link-day-1 "https://www.youtube.com/watch?v=p-CZ4LRTTqQ" --stream-link-day-2 "https://www.youtube.com/watch?v=TJuzMzMi-g4&pp=2AaxDA%3D%3D" --stream-link-day-3 "https://www.youtube.com/watch?v=0oHvm-ZECB0"
+comp-setup-2026week0:
+	@echo "Initializing 2026week0 competition (Real Event, Blank Matches)..."
+	cd vibescout_backend && uv run python manage.py init_competition 2026week0 --stream-time-day-1 2117 --stream-link-day-1 "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
 	@echo "Adding blank matches..."
-	cd vibescout_backend && uv run python manage.py add_blank_matches 2025gacmp
-
-init_gacmp: comp-setup-gacmp
+	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
 
 comp-reset:
 	@echo "Resetting database (deleting all data)..."
 	cd vibescout_backend && uv run python manage.py reset_database
+
+dev-reset-2026week0:
+	@echo "Resetting database..."
+	rm -f vibescout_backend/db.sqlite3
+	@echo "Clearing match videos..."
+	rm -rf vibescout_backend/match_videos/2026week0
+	@echo "Running migrations..."
+	cd vibescout_backend && uv run python manage.py migrate
+	@echo "Creating admin user..."
+	cd vibescout_backend && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | uv run python manage.py shell
+	@echo "Initializing 2026week0 competition..."
+	cd vibescout_backend && uv run python manage.py init_competition 2026week0 --stream-time-day-1 2117 --stream-link-day-1 "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
+	@echo "Adding blank matches..."
+	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
+	@echo "Done! Ready to run."
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)

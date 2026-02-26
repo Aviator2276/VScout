@@ -22,6 +22,9 @@ class CompetitionSchema(ModelSchema):
             "offset_stream_time_to_unix_timestamp_day_1",
             "offset_stream_time_to_unix_timestamp_day_2",
             "offset_stream_time_to_unix_timestamp_day_3",
+            "first_match_video_position_day_1",
+            "first_match_video_position_day_2",
+            "first_match_video_position_day_3",
         ]
 
 
