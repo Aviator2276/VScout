@@ -12,6 +12,7 @@ from ninja import NinjaAPI
 
 from .models import Competition, Match, RobotAction, Team, TeamInfo
 from .schemas import (
+    BulkRobotActionsResponseSchema,
     BulkRobotActionsSchema,
     CompetitionSchema,
     MatchSchema,
@@ -433,12 +434,12 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
         "is_playoff": false,
         "notes": "General match notes",
         "auto": [
-            {"duration": 2, "action": "shoot", "fuel": 2},
-            {"duration": 10, "action": "traverse", "fuel": 0}
+            {"duration": 2, "action": "shoot"},
+            {"duration": 10, "action": "traverse"}
         ],
         "tele": [
-            {"duration": 20, "action": "shoot", "fuel": 20},
-            {"duration": 120, "action": "traverse", "fuel": 0}
+            {"duration": 20, "action": "shoot"},
+            {"duration": 120, "action": "traverse"}
         ]
     }
     ```
@@ -499,7 +500,7 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
                 start_time=start_time,
                 end_time=end_time,
                 is_playoff=payload.is_playoff,
-                fuel=action_item.fuel,
+                fuel=0,
                 notes=payload.notes if payload.notes else None,
                 recorded_by=recorded_by,
             )
@@ -519,7 +520,7 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
                 start_time=start_time,
                 end_time=end_time,
                 is_playoff=payload.is_playoff,
-                fuel=action_item.fuel,
+                fuel=0,
                 notes=payload.notes if payload.notes else None,
                 recorded_by=recorded_by,
             )
@@ -527,6 +528,55 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
             current_time = end_time
 
     return created_actions
+
+
+@api.get("/robot-actions/bulk", response=BulkRobotActionsResponseSchema)
+def get_bulk_robot_actions(
+    request, competition_code: str, match_number: int, team_number: int
+):
+    """
+    Returns robot action durations and fuel counts for a team in a match.
+
+    Fuel counts come from the match's official TBA data (not scouter input).
+    Actions are split into auto (start_time < 15) and tele (start_time >= 15).
+    """
+    competition = get_object_or_404(Competition, code=competition_code)
+    match = get_object_or_404(Match, competition=competition, match_number=match_number)
+    team = get_object_or_404(Team, number=team_number)
+
+    actions = RobotAction.objects.filter(match=match, team=team).order_by("start_time")
+
+    auto_actions = []
+    tele_actions = []
+    for action in actions:
+        duration = int(action.end_time - action.start_time)
+        item = {"duration": duration, "action": action.action_type}
+        if action.start_time < 15:
+            auto_actions.append(item)
+        else:
+            tele_actions.append(item)
+
+    # Determine team position in match to look up fuel from match model
+    position_map = {
+        "blue_1": match.blue_team_1_id,
+        "blue_2": match.blue_team_2_id,
+        "blue_3": match.blue_team_3_id,
+        "red_1": match.red_team_1_id,
+        "red_2": match.red_team_2_id,
+        "red_3": match.red_team_3_id,
+    }
+    position = next((pos for pos, tid in position_map.items() if tid == team.id), None)
+
+    auto_fuel = getattr(match, f"{position}_auto_fuel", 0) if position else 0
+    tele_fuel = getattr(match, f"{position}_teleop_fuel", 0) if position else 0
+
+    return {
+        "team_number": team_number,
+        "auto": auto_actions,
+        "tele": tele_actions,
+        "auto_fuel": auto_fuel,
+        "tele_fuel": tele_fuel,
+    }
 
 
 @api.get("/scary-api")

@@ -238,3 +238,4 @@ data.json
 # Mypy type check and compiler
 .mypy_cache
 cookies.txt
+vibescout_backend/match_videos/*.mp4.part
