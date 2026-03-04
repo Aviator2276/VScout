@@ -1,10 +1,10 @@
 /**
  * Video Storage Utility using File System API (OPFS - Origin Private File System)
  * 
- * This utility provides methods for caching videos locally using the
- * File System API for persistent storage.
+ * Provides methods for caching videos locally using the File System API.
+ * Compatible with iOS Safari 17.4+, Android Chrome 86+, and modern desktop browsers.
  * 
- * @see https://developer.mozilla.org/en-US/docs/Web/API/File_System_API
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
  */
 
 // Extend FileSystemDirectoryHandle to include entries() method
@@ -17,10 +17,35 @@ declare global {
 const VIDEO_DIRECTORY = 'videos';
 
 /**
- * Check if the File System API is available
+ * Check if the File System API (OPFS) is available in this browser
  */
 export function isFileSystemAvailable(): boolean {
-  return typeof navigator !== 'undefined' && 'storage' in navigator && 'getDirectory' in navigator.storage;
+  return (
+    typeof navigator !== 'undefined' &&
+    'storage' in navigator &&
+    typeof navigator.storage.getDirectory === 'function'
+  );
+}
+
+/**
+ * Check if the browser supports writable file streams (createWritable).
+ * Required for writing videos to OPFS. Baseline since Sept 2025 (Safari 17.4+, Chrome 86+).
+ */
+async function assertWritableSupport(): Promise<void> {
+  if (!isFileSystemAvailable()) {
+    throw new Error(
+      'File System API is not available. Video caching requires a modern browser (Safari 17.4+, Chrome 86+).'
+    );
+  }
+  const root = await navigator.storage.getDirectory();
+  const testHandle = await root.getFileHandle('__opfs_test__', { create: true });
+  if (typeof testHandle.createWritable !== 'function') {
+    await root.removeEntry('__opfs_test__');
+    throw new Error(
+      'FileSystemFileHandle.createWritable() is not supported. Please update your browser (Safari 17.4+, Chrome 86+).'
+    );
+  }
+  await root.removeEntry('__opfs_test__');
 }
 
 /**
@@ -361,4 +386,15 @@ export async function getVideoUrl(
  */
 export function revokeVideoUrl(url: string): void {
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Format bytes to a human-readable string
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }

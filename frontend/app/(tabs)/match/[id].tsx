@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import {
   Actionsheet,
@@ -42,8 +42,10 @@ import {
 } from '@/components/ui/popover';
 import { Download, TriangleAlert } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
-import { Image } from '@/components/ui/image';
-import { useAssets } from 'expo-asset';
+import { MatchVideoPlayer, MatchVideoPlayerRef } from '@/components/MatchVideoPlayer';
+import { db } from '@/utils/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 
 type TabType = 'overview' | 'scores';
 
@@ -57,15 +59,33 @@ export default function MatchDetailScreen() {
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [testImage, testError] = useAssets([
-    require('/assets/images/test.png'),
-  ]);
+  const videoPlayerRef = useRef<MatchVideoPlayerRef>(null);
+  const { startDownload, activeDownloads } = useVideoDownload();
 
   const speedOptions = [1, 1.25, 1.5, 1.75, 2];
 
   useEffect(() => {
     loadMatchDetails();
   }, [id]);
+
+  const videoRecord = useLiveQuery(
+    async () => {
+      if (!match) return null;
+      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+      if (!compCode) return null;
+      return (await db.matchVideos.get([compCode, match.match_number])) ?? null;
+    },
+    [match],
+    null,
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        videoPlayerRef.current?.pause();
+      };
+    }, [])
+  );
 
   async function loadMatchDetails() {
     try {
@@ -149,31 +169,14 @@ export default function MatchDetailScreen() {
       />
       <Box className='max-w-2xl self-center w-full'>
         <ScrollView className='flex-1 px-4 pb-4 pt-2'>
-          {testImage ? (
-            <Card
-              variant='outline'
-              className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2 overflow-hidden'
-            >
-              <Image
-                source={{ uri: testImage[0].uri }}
-                alt='Match video'
-                className='w-svw h-full aspect-video'
-              />
-            </Card>
-          ) : (
-            <Card
-              variant='outline'
-              className='w-lvw aspect-video p-0 -ml-4 mb-2'
-            >
-              <Center className='items-center justify-center h-full'>
-                Video Not Available
-                <Button size='sm' variant='solid' action='secondary'>
-                  <Icon as={Download} size='md' className={``} />
-                  <ButtonText>Download</ButtonText>
-                </Button>
-              </Center>
-            </Card>
-          )}
+          <MatchVideoPlayer
+            ref={videoPlayerRef}
+            competitionCode={match.competition.code}
+            matchNumber={match.match_number}
+            isAvailable={match.video_available}
+            isDownloaded={videoRecord?.isDownloaded ?? false}
+            onDownloadComplete={() => {}}
+          />
           <Card variant='outline' className='p-2 mb-2'>
             <VStack space='md' className='mb-2'>
               <Heading size='2xl' className='capitalize'>
@@ -411,12 +414,7 @@ export default function MatchDetailScreen() {
                             <Text
                               className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
                             >
-                              Match Video
-                            </Text>
-                            <Text
-                              className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
-                            >
-                              Download video for scouting
+                              Download Video
                             </Text>
                           </VStack>
                           <Button
@@ -424,16 +422,16 @@ export default function MatchDetailScreen() {
                             variant='outline'
                             action='secondary'
                             className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
-                            disabled={isLiveMode}
+                            disabled={isLiveMode || activeDownloads.has(match.match_number) || (videoRecord?.isDownloaded ?? false)}
                             onPress={() => {
-                              // TODO: Implement video download functionality
-                              console.log(
-                                'Download video for match',
-                                match.match_number,
-                              );
+                              startDownload(match.match_number);
                             }}
                           >
-                            <ButtonText>Download</ButtonText>
+                            {activeDownloads.has(match.match_number) ? (
+                              <ActivityIndicator size='small' />
+                            ) : (
+                              <ButtonText>{videoRecord?.isDownloaded ? 'Downloaded' : 'Download'}</ButtonText>
+                            )}
                           </Button>
                         </HStack>
                       </Card>

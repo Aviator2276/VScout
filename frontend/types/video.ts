@@ -6,9 +6,7 @@ export interface MatchVideo {
   isDownloaded: boolean;
   downloadedAt?: number;
   autoDownloaded?: boolean;
-  // TODO: Add these fields when video storage is implemented
-  // blobUrl?: string;
-  // fileSize?: number;
+  fileSize?: number;
 }
 
 export type VideoSelectionMode = 'none' | 'manual' | 'auto';

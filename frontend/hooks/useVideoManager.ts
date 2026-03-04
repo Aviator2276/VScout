@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '@/utils/db';
 import { MatchVideo, VideoSelectionMode, VideoDynamicDownloading, VideoAutoDelete } from '@/types/video';
 import { Match } from '@/types/match';
-import { fetchVideo, deleteLocalVideo, syncVideoAvailability } from '@/api/videos';
+import { fetchAndStoreVideo, deleteLocalVideo, syncVideoAvailability } from '@/api/videos';
 import { useNetworkQuality, NetworkQuality } from '@/hooks/useNetworkQuality';
+import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 
 export type MatchStatus = 'played' | 'current' | 'upcoming';
 
@@ -27,6 +28,8 @@ interface VideoManagerState {
   videoDynamicDownloading: VideoDynamicDownloading;
   videoAutoDelete: VideoAutoDelete;
   networkQuality: NetworkQuality;
+  downloadProgress: Map<number, number>;
+  downloadQueue: number[];
 }
 
 interface VideoManagerActions {
@@ -49,7 +52,10 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
   const [videoDynamicDownloading, setVideoDynamicDownloading] = useState<VideoDynamicDownloading>('manual');
   const [videoAutoDelete, setVideoAutoDelete] = useState<VideoAutoDelete>('no');
   const { quality: networkQuality } = useNetworkQuality();
+  const { downloadProgress, setProgress, clearProgress, clearAllProgress, markActive, markInactive, isActive } = useVideoDownload();
   const downloadAbortRef = useRef(false);
+  const [downloadQueue, setDownloadQueue] = useState<number[]>([]);
+  const downloadQueueRef = useRef<number[]>([]);
 
   useEffect(() => {
     loadConfig();
@@ -218,8 +224,32 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
   const startDownloads = useCallback(() => {
     setIsPaused(false);
     downloadAbortRef.current = false;
-    processDownloadQueue();
-  }, [videos, videoSelectionMode, videoDynamicDownloading, networkQuality, selectedVideos]);
+
+    // Build list of videos to add to queue
+    let toQueue: number[];
+    if (videoSelectionMode === 'auto') {
+      toQueue = videos
+        .filter((v) => v.isAvailable && !v.isDownloaded && !v.autoDownloaded)
+        .map((v) => v.match_number);
+    } else if (videoSelectionMode === 'manual') {
+      toQueue = videos
+        .filter((v) => selectedVideos.has(v.match_number) && v.isAvailable && !v.isDownloaded)
+        .map((v) => v.match_number);
+    } else {
+      toQueue = [];
+    }
+
+    // Merge into existing queue (avoid duplicates)
+    const existing = new Set(downloadQueueRef.current);
+    const merged = [...downloadQueueRef.current, ...toQueue.filter((n) => !existing.has(n))];
+    downloadQueueRef.current = merged;
+    setDownloadQueue([...merged]);
+
+    // Only start processing if not already running
+    if (!isDownloading) {
+      processDownloadQueue();
+    }
+  }, [videos, videoSelectionMode, videoDynamicDownloading, networkQuality, selectedVideos, isDownloading]);
 
   const pauseDownloads = useCallback(() => {
     setIsPaused(true);
@@ -234,24 +264,8 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
       const compCode = (await db.config.get({ key: 'compCode' }))?.value;
       if (!compCode) return;
 
-      // Determine which videos to download
-      let toDownload: VideoListItem[];
-      if (videoSelectionMode === 'auto') {
-        // Auto mode: download all available, not yet downloaded, not auto-downloaded before
-        toDownload = videos.filter(
-          (v) => v.isAvailable && !v.isDownloaded && !v.autoDownloaded,
-        );
-      } else if (videoSelectionMode === 'manual') {
-        // Manual mode: download selected videos that are available and not downloaded
-        toDownload = videos.filter(
-          (v) => selectedVideos.has(v.match_number) && v.isAvailable && !v.isDownloaded,
-        );
-      } else {
-        // None mode: no downloads
-        toDownload = [];
-      }
-
-      for (const video of toDownload) {
+      // Process queue items one at a time, checking for new additions each iteration
+      while (downloadQueueRef.current.length > 0) {
         if (downloadAbortRef.current) break;
 
         // Check network condition if optimal mode
@@ -261,21 +275,52 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
           break;
         }
 
-        // TODO: Actually download the video when backend is ready
-        const blob = await fetchVideo(video.match_number);
-        if (blob) {
-          // TODO: Store blob locally
-          await db.matchVideos.update([compCode, video.match_number], {
-            isDownloaded: true,
-            downloadedAt: Date.now(),
-            autoDownloaded: videoSelectionMode === 'auto' ? true : undefined,
-          });
+        const matchNumber = downloadQueueRef.current[0];
+
+        // Skip if already being downloaded (e.g., from match page or auto-download)
+        if (isActive(matchNumber)) {
+          downloadQueueRef.current = downloadQueueRef.current.slice(1);
+          setDownloadQueue([...downloadQueueRef.current]);
+          continue;
+        }
+
+        // Fetch video from API and store in OPFS with progress tracking
+        // Progress UI is deferred until onStart (response.ok confirmed, not 404)
+        const fileSize = await fetchAndStoreVideo(
+          matchNumber,
+          (progress) => {
+            setProgress(matchNumber, progress);
+          },
+          () => {
+            markActive(matchNumber);
+            setProgress(matchNumber, 0);
+          },
+        );
+
+        // Remove from queue after download attempt
+        downloadQueueRef.current = downloadQueueRef.current.slice(1);
+        setDownloadQueue([...downloadQueueRef.current]);
+
+        // Clear progress after download completes
+        markInactive(matchNumber);
+        clearProgress(matchNumber);
+
+        if (fileSize !== null) {
+          // Mark as auto-downloaded if in auto mode
+          if (videoSelectionMode === 'auto') {
+            await db.matchVideos.update([compCode, matchNumber], {
+              autoDownloaded: true,
+            });
+          }
         }
       }
     } catch (error) {
       console.error('Download queue error:', error);
     } finally {
       setIsDownloading(false);
+      downloadQueueRef.current = [];
+      setDownloadQueue([]);
+      clearAllProgress();
       await loadVideos();
     }
   }
@@ -308,6 +353,8 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
     videoDynamicDownloading,
     videoAutoDelete,
     networkQuality,
+    downloadProgress,
+    downloadQueue,
     toggleSelect,
     selectAll,
     deselectAll,

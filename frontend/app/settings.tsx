@@ -12,7 +12,7 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
-import { deleteAllAppFiles } from '@/utils/videoStorage';
+import { deleteAllAppFiles, getTotalVideoStorageUsed, formatBytes } from '@/utils/videoStorage';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -91,6 +91,7 @@ export default function SettingsScreen() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loadingCompetitions, setLoadingCompetitions] = useState(true);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [videoStorageBytes, setVideoStorageBytes] = useState<number>(0);
   const [videoSelectionMode, setVideoSelectionMode] =
     useState<VideoSelectionMode>('none');
   const [videoDynamicDownloading, setVideoDynamicDownloading] =
@@ -122,8 +123,12 @@ export default function SettingsScreen() {
   }, [scrollTo, storage]);
 
   async function loadStorageInfo() {
-    const info = await getStorageInfo();
+    const [info, videoBytes] = await Promise.all([
+      getStorageInfo(),
+      getTotalVideoStorageUsed(),
+    ]);
     setStorage(info);
+    setVideoStorageBytes(videoBytes);
   }
 
   if (!storage || !storage.available) {
@@ -316,6 +321,27 @@ export default function SettingsScreen() {
                   </Progress>
                   <Text className='text-xs text-typography-600'>
                     {storage.usagePercentage.toFixed(1)}% used
+                  </Text>
+                </VStack>
+                <VStack space='xs'>
+                  <HStack className='justify-between items-center'>
+                    <Text className='text-sm font-semibold text-typography-700'>
+                      Video Storage
+                    </Text>
+                    <Text className='text-xs text-typography-600'>
+                      {formatBytes(videoStorageBytes)} / {storage.quotaFormatted}
+                    </Text>
+                  </HStack>
+                  <Progress
+                    value={storage.quota > 0 ? (videoStorageBytes / storage.quota) * 100 : 0}
+                    size='sm'
+                  >
+                    <ProgressFilledTrack className='bg-warning-500' />
+                  </Progress>
+                  <Text className='text-xs text-typography-600'>
+                    {storage.quota > 0
+                      ? ((videoStorageBytes / storage.quota) * 100).toFixed(1)
+                      : '0.0'}% of total storage
                   </Text>
                 </VStack>
               </VStack>
