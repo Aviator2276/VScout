@@ -77,7 +77,7 @@ export async function deleteLocalVideo(
 }
 
 /**
- * Sync video availability for all matches by checking the isVideoAvailable field
+ * Sync video availability for all matches by checking the video_available field
  * on cached match data. Creates/updates matchVideos records accordingly.
  * TODO: When backend provides per-match availability, this can also call an API.
  */
@@ -92,7 +92,7 @@ export async function syncVideoAvailability(): Promise<void> {
 
   for (const match of matches) {
     const existing = await db.matchVideos.get([compCode, match.match_number]);
-    const isAvailable = match.isVideoAvailable ?? false;
+    const isAvailable = match.video_available ?? false;
 
     if (existing) {
       if (existing.isAvailable !== isAvailable) {

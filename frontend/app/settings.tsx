@@ -12,6 +12,7 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
+import { deleteAllAppFiles } from '@/utils/videoStorage';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -195,6 +196,8 @@ export default function SettingsScreen() {
 
     try {
       setIsCompleting(true);
+      // Delete all stored video files
+      await deleteAllAppFiles();
       await db.delete();
       await db.open();
       await setCompetitionCode(localCompetitionCode);
@@ -213,6 +216,8 @@ export default function SettingsScreen() {
   async function handleResetDatabase() {
     try {
       setIsResetting(true);
+      // Delete all stored video files
+      await deleteAllAppFiles();
       await db.delete().then(async () => {
         await db.open();
       });
@@ -584,7 +589,7 @@ export default function SettingsScreen() {
                   onPress={() => setShowResetDialog(true)}
                   isDisabled={isResetting}
                 >
-                  <ButtonText>Reset Database</ButtonText>
+                  <ButtonText>Reset App</ButtonText>
                 </Button>
               </VStack>
             </Card>
@@ -604,8 +609,8 @@ export default function SettingsScreen() {
           <AlertDialogBody>
             <Text>
               This action will permanently delete your local scouting data,
-              including all matches and teams. An internet connection is
-              required to download the new match and team data.
+              including all matches, videos, and teams. An internet connection
+              is required to download the new match and team data.
             </Text>
           </AlertDialogBody>
           <AlertDialogFooter>
@@ -638,13 +643,13 @@ export default function SettingsScreen() {
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Heading>Reset Database</Heading>
+            <Heading>Reset App</Heading>
           </AlertDialogHeader>
           <AlertDialogBody>
             <Text>
               This action will permanently delete your local scouting data,
-              including all matches and teams. An internet connection is
-              required to redownload match and team data. A competition code
+              including all matches, videos, and teams. An internet connection
+              is required to redownload match and team data. A competition code
               will not be auto-selected.
             </Text>
           </AlertDialogBody>

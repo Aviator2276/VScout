@@ -139,7 +139,7 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
         return {
           match_number: match.match_number,
           match_type: match.match_type,
-          isAvailable: vr?.isAvailable ?? match.isVideoAvailable ?? false,
+          isAvailable: vr?.isAvailable ?? match.video_available ?? false,
           isDownloaded: vr?.isDownloaded ?? false,
           downloadedAt: vr?.downloadedAt,
           autoDownloaded: vr?.autoDownloaded,
