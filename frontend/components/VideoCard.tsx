@@ -5,7 +5,16 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
 import { Badge, BadgeIcon, BadgeText } from '@/components/ui/badge';
-import { Check, Download, X, Play, Clock, Calendar } from 'lucide-react-native';
+import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
+import {
+  Check,
+  Play,
+  Clock,
+  CloudCheck,
+  CloudOff,
+  Save,
+  SaveOff,
+} from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { VideoListItem, MatchStatus } from '@/hooks/useVideoManager';
 
@@ -24,13 +33,18 @@ interface VideoCardProps {
   video: VideoListItem;
   isSelected: boolean;
   onToggleSelect: (matchNumber: number) => void;
+  downloadProgress?: number;
+  queuePosition?: number;
 }
 
 export function VideoCard({
   video,
   isSelected,
   onToggleSelect,
+  downloadProgress,
+  queuePosition,
 }: VideoCardProps) {
+  const isDownloading = downloadProgress !== undefined;
   return (
     <Pressable onPress={() => onToggleSelect(video.match_number)}>
       <Card variant='outline' size='md' className='mb-2 p-2'>
@@ -62,32 +76,48 @@ export function VideoCard({
                   {getStatusConfig(video.matchStatus).label}
                 </BadgeText>
               </Badge>
+              {queuePosition !== undefined && (
+                <Badge size='sm' variant='solid' action='warning'>
+                  <BadgeText>#{queuePosition}</BadgeText>
+                </Badge>
+              )}
             </HStack>
           </VStack>
 
-          <VStack space='xs' className='items-end'>
+          <HStack space='sm' className='items-end'>
             <HStack space='xs' className='gap-1 justify-end items-center'>
-              <Text className='text-xs text-typography-500'>Available:</Text>
               <Badge
-                size='sm'
+                size='lg'
                 variant='solid'
-                action={video.isAvailable ? 'success' : 'error'}
+                action={video.isAvailable ? 'info' : 'error'}
               >
-                <BadgeIcon as={video.isAvailable ? Check : X} />
+                <BadgeIcon
+                  size='lg'
+                  className='h-5 w-5'
+                  as={video.isAvailable ? CloudCheck : CloudOff}
+                />
               </Badge>
             </HStack>
             <HStack space='xs' className='gap-1 items-center'>
-              <Text className='text-xs text-typography-500'>Cached:</Text>
               <Badge
-                size='sm'
+                size='lg'
                 variant='solid'
-                action={video.isDownloaded ? 'info' : 'error'}
+                action={video.isDownloaded ? 'success' : 'error'}
               >
-                <BadgeIcon as={video.isDownloaded ? Check : X} />
+                <BadgeIcon
+                  size='lg'
+                  className='h-5 w-5'
+                  as={video.isDownloaded ? Save : SaveOff}
+                />
               </Badge>
             </HStack>
-          </VStack>
+          </HStack>
         </HStack>
+        {isDownloading && (
+          <Progress value={downloadProgress} size='xs' className='p-0 m-0 mt-2'>
+            <ProgressFilledTrack className='bg-primary-500' />
+          </Progress>
+        )}
       </Card>
     </Pressable>
   );

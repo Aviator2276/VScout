@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { AppProvider, useApp } from '@/contexts/AppContext';
+import { VideoDownloadProvider } from '@/contexts/VideoDownloadContext';
 import '@/utils/db';
 import '../global.css';
 
@@ -20,7 +21,9 @@ export default function AppLayout() {
   return (
     <GluestackUIProvider mode='system'>
       <AppProvider>
-        <ThemedApp />
+        <VideoDownloadProvider>
+          <ThemedApp />
+        </VideoDownloadProvider>
       </AppProvider>
     </GluestackUIProvider>
   );

@@ -341,7 +341,6 @@ class RobotActionItemSchema(Schema):
 
     duration: int  # Duration in seconds
     action: str  # Action type (shoot, traverse, climb, etc.)
-    fuel: int  # Number of fuel/game pieces
 
 
 class BulkRobotActionsSchema(Schema):
@@ -354,3 +353,13 @@ class BulkRobotActionsSchema(Schema):
     notes: Optional[str] = None
     auto: list[RobotActionItemSchema]  # List of autonomous actions
     tele: list[RobotActionItemSchema]  # List of teleop actions
+
+
+class BulkRobotActionsResponseSchema(Schema):
+    """Schema for returning bulk robot actions with fuel data from match"""
+
+    team_number: int
+    auto: list[RobotActionItemSchema]
+    tele: list[RobotActionItemSchema]
+    auto_fuel: int
+    tele_fuel: int

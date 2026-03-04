@@ -28,7 +28,11 @@ export default function VideosScreen() {
     isPaused,
     videoDynamicDownloading,
     networkQuality,
+    downloadProgress,
+    downloadQueue,
     toggleSelect,
+    selectAll,
+    deselectAll,
     startDownloads,
     pauseDownloads,
     deleteSelected,
@@ -50,8 +54,11 @@ export default function VideosScreen() {
           isDownloading={isDownloading}
           isPaused={isPaused}
           videoDynamicDownloading={videoDynamicDownloading}
+          isAllSelected={selectedVideos.size > 0}
           onStartDownloads={startDownloads}
           onPauseDownloads={pauseDownloads}
+          onSelectAll={selectAll}
+          onDeselectAll={deselectAll}
         />
 
         {isLoading ? (
@@ -62,12 +69,18 @@ export default function VideosScreen() {
           <FlatList
             className='flex-1 px-4 pt-4'
             data={videos}
-            keyExtractor={(item) => `video-${item.match_number}`}
+            keyExtractor={(item) => `video-${item.match_type}-${item.match_number}`}
             renderItem={({ item }) => (
               <VideoCard
                 video={item}
                 isSelected={selectedVideos.has(item.match_number)}
                 onToggleSelect={toggleSelect}
+                downloadProgress={downloadProgress.get(item.match_number)}
+                queuePosition={
+                  downloadQueue.includes(item.match_number)
+                    ? downloadQueue.indexOf(item.match_number) + 1
+                    : undefined
+                }
               />
             )}
             ListEmptyComponent={() => (
