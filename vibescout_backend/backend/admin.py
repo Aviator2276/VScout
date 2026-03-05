@@ -1,5 +1,40 @@
+import json
+
 from django.contrib import admin
-from .models import Team, Competition, TeamInfo
+from django.utils.html import format_html
+
+from .models import Match, Team, Competition, TeamInfo
+
+
+@admin.register(Match)
+class MatchAdmin(admin.ModelAdmin):
+    list_display = ['match_number', 'match_type', 'competition', 'has_played', 'video_available', 'video_clipped', 'has_fuel_timeline']
+    list_filter = ['competition', 'match_type', 'has_played', 'video_clipped']
+    search_fields = ['match_number']
+    readonly_fields = ['fuel_timeline_pretty']
+
+    def has_fuel_timeline(self, obj):
+        return obj.fuel_timeline is not None
+    has_fuel_timeline.boolean = True
+    has_fuel_timeline.short_description = 'Fuel Timeline'
+
+    def fuel_timeline_pretty(self, obj):
+        if obj.fuel_timeline is None:
+            return '—'
+        return format_html('<pre style="white-space:pre-wrap">{}</pre>', json.dumps(obj.fuel_timeline, indent=2))
+    fuel_timeline_pretty.short_description = 'Fuel Timeline (JSON)'
+
+    fieldsets = [
+        (None, {
+            'fields': ['competition', 'match_number', 'match_type', 'set_number', 'has_played'],
+        }),
+        ('Video', {
+            'fields': ['video_available', 'video_clipped'],
+        }),
+        ('Fuel Timeline', {
+            'fields': ['fuel_timeline_pretty'],
+        }),
+    ]
 
 
 @admin.register(Team)

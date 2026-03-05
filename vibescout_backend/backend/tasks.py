@@ -218,6 +218,77 @@ def sync_all_competition_matches(competition_code: Optional[str] = None) -> dict
         return {"success": False, "error": f"Error syncing matches: {str(e)}"}
 
 
+def compute_fuel_timeline_task(match_id: int) -> dict:
+    """
+    Background task to compute per-second fuel scores for a match using LLM vision.
+
+    Crops red/blue scoreboard regions from the clipped video into a temp directory,
+    runs LLM inference on each frame, and saves the result to match.fuel_timeline.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    from .models import Match
+    from .utils.fuel_count_llm import scores_from_images
+    from .utils.video_downloader import _get_video_path
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        logger.error(f"Match {match_id} not found")
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    video_path = _get_video_path(match, match.competition)
+    if not video_path.exists():
+        logger.error(f"Video not found for match {match_id}: {video_path}")
+        return {"success": False, "error": "Video file not found"}
+
+    tmp = Path(tempfile.mkdtemp(prefix="fuel_llm_"))
+    try:
+        red_dir = tmp / "red"
+        blue_dir = tmp / "blue"
+        red_dir.mkdir()
+        blue_dir.mkdir()
+
+        # Crop coords (W:H:X:Y) at 640x360 — coords are swapped due to cropper flipping
+        crops = [
+            ("red",  "18:10:582:24", str(red_dir / "%03d.jpg")),
+            ("blue", "18:10:30:24",  str(blue_dir / "%03d.jpg")),
+        ]
+        for alliance, crop, out_pattern in crops:
+            w, h, x, y = crop.split(":")
+            cmd = [
+                "ffmpeg", "-i", str(video_path),
+                "-vf", f"crop={w}:{h}:{x}:{y},scale={int(w)*32}:{int(h)*32},fps=1",
+                "-f", "image2", "-q:v", "2",
+                out_pattern, "-y", "-loglevel", "error",
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                logger.error(f"ffmpeg crop failed for {alliance}: {result.stderr}")
+                return {"success": False, "error": f"ffmpeg failed for {alliance}"}
+
+        logger.info(f"Running LLM fuel timeline for match {match.match_number}")
+        timeline = scores_from_images(str(tmp))
+
+        match.fuel_timeline = timeline
+        match.save(update_fields=["fuel_timeline"])
+        logger.info(f"Saved fuel_timeline for match {match.match_number}")
+
+        return {
+            "success": True,
+            "match_id": match_id,
+            "match_number": match.match_number,
+        }
+    except Exception as e:
+        logger.error(f"compute_fuel_timeline_task error for match {match_id}: {e}")
+        return {"success": False, "error": str(e)}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def clip_match_video_task(match_id: int) -> dict:
     """
     Background task to clip a downloaded match video to exact match start.
@@ -246,6 +317,13 @@ def clip_match_video_task(match_id: int) -> dict:
             f"Successfully clipped video for match {match.match_number} "
             f"({match.competition.code})"
         )
+        from django_q.tasks import async_task
+        async_task(
+            "backend.tasks.compute_fuel_timeline_task",
+            match.pk,
+            task_name=f"fuel_timeline_{match.competition.code}_match_{match.match_number}",
+        )
+        logger.info(f"Queued fuel timeline task for match {match.match_number}")
         return {
             "success": True,
             "message": f"Clipped video for match {match.match_number}",
