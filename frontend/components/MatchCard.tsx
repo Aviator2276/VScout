@@ -110,7 +110,7 @@ export function MatchCard({
                       className='justify-center items-center'
                     >
                       <BadgeIcon
-                        size='md'
+                        size='sm'
                         className=''
                         as={isVideoDownloaded ? Video : VideoOff}
                       ></BadgeIcon>
