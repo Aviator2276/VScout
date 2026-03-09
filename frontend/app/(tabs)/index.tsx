@@ -20,7 +20,7 @@ import { useState, useMemo } from 'react';
 import { Text } from '@/components/ui/text';
 import { useRecords } from '@/hooks/useRecords';
 import formbricks from '@formbricks/js';
-import { Fab, FabIcon } from '@/components/ui/fab';
+import { Fab, FabIcon, FabLabel } from '@/components/ui/fab';
 
 export default function HomeScreen() {
   const [showRecords, setShowRecords] = useState(false);
@@ -29,13 +29,13 @@ export default function HomeScreen() {
 
   if (typeof window !== 'undefined') {
     formbricks.setup({
-      environmentId: 'cmlvxt0pj0009s20185359bk4',
+      environmentId: 'cmmgt704e0009pi01h39hwhmq',
       appUrl: 'https://surveys.sparkslab.net/',
     });
   }
 
   const handleFeedback = () => {
-    formbricks.track('feedback_fab');
+    formbricks.track('feedback_home');
   };
 
   // Get the latest 3 records
@@ -52,6 +52,7 @@ export default function HomeScreen() {
         onPress={handleFeedback}
       >
         <FabIcon as={MessageSquareMore} />
+        <FabLabel>Feedback</FabLabel>
       </Fab>
       <Header title='Home' isMainScreen />
       <Box className='flex-1 max-w-2xl self-center w-full'>
