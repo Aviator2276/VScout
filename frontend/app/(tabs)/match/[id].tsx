@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import {
   Actionsheet,
@@ -42,8 +42,13 @@ import {
 } from '@/components/ui/popover';
 import { Download, TriangleAlert } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
-import { Image } from '@/components/ui/image';
-import { useAssets } from 'expo-asset';
+import {
+  MatchVideoPlayer,
+  MatchVideoPlayerRef,
+} from '@/components/MatchVideoPlayer';
+import { db } from '@/utils/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 
 type TabType = 'overview' | 'scores';
 
@@ -57,15 +62,37 @@ export default function MatchDetailScreen() {
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [testImage, testError] = useAssets([
-    require('/assets/images/test.png'),
-  ]);
+  const [selectedTeam, setSelectedTeam] = useState<{
+    number: number;
+    name: string;
+  } | null>(null);
+  const videoPlayerRef = useRef<MatchVideoPlayerRef>(null);
+  const { startDownload, activeDownloads } = useVideoDownload();
 
   const speedOptions = [1, 1.25, 1.5, 1.75, 2];
 
   useEffect(() => {
     loadMatchDetails();
   }, [id]);
+
+  const videoRecord = useLiveQuery(
+    async () => {
+      if (!match) return null;
+      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+      if (!compCode) return null;
+      return (await db.matchVideos.get([compCode, match.match_number])) ?? null;
+    },
+    [match],
+    null,
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        videoPlayerRef.current?.pause();
+      };
+    }, []),
+  );
 
   async function loadMatchDetails() {
     try {
@@ -149,31 +176,14 @@ export default function MatchDetailScreen() {
       />
       <Box className='max-w-2xl self-center w-full'>
         <ScrollView className='flex-1 px-4 pb-4 pt-2'>
-          {testImage ? (
-            <Card
-              variant='outline'
-              className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2 overflow-hidden'
-            >
-              <Image
-                source={{ uri: testImage[0].uri }}
-                alt='Match video'
-                className='w-svw h-full aspect-video'
-              />
-            </Card>
-          ) : (
-            <Card
-              variant='outline'
-              className='w-lvw aspect-video p-0 -ml-4 mb-2'
-            >
-              <Center className='items-center justify-center h-full'>
-                Video Not Available
-                <Button size='sm' variant='solid' action='secondary'>
-                  <Icon as={Download} size='md' className={``} />
-                  <ButtonText>Download</ButtonText>
-                </Button>
-              </Center>
-            </Card>
-          )}
+          <MatchVideoPlayer
+            ref={videoPlayerRef}
+            competitionCode={match.competition.code}
+            matchNumber={match.match_number}
+            isAvailable={match.video_available}
+            isDownloaded={videoRecord?.isDownloaded ?? false}
+            onDownloadComplete={() => {}}
+          />
           <Card variant='outline' className='p-2 mb-2'>
             <VStack space='md' className='mb-2'>
               <Heading size='2xl' className='capitalize'>
@@ -282,15 +292,19 @@ export default function MatchDetailScreen() {
             onClose={() => setIsScoutSheetOpen(false)}
           >
             <ActionsheetBackdrop />
-            <ActionsheetContent className='p-4'>
+            <ActionsheetContent className='p-4 max-h-[90%]'>
               <ActionsheetDragIndicatorWrapper>
                 <ActionsheetDragIndicator />
               </ActionsheetDragIndicatorWrapper>
-              <VStack space='lg' className='w-full max-w-md self-center py-4'>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+              >
+                <VStack space='lg' className='w-full max-w-md self-center py-4'>
                 <Heading size='xl' className='text-center capitalize'>
                   Scout {match.match_type} {match.match_number}
                 </Heading>
-                <Card variant='outline' className='p-4 border-warning-500'>
+                {/* <Card variant='outline' className='p-4 border-warning-500'>
                   <HStack className='items-center justify-between gap-2'>
                     <Icon
                       as={TriangleAlert}
@@ -301,6 +315,51 @@ export default function MatchDetailScreen() {
                       Match timer will start immediately after clicking start.
                     </Text>
                   </HStack>
+                </Card> */}
+
+                {/* Team Selector */}
+                <Card variant='outline' className='p-4'>
+                  <VStack space='sm'>
+                    <Text className='font-semibold'>Select Team to Scout</Text>
+                    <HStack space='xs'>
+                      {[
+                        { key: 'blue_team_1', alliance: 'blue' },
+                        { key: 'blue_team_2', alliance: 'blue' },
+                        { key: 'blue_team_3', alliance: 'blue' },
+                        { key: 'red_team_1', alliance: 'red' },
+                        { key: 'red_team_2', alliance: 'red' },
+                        { key: 'red_team_3', alliance: 'red' },
+                      ].map(({ key, alliance }) => {
+                        const team = match[key as keyof Match] as {
+                          number: number;
+                          name: string;
+                        };
+                        const isSelected = selectedTeam?.number === team.number;
+                        return (
+                          <Pressable
+                            key={key}
+                            onPress={() => setSelectedTeam(team)}
+                            className='flex-1'
+                          >
+                            <Badge
+                              size='lg'
+                              variant='solid'
+                              className={`${
+                                alliance === 'blue'
+                                  ? 'bg-blue-500/75'
+                                  : 'bg-red-500/75'
+                              } rounded font-medium justify-center py-1 ${
+                                isSelected &&
+                                '!border-amber-400 border-[0.15rem] py-[0.1rem]'
+                              }`}
+                            >
+                              <BadgeText>{team.number}</BadgeText>
+                            </Badge>
+                          </Pressable>
+                        );
+                      })}
+                    </HStack>
+                  </VStack>
                 </Card>
 
                 {/* Live/Video Mode Switch */}
@@ -411,12 +470,7 @@ export default function MatchDetailScreen() {
                             <Text
                               className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
                             >
-                              Match Video
-                            </Text>
-                            <Text
-                              className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
-                            >
-                              Download video for scouting
+                              Download Video
                             </Text>
                           </VStack>
                           <Button
@@ -424,16 +478,24 @@ export default function MatchDetailScreen() {
                             variant='outline'
                             action='secondary'
                             className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
-                            disabled={isLiveMode}
+                            disabled={
+                              isLiveMode ||
+                              activeDownloads.has(match.match_number) ||
+                              (videoRecord?.isDownloaded ?? false)
+                            }
                             onPress={() => {
-                              // TODO: Implement video download functionality
-                              console.log(
-                                'Download video for match',
-                                match.match_number,
-                              );
+                              startDownload(match.match_number);
                             }}
                           >
-                            <ButtonText>Download</ButtonText>
+                            {activeDownloads.has(match.match_number) ? (
+                              <ActivityIndicator size='small' />
+                            ) : (
+                              <ButtonText>
+                                {videoRecord?.isDownloaded
+                                  ? 'Downloaded'
+                                  : 'Download'}
+                              </ButtonText>
+                            )}
                           </Button>
                         </HStack>
                       </Card>
@@ -457,13 +519,38 @@ export default function MatchDetailScreen() {
                 <Button
                   size='lg'
                   action='positive'
+                  disabled={
+                    !selectedTeam ||
+                    (!isLiveMode && !videoRecord?.isDownloaded)
+                  }
+                  className={
+                    !selectedTeam ||
+                    (!isLiveMode && !videoRecord?.isDownloaded)
+                      ? 'opacity-40'
+                      : ''
+                  }
                   onPress={() => {
+                    if (!selectedTeam) return;
+                    if (!isLiveMode && !videoRecord?.isDownloaded) return;
                     setIsScoutSheetOpen(false);
-                    // TODO: Navigate to scouting screen
-                    // router.push(`/(tabs)/match/scout/${match.match_number}?mode=${isLiveMode ? 'live' : 'video'}&speed=${playbackSpeed}`);
+                    if (isLiveMode) {
+                      router.push(
+                        `/scout-live?matchNumber=${match.match_number}&teamNumber=${selectedTeam.number}`,
+                      );
+                    } else {
+                      router.push(
+                        `/scout-video?matchNumber=${match.match_number}&speed=${playbackSpeed}&teamNumber=${selectedTeam.number}`,
+                      );
+                    }
                   }}
                 >
-                  <ButtonText>Start Scouting</ButtonText>
+                  <ButtonText>
+                    {!selectedTeam
+                      ? 'Select a Team'
+                      : !isLiveMode && !videoRecord?.isDownloaded
+                        ? 'Download Video First'
+                        : `Start Scouting Team ${selectedTeam.number}`}
+                  </ButtonText>
                 </Button>
 
                 <Button
@@ -475,6 +562,7 @@ export default function MatchDetailScreen() {
                   <ButtonText>Cancel</ButtonText>
                 </Button>
               </VStack>
+              </ScrollView>
             </ActionsheetContent>
           </Actionsheet>
 

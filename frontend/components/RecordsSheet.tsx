@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Text } from '@/components/ui/text';
 import { Box } from '@/components/ui/box';
 import { Heading } from '@/components/ui/heading';
-import { FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable, ScrollView } from 'react-native';
 import { cssInterop } from 'nativewind';
 import { deleteRecord } from '@/api/records';
 import { db } from '@/utils/db';
@@ -101,7 +101,7 @@ export function RecordsSheet({ isOpen, onClose }: RecordsSheetProps) {
   return (
     <Actionsheet isOpen={isOpen} onClose={onClose}>
       <ActionsheetBackdrop />
-      <ActionsheetContent className='w-full h-[calc(100%-4rem)]'>
+      <ActionsheetContent className='w-full max-h-[90%]'>
         <ActionsheetDragIndicatorWrapper>
           <ActionsheetDragIndicator />
         </ActionsheetDragIndicatorWrapper>

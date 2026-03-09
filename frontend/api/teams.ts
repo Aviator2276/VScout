@@ -342,6 +342,10 @@ interface PictureSyncResponse {
   has_picture: boolean;
 }
 
+interface BatchPictureSyncResponse {
+  [teamNumber: string]: PictureSyncResponse;
+}
+
 interface PictureResponse {
   picture: string | null;
 }
@@ -397,6 +401,27 @@ export async function fetchTeamPicture(
 }
 
 /**
+ * Fetch all picture hashes for the current competition.
+ * @returns A map of team numbers to their picture sync responses
+ */
+export async function fetchAllPictureHashes(): Promise<BatchPictureSyncResponse | null> {
+  const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+
+  if (!compCode) {
+    return null;
+  }
+
+  try {
+    return await apiRequest<BatchPictureSyncResponse>(
+      `/api/team-info/picture/sync?competition_code=${encodeURIComponent(compCode)}`,
+    );
+  } catch (error) {
+    console.error('Failed to fetch all picture hashes:', error);
+    return null;
+  }
+}
+
+/**
  * Sync pictures for all teams in the current competition.
  * Checks hashes and only downloads pictures that have changed.
  * Runs asynchronously and does not block.
@@ -417,6 +442,13 @@ export async function syncTeamPictures(): Promise<void> {
 
     console.log(`Syncing pictures for ${teamInfoList.length} teams...`);
 
+    // Fetch all picture hashes in one request
+    const allHashes = await fetchAllPictureHashes();
+    if (!allHashes) {
+      console.log('Failed to fetch picture hashes, skipping sync');
+      return;
+    }
+
     // Process teams in batches of 5 to avoid overwhelming the network
     const batchSize = 5;
     for (let i = 0; i < teamInfoList.length; i += batchSize) {
@@ -425,7 +457,7 @@ export async function syncTeamPictures(): Promise<void> {
       await Promise.allSettled(
         batch.map(async (teamInfo) => {
           try {
-            const syncResponse = await fetchPictureHash(teamInfo.team_number);
+            const syncResponse = allHashes[teamInfo.team_number.toString()];
 
             if (!syncResponse) return;
 

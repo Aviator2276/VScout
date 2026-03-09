@@ -4,12 +4,13 @@ import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Center } from '@/components/ui/center';
 import { Badge, BadgeText } from '@/components/ui/badge';
-import { Button, ButtonText } from '@/components/ui/button';
+import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { DownlinkStatus } from '@/components/DownlinkStatus';
 import { useApp } from '@/contexts/AppContext';
 import { parseCompetitionCode } from '@/utils/competitionCode';
 import { UplinkStatus } from './UplinkStatus';
+import { ChevronLeft } from 'lucide-react-native';
 
 interface HeaderProps {
   title: string;
@@ -55,12 +56,12 @@ export function Header({
       <HStack className='gap-2 items-center'>
         {showBackButton && (
           <Button
-            variant='outline'
-            size='sm'
-            className='px-2 font-bold border-primary-500/5'
+            variant='link'
+            size='md'
+            className='px-1 font-bold border-primary-500/5'
             onPress={handleBackNavigation}
           >
-            <ButtonText>←</ButtonText>
+            <ButtonIcon size='xl' as={ChevronLeft} />
           </Button>
         )}
         <Heading

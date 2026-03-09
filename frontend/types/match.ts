@@ -48,18 +48,18 @@ export interface Match {
   red_1_fuel_scored: number;
   red_2_fuel_scored: number;
   red_3_fuel_scored: number;
-  blue_1_auto_climb: boolean;
-  blue_2_auto_climb: boolean;
-  blue_3_auto_climb: boolean;
   blue_1_climb: string;
   blue_2_climb: string;
   blue_3_climb: string;
-  red_1_auto_climb: boolean;
-  red_2_auto_climb: boolean;
-  red_3_auto_climb: boolean;
   red_1_climb: string;
   red_2_climb: string;
   red_3_climb: string;
+  blue_1_auto_climb: boolean;
+  blue_2_auto_climb: boolean;
+  blue_3_auto_climb: boolean;
+  red_1_auto_climb: boolean;
+  red_2_auto_climb: boolean;
+  red_3_auto_climb: boolean;
   calculated_points: number;
   blue_total_score: number;
   red_total_score: number;
@@ -74,5 +74,5 @@ export interface Match {
   red_endgame_points: number;
   blue_penalties: number;
   red_penalties: number;
-  isVideoAvailable?: boolean;
+  video_available: boolean;
 }

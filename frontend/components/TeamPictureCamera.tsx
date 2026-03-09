@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { ScrollView } from 'react-native';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
@@ -73,10 +74,14 @@ export function TeamPictureCamera({
   return (
     <Actionsheet isOpen={isOpen} onClose={handleClose}>
       <ActionsheetBackdrop />
-      <ActionsheetContent className='w-full h-[calc(100%-4rem)]'>
+      <ActionsheetContent className='w-full max-h-[90%]'>
         <ActionsheetDragIndicatorWrapper>
           <ActionsheetDragIndicator />
         </ActionsheetDragIndicatorWrapper>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
         {!permission?.granted ? (
           <Center className='flex-1 max-w-2xl self-center w-full p-4'>
             <VStack space='md'>
@@ -135,6 +140,7 @@ export function TeamPictureCamera({
         >
           <ButtonText>Cancel</ButtonText>
         </Button>
+        </ScrollView>
       </ActionsheetContent>
     </Actionsheet>
   );

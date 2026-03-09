@@ -12,6 +12,7 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
+import { deleteAllAppFiles, getTotalVideoStorageUsed, formatBytes } from '@/utils/videoStorage';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -90,6 +91,7 @@ export default function SettingsScreen() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loadingCompetitions, setLoadingCompetitions] = useState(true);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [videoStorageBytes, setVideoStorageBytes] = useState<number>(0);
   const [videoSelectionMode, setVideoSelectionMode] =
     useState<VideoSelectionMode>('none');
   const [videoDynamicDownloading, setVideoDynamicDownloading] =
@@ -121,8 +123,12 @@ export default function SettingsScreen() {
   }, [scrollTo, storage]);
 
   async function loadStorageInfo() {
-    const info = await getStorageInfo();
+    const [info, videoBytes] = await Promise.all([
+      getStorageInfo(),
+      getTotalVideoStorageUsed(),
+    ]);
     setStorage(info);
+    setVideoStorageBytes(videoBytes);
   }
 
   if (!storage || !storage.available) {
@@ -195,6 +201,8 @@ export default function SettingsScreen() {
 
     try {
       setIsCompleting(true);
+      // Delete all stored video files
+      await deleteAllAppFiles();
       await db.delete();
       await db.open();
       await setCompetitionCode(localCompetitionCode);
@@ -213,6 +221,8 @@ export default function SettingsScreen() {
   async function handleResetDatabase() {
     try {
       setIsResetting(true);
+      // Delete all stored video files
+      await deleteAllAppFiles();
       await db.delete().then(async () => {
         await db.open();
       });
@@ -311,6 +321,27 @@ export default function SettingsScreen() {
                   </Progress>
                   <Text className='text-xs text-typography-600'>
                     {storage.usagePercentage.toFixed(1)}% used
+                  </Text>
+                </VStack>
+                <VStack space='xs'>
+                  <HStack className='justify-between items-center'>
+                    <Text className='text-sm font-semibold text-typography-700'>
+                      Video Storage
+                    </Text>
+                    <Text className='text-xs text-typography-600'>
+                      {formatBytes(videoStorageBytes)} / {storage.quotaFormatted}
+                    </Text>
+                  </HStack>
+                  <Progress
+                    value={storage.quota > 0 ? (videoStorageBytes / storage.quota) * 100 : 0}
+                    size='sm'
+                  >
+                    <ProgressFilledTrack className='bg-warning-500' />
+                  </Progress>
+                  <Text className='text-xs text-typography-600'>
+                    {storage.quota > 0
+                      ? ((videoStorageBytes / storage.quota) * 100).toFixed(1)
+                      : '0.0'}% of total storage
                   </Text>
                 </VStack>
               </VStack>
@@ -584,7 +615,7 @@ export default function SettingsScreen() {
                   onPress={() => setShowResetDialog(true)}
                   isDisabled={isResetting}
                 >
-                  <ButtonText>Reset Database</ButtonText>
+                  <ButtonText>Reset App</ButtonText>
                 </Button>
               </VStack>
             </Card>
@@ -604,8 +635,8 @@ export default function SettingsScreen() {
           <AlertDialogBody>
             <Text>
               This action will permanently delete your local scouting data,
-              including all matches and teams. An internet connection is
-              required to download the new match and team data.
+              including all matches, videos, and teams. An internet connection
+              is required to download the new match and team data.
             </Text>
           </AlertDialogBody>
           <AlertDialogFooter>
@@ -638,13 +669,13 @@ export default function SettingsScreen() {
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Heading>Reset Database</Heading>
+            <Heading>Reset App</Heading>
           </AlertDialogHeader>
           <AlertDialogBody>
             <Text>
               This action will permanently delete your local scouting data,
-              including all matches and teams. An internet connection is
-              required to redownload match and team data. A competition code
+              including all matches, videos, and teams. An internet connection
+              is required to redownload match and team data. A competition code
               will not be auto-selected.
             </Text>
           </AlertDialogBody>

@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom joystick colors */
+.react-joystick {
+  background: #525252 !important;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) inset !important;
+  border: 1px solid #404040 !important;
+}
+
+.react-joystick .react-joystick-controller {
+  background: linear-gradient(to bottom, #444444, #333333) !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid #555555 !important;
+}
+
+/* Prevent text selection in scouting screens */
+.scouting-no-select,
+.scouting-no-select * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
 @layer base {
   :root {
     --chart-1: oklch(0.646 0.222 41.116);

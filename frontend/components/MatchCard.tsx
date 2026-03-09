@@ -14,8 +14,10 @@ import {
   PopoverBody,
   PopoverContent,
 } from './ui/popover';
-import { CircleDashed, ImageDown } from 'lucide-react-native';
+import { CircleDashed, ImageDown, Video, VideoOff } from 'lucide-react-native';
 import { Icon } from './ui/icon';
+import { db } from '@/utils/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface MatchCardProps {
   match: Match;
@@ -31,6 +33,18 @@ export function MatchCard({
   const router = useRouter();
   const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
   const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
+
+  const videoRecord = useLiveQuery(
+    async () => {
+      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+      if (!compCode) return null;
+      return (await db.matchVideos.get([compCode, match.match_number])) ?? null;
+    },
+    [match.match_number],
+    null,
+  );
+
+  const isVideoDownloaded = videoRecord?.isDownloaded ?? false;
 
   // Check if a team number matches the search query
   const isTeamHighlighted = (teamNumber: number): boolean => {
@@ -92,10 +106,14 @@ export function MatchCard({
                     <Badge
                       size='lg'
                       variant='solid'
-                      action='muted'
-                      className=' justify-center items-center'
+                      action={isVideoDownloaded ? 'success' : 'muted'}
+                      className='justify-center items-center'
                     >
-                      <BadgeIcon as={ImageDown}></BadgeIcon>
+                      <BadgeIcon
+                        size='sm'
+                        className=''
+                        as={isVideoDownloaded ? Video : VideoOff}
+                      ></BadgeIcon>
                     </Badge>
                   </Pressable>
                 )}
@@ -105,7 +123,9 @@ export function MatchCard({
                   <PopoverArrow />
                   <PopoverBody>
                     <Text className='text-typography-900'>
-                      Video Downloaded
+                      {isVideoDownloaded
+                        ? 'Video Downloaded'
+                        : 'Video Not Downloaded'}
                     </Text>
                   </PopoverBody>
                 </PopoverContent>

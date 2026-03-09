@@ -4,6 +4,7 @@ import { Match } from '@/types/match';
 import { Team, TeamInfo } from '@/types/team';
 import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
 import { MatchVideo } from '@/types/video';
+import { RobotActionRecord } from '@/types/scouting';
 
 export interface Config {
   key: string;
@@ -19,6 +20,7 @@ class IndexDb extends Dexie {
   prescoutRecords!: Table<PrescoutRecord>;
   pictureRecords!: Table<PictureRecord>;
   matchVideos!: Table<MatchVideo>;
+  robotActions!: Table<RobotActionRecord>;
 
   constructor() {
     super('vscout', {
@@ -28,7 +30,7 @@ class IndexDb extends Dexie {
     });
 
     // Increment version number when changing table schema to migrate.
-    this.version(12).stores({
+    this.version(13).stores({
       config: '&key, value',
       matches:
         '[competitionCode+match_type+set_number+match_number], match_number, set_number, match_type, start_match_time, end_match_time, blue_team_1.number, blue_team_2.number, blue_team_3.number, red_team_1.number, red_team_2.number, red_team_3.number',
@@ -43,6 +45,8 @@ class IndexDb extends Dexie {
         '[info.competitionCode+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
       matchVideos:
         '[competitionCode+match_number], match_number, match_type, isAvailable, isDownloaded',
+      robotActions:
+        '[competitionCode+match_type+set_number+match_number+team_number]',
     });
   }
 }

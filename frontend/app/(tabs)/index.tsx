@@ -6,7 +6,12 @@ import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Bolt, NotebookTabs, NotepadText } from 'lucide-react-native';
+import {
+  Bolt,
+  MessageSquareMore,
+  NotebookTabs,
+  NotepadText,
+} from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Header } from '@/components/Header';
 import { RecordsSheet } from '@/components/RecordsSheet';
@@ -14,17 +19,41 @@ import { RecordCard } from '@/components/RecordCard';
 import { useState, useMemo } from 'react';
 import { Text } from '@/components/ui/text';
 import { useRecords } from '@/hooks/useRecords';
+import formbricks from '@formbricks/js';
+import { Fab, FabIcon, FabLabel } from '@/components/ui/fab';
 
 export default function HomeScreen() {
   const [showRecords, setShowRecords] = useState(false);
   const router = useRouter();
   const { records } = useRecords();
 
+  if (typeof window !== 'undefined') {
+    formbricks.setup({
+      environmentId: 'cmmgt704e0009pi01h39hwhmq',
+      appUrl: 'https://surveys.sparkslab.net/',
+    });
+  }
+
+  const handleFeedback = () => {
+    formbricks.track('feedback_home');
+  };
+
   // Get the latest 3 records
   const latestRecords = useMemo(() => records.slice(0, 3), [records]);
 
   return (
     <AdaptiveSafeArea>
+      <Fab
+        size='lg'
+        placement='bottom left'
+        isHovered={false}
+        isDisabled={false}
+        isPressed={false}
+        onPress={handleFeedback}
+      >
+        <FabIcon as={MessageSquareMore} />
+        <FabLabel>Feedback</FabLabel>
+      </Fab>
       <Header title='Home' isMainScreen />
       <Box className='flex-1 max-w-2xl self-center w-full'>
         <ScrollView
