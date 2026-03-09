@@ -117,6 +117,9 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
           controls
           playsInline
           preload='metadata'
+          onLoadedMetadata={() => {
+            if (videoRef.current) videoRef.current.currentTime = 0;
+          }}
           style={{
             width: '100%',
             height: '100%',

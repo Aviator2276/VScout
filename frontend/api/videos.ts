@@ -50,6 +50,7 @@ export async function fetchAndStoreVideo(
     // Use streaming progress if we have a progress callback and readable body
     if (onProgress && response.body) {
       const reader = response.body.getReader();
+      const contentType = response.headers.get('content-type') || 'video/mp4';
       const chunks: BlobPart[] = [];
       let loaded = 0;
 
@@ -57,7 +58,7 @@ export async function fetchAndStoreVideo(
         const { done, value } = await reader.read();
         if (done) break;
 
-        chunks.push(value.buffer as ArrayBuffer);
+        chunks.push(value);
         loaded += value.length;
 
         if (total > 0) {
@@ -70,7 +71,7 @@ export async function fetchAndStoreVideo(
         }
       }
 
-      blob = new Blob(chunks);
+      blob = new Blob(chunks, { type: contentType });
     } else {
       // Fallback to simple blob() if no progress tracking needed
       blob = await response.blob();

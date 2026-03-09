@@ -12,6 +12,8 @@ function ThemedApp() {
     <GluestackUIProvider mode={theme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name='(tabs)' />
+        <Stack.Screen name='scout-live' options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name='scout-video' options={{ animation: 'slide_from_bottom' }} />
       </Stack>
     </GluestackUIProvider>
   );

@@ -374,7 +374,10 @@ export async function getVideoUrl(
 ): Promise<string | null> {
   const blob = await readVideo(competitionCode, matchNumber);
   if (blob) {
-    return URL.createObjectURL(blob);
+    // OPFS doesn't preserve MIME types — ensure the blob has video/mp4
+    // so iOS Safari correctly handles playback from the start
+    const typedBlob = blob.type ? blob : new Blob([blob], { type: 'video/mp4' });
+    return URL.createObjectURL(typedBlob);
   }
   return null;
 }

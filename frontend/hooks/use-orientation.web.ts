@@ -1,27 +1,41 @@
-import { useState, useEffect } from 'react';
-import { Dimensions } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
 
 export type Orientation = 'portrait' | 'landscape-left' | 'landscape-right';
 
 // Tailwind md breakpoint is 768px
 const MD_BREAKPOINT = 768;
 
-export function useOrientation(): Orientation {
-  const [orientation, setOrientation] = useState<Orientation>(getOrientation());
+function getOrientation(): Orientation {
+  if (typeof window === 'undefined') return 'portrait';
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  // Wide viewport (desktop/tablet) or landscape on smaller screens (phones)
+  if (width >= MD_BREAKPOINT || width > height) return 'landscape-left';
+  return 'portrait';
+}
 
-  function getOrientation(): Orientation {
-    const { width } = Dimensions.get('window');
-    // On web, use width breakpoint to determine if nav should be on side
-    return width >= MD_BREAKPOINT ? 'landscape-left' : 'portrait';
-  }
+export function useOrientation(): Orientation {
+  const [orientation, setOrientation] = useState<Orientation>(getOrientation);
+
+  const handleResize = useCallback(() => {
+    setOrientation(getOrientation());
+  }, []);
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setOrientation(window.width >= MD_BREAKPOINT ? 'landscape-left' : 'portrait');
-    });
+    // Initial check in case value changed between render and effect
+    handleResize();
 
-    return () => subscription.remove();
-  }, []);
+    window.addEventListener('resize', handleResize);
+
+    // iOS Safari needs a delay after orientationchange for dimensions to update
+    const handleOrientationChange = () => setTimeout(handleResize, 100);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, [handleResize]);
 
   return orientation;
 }
