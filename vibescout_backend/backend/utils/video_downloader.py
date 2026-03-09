@@ -345,7 +345,9 @@ def clip_match_video(match, output_dir="match_videos") -> bool:
         "-ss", str(clip_start),
         "-i", str(video_path),
         "-t", str(_MATCH_DURATION),
-        "-c", "copy",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+        "-c:a", "aac",
+        "-movflags", "+faststart",
         str(tmp_path),
         "-y", "-loglevel", "error",
     ]

@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 dev-reset-2026week0 export-cookies
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 dev-reset-2026week0 export-cookies redownload-videos reclip-videos
 
 init:
 	@echo "Installing backend dependencies..."
@@ -87,6 +87,15 @@ dev-reset-2026week0:
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)
+
+redownload-videos:
+	cd vibescout_backend && uv run python manage.py redownload_videos $(COMP) $(if $(MATCH),--match $(MATCH),)
+
+reclip-videos:
+	cd vibescout_backend && uv run python manage.py reclip_videos $(COMP) $(if $(MATCH),--match $(MATCH),)
+
+export:
+	cd frontend && npm run build:web
 
 ocr-scores:
 	cd vibescout_backend/score_ocr && uv run python score_ocr.py
