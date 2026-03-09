@@ -25,6 +25,16 @@ run:
 	@echo "Starting backend, frontend, and qcluster worker concurrently..."
 	@make -j3 backend frontend qcluster
 
+export:
+	cd frontend && npm run build:web
+
+frontend-prod:
+	cd frontend && npm run serve
+
+run-prod:
+	@echo "Starting backend, frontend, and qcluster worker concurrently..."
+	@make -j3 backend frontend-prod qcluster
+
 migrate:
 	cd vibescout_backend && uv run python manage.py migrate
 
@@ -77,9 +87,6 @@ dev-reset-2026week0:
 
 download-match-videos:
 	cd vibescout_backend && uv run python manage.py download_match_videos $(COMP)
-
-export:
-	cd frontend && npm run build:web
 
 ocr-scores:
 	cd vibescout_backend/score_ocr && uv run python score_ocr.py

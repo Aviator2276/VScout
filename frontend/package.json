@@ -6,6 +6,7 @@
     "start": "expo start -c",
     "web": "expo start --web -c",
     "build:web": "expo export -p web && npx workbox-cli generateSW workbox-config.js",
+    "serve": "npx expo serve",
     "lint": "expo lint"
   },
   "dependencies": {
