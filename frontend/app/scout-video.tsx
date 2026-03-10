@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Platform, View, useWindowDimensions } from 'react-native';
+import {
+  Platform,
+  View,
+  Text as RNText,
+  useWindowDimensions,
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -32,14 +37,16 @@ function useIsPortrait(): boolean {
 }
 
 export default function ScoutVideoScreen() {
-  const { matchNumber, speed, teamNumber } = useLocalSearchParams<{
+  const { matchNumber, speed, teamNumber, muted } = useLocalSearchParams<{
     matchNumber: string;
     speed: string;
     teamNumber: string;
+    muted: string;
   }>();
   const { competitionCode } = useApp();
   const [match, setMatch] = useState<Match | null>(null);
   const playbackSpeed = speed ? parseFloat(speed) : 1;
+  const isMuted = muted === 'true';
   const isMobileWeb = useIsMobileWeb();
   const isPortrait = useIsPortrait();
   const { width, height } = useWindowDimensions();
@@ -52,6 +59,8 @@ export default function ScoutVideoScreen() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const session = useScoutingSession({
     matchNumber: matchNum,
@@ -96,10 +105,16 @@ export default function ScoutVideoScreen() {
     }
   }, [videoUrl, playbackSpeed]);
 
-  // Pause video when session finishes
+  // Pause/resume video when session state changes
   useEffect(() => {
     if (session.sessionState === 'finished' && videoRef.current) {
       videoRef.current.pause();
+    }
+    if (session.sessionState === 'paused' && videoRef.current) {
+      videoRef.current.pause();
+    }
+    if (session.sessionState === 'running' && videoRef.current && countdown === null) {
+      videoRef.current.play().catch(() => {});
     }
   }, [session.sessionState]);
 
@@ -112,15 +127,33 @@ export default function ScoutVideoScreen() {
     };
   }, []);
 
-  // Wrap startSession to also play the video
-  const handleStart = useCallback(() => {
-    session.startSession();
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.playbackRate = playbackSpeed;
-      videoRef.current.play().catch(() => {});
+  // Start countdown when user presses the start button
+  const handleStartCountdown = useCallback(() => {
+    // Pre-load audio (skip if muted)
+    if (Platform.OS === 'web' && !isMuted) {
+      const audio = new Audio(require('@/assets/sounds/countdown.wav'));
+      countdownAudioRef.current = audio;
+      audio.play().catch(() => {});
     }
-  }, [session.startSession, playbackSpeed]);
+    setCountdown(3);
+  }, [isMuted]);
+
+  // Tick down the countdown, then start session + video
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      session.startSession();
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.playbackRate = playbackSpeed;
+        videoRef.current.play().catch(() => {});
+      }
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, session.startSession, playbackSpeed]);
 
   // On native phones, lock to landscape; on web, try the orientation API (phones only)
   useEffect(() => {
@@ -207,6 +240,9 @@ export default function ScoutVideoScreen() {
         currentPhase={session.currentPhase}
         displayCountdown={session.displayCountdown}
         sessionRunning={session.sessionState === 'running'}
+        isPaused={session.sessionState === 'paused'}
+        onPause={session.pauseSession}
+        onResume={session.resumeSession}
       />
 
       <HStack className='flex-1'>
@@ -218,7 +254,10 @@ export default function ScoutVideoScreen() {
                 src={videoUrl}
                 playsInline
                 preload='auto'
-                muted={false}
+                muted={isMuted}
+                onLoadedMetadata={() => {
+                  if (videoRef.current) videoRef.current.currentTime = 0;
+                }}
                 style={{
                   width: '100%',
                   objectFit: 'cover',
@@ -237,7 +276,7 @@ export default function ScoutVideoScreen() {
           />
         </Box>
 
-        <Box className='w-64 items-center justify-between py-2'>
+        <Box className='w-64 items-center justify-evenly py-2'>
           <Box className='w-full px-2'>
             <ScoutingToggles
               isDisabled={session.isDisabled}
@@ -262,16 +301,54 @@ export default function ScoutVideoScreen() {
         </Box>
       </HStack>
 
-      {session.sessionState === 'ready' && (
+      {session.sessionState === 'ready' && countdown === null && (
         <ScoutingStartOverlay
           matchType={match?.match_type || 'qualification'}
           matchNumber={matchNum}
           teamNumber={teamNum}
           playbackSpeed={playbackSpeed}
           isLive={false}
-          onStart={handleStart}
+          onStart={handleStartCountdown}
           alignRight
+          videoUrl={videoUrl}
         />
+      )}
+
+      {countdown !== null && countdown > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 50,
+          }}
+        >
+          <View
+            style={{
+              width: 160,
+              height: 160,
+              borderRadius: 80,
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <RNText
+              style={{
+                fontSize: 96,
+                fontWeight: '800',
+                color: 'rgba(255, 255, 255, 0.9)',
+              }}
+            >
+              {countdown}
+            </RNText>
+          </View>
+        </View>
       )}
     </Box>
   );

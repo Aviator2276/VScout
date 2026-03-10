@@ -6,7 +6,8 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Pause, Play } from 'lucide-react-native';
+import { Button } from '@/components/ui/button';
 import { RobotAction } from '@/types/scouting';
 import { ACTION_COLORS } from './actionColors';
 import { VStack } from '../ui/vstack';
@@ -19,6 +20,9 @@ interface ScoutingHeaderProps {
   currentPhase: 'auto' | 'hold' | 'teleop';
   displayCountdown: string;
   sessionRunning: boolean;
+  isPaused?: boolean;
+  onPause?: () => void;
+  onResume?: () => void;
 }
 
 const HOLD_DURATION_MS = 1000;
@@ -31,6 +35,9 @@ export function ScoutingHeader({
   currentPhase,
   displayCountdown,
   sessionRunning,
+  isPaused,
+  onPause,
+  onResume,
 }: ScoutingHeaderProps) {
   const router = useRouter();
   const [holdProgress, setHoldProgress] = useState(0);
@@ -105,7 +112,7 @@ export function ScoutingHeader({
         : 'Teleop';
 
   return (
-    <HStack className='w-full grid grid-cols-3 px-3 py-2'>
+    <HStack className='w-full grid grid-cols-3 px-3 py-2 items-center'>
       {/* Hold-to-exit button */}
       <Pressable
         onPressIn={startHold}
@@ -180,6 +187,21 @@ export function ScoutingHeader({
 
       {/* Timer + match info */}
       <HStack space='sm' className='items-center justify-end'>
+        {onPause && onResume && (sessionRunning || isPaused) && (
+          <Button
+            size='md'
+            variant='outline'
+            action='secondary'
+            onPress={isPaused ? onResume : onPause}
+            className='rounded-full p-0 aspect-square'
+          >
+            <Icon
+              as={isPaused ? Play : Pause}
+              size='md'
+              className='text-typography-700 max-w-5 max-h-5'
+            />
+          </Button>
+        )}
         <Badge
           size='lg'
           variant='outline'

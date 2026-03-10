@@ -40,7 +40,13 @@ import {
   PopoverBody,
   PopoverContent,
 } from '@/components/ui/popover';
-import { Download, TriangleAlert } from 'lucide-react-native';
+import { Check, Download, TriangleAlert, VolumeX } from 'lucide-react-native';
+import {
+  Checkbox,
+  CheckboxIndicator,
+  CheckboxLabel,
+  CheckboxIcon,
+} from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/icon';
 import {
   MatchVideoPlayer,
@@ -62,6 +68,7 @@ export default function MatchDetailScreen() {
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [muteVideo, setMuteVideo] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<{
     number: number;
     name: string;
@@ -301,10 +308,10 @@ export default function MatchDetailScreen() {
                 contentContainerStyle={{ flexGrow: 1 }}
               >
                 <VStack space='lg' className='w-full max-w-md self-center py-4'>
-                <Heading size='xl' className='text-center capitalize'>
-                  Scout {match.match_type} {match.match_number}
-                </Heading>
-                {/* <Card variant='outline' className='p-4 border-warning-500'>
+                  <Heading size='xl' className='text-center capitalize'>
+                    Scout {match.match_type} {match.match_number}
+                  </Heading>
+                  {/* <Card variant='outline' className='p-4 border-warning-500'>
                   <HStack className='items-center justify-between gap-2'>
                     <Icon
                       as={TriangleAlert}
@@ -317,251 +324,244 @@ export default function MatchDetailScreen() {
                   </HStack>
                 </Card> */}
 
-                {/* Team Selector */}
-                <Card variant='outline' className='p-4'>
-                  <VStack space='sm'>
-                    <Text className='font-semibold'>Select Team to Scout</Text>
-                    <HStack space='xs'>
-                      {[
-                        { key: 'blue_team_1', alliance: 'blue' },
-                        { key: 'blue_team_2', alliance: 'blue' },
-                        { key: 'blue_team_3', alliance: 'blue' },
-                        { key: 'red_team_1', alliance: 'red' },
-                        { key: 'red_team_2', alliance: 'red' },
-                        { key: 'red_team_3', alliance: 'red' },
-                      ].map(({ key, alliance }) => {
-                        const team = match[key as keyof Match] as {
-                          number: number;
-                          name: string;
-                        };
-                        const isSelected = selectedTeam?.number === team.number;
-                        return (
-                          <Pressable
-                            key={key}
-                            onPress={() => setSelectedTeam(team)}
-                            className='flex-1'
-                          >
-                            <Badge
-                              size='lg'
-                              variant='solid'
-                              className={`${
-                                alliance === 'blue'
-                                  ? 'bg-blue-500/75'
-                                  : 'bg-red-500/75'
-                              } rounded font-medium justify-center py-1 ${
-                                isSelected &&
-                                '!border-amber-400 border-[0.15rem] py-[0.1rem]'
-                              }`}
-                            >
-                              <BadgeText>{team.number}</BadgeText>
-                            </Badge>
-                          </Pressable>
-                        );
-                      })}
-                    </HStack>
-                  </VStack>
-                </Card>
-
-                {/* Live/Video Mode Switch */}
-                <Card variant='outline' className='p-4'>
-                  <HStack className='justify-between items-center'>
-                    <VStack>
-                      <Text className='font-semibold'>Scout Live</Text>
-                      <Text className='text-typography-500 text-sm'>
-                        {isLiveMode
-                          ? 'Scout in real-time'
-                          : 'Scout from recording'}
+                  {/* Live/Video Mode Switch */}
+                  <Card variant='outline' className='p-4 gap-2'>
+                    <VStack space='sm'>
+                      <Text className='font-semibold'>
+                        Select Team to Scout
                       </Text>
-                    </VStack>
-                    <HStack space='sm' className='items-center'>
-                      <Switch
-                        value={isLiveMode}
-                        onValueChange={setIsLiveMode}
-                      />
-                    </HStack>
-                  </HStack>
-                </Card>
-
-                {/* Playback Speed */}
-                <Popover
-                  placement='top'
-                  size='xs'
-                  isOpen={isLiveMode ? undefined : false}
-                  trigger={(triggerProps) => (
-                    <Pressable {...triggerProps}>
-                      <Card variant='outline' className='p-4'>
-                        <VStack space='sm'>
-                          <VStack className='flex-1'>
-                            <Text
-                              className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                      <HStack space='xs'>
+                        {[
+                          { key: 'blue_team_1', alliance: 'blue' },
+                          { key: 'blue_team_2', alliance: 'blue' },
+                          { key: 'blue_team_3', alliance: 'blue' },
+                          { key: 'red_team_1', alliance: 'red' },
+                          { key: 'red_team_2', alliance: 'red' },
+                          { key: 'red_team_3', alliance: 'red' },
+                        ].map(({ key, alliance }) => {
+                          const team = match[key as keyof Match] as {
+                            number: number;
+                            name: string;
+                          };
+                          const isSelected =
+                            selectedTeam?.number === team.number;
+                          return (
+                            <Pressable
+                              key={key}
+                              onPress={() => setSelectedTeam(team)}
+                              className='flex-1'
                             >
-                              Playback Speed
-                            </Text>
-                            <Text
-                              className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
-                            >
-                              Cannot change during scouting
-                            </Text>
-                          </VStack>
-
-                          <HStack
-                            space='xs'
-                            className='flex-wrap justify-between'
-                          >
-                            {speedOptions.map((speed) => (
-                              <Button
-                                key={speed}
-                                size='sm'
-                                variant={
-                                  playbackSpeed === speed && !isLiveMode
-                                    ? 'solid'
-                                    : 'outline'
-                                }
-                                action={
-                                  playbackSpeed === speed && !isLiveMode
-                                    ? 'primary'
-                                    : 'secondary'
-                                }
-                                onPress={() =>
-                                  !isLiveMode && setPlaybackSpeed(speed)
-                                }
-                                className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
-                                disabled={isLiveMode}
+                              <Badge
+                                size='lg'
+                                variant='solid'
+                                className={`${
+                                  alliance === 'blue'
+                                    ? 'bg-blue-500/75'
+                                    : 'bg-red-500/75'
+                                } rounded font-medium justify-center py-1 ${
+                                  isSelected &&
+                                  '!border-amber-400 border-[0.15rem] py-[0.1rem]'
+                                }`}
                               >
-                                <ButtonText
-                                  className={
-                                    isLiveMode ? 'text-typography-400' : ''
-                                  }
-                                >
-                                  {speed}x
-                                </ButtonText>
-                              </Button>
-                            ))}
-                          </HStack>
-                        </VStack>
-                      </Card>
-                    </Pressable>
-                  )}
-                >
-                  {isLiveMode && (
-                    <>
-                      <PopoverBackdrop />
-                      <PopoverContent>
-                        <PopoverArrow />
-                        <PopoverBody>
-                          <Text className='text-typography-900'>
-                            Speed controls are only available in video mode
-                          </Text>
-                        </PopoverBody>
-                      </PopoverContent>
-                    </>
-                  )}
-                </Popover>
+                                <BadgeText>{team.number}</BadgeText>
+                              </Badge>
+                            </Pressable>
+                          );
+                        })}
+                      </HStack>
+                    </VStack>
+                    <HStack className='justify-between items-center'>
+                      <VStack>
+                        <Text className='font-semibold'>Scout Live</Text>
+                        <Text className='text-typography-500 text-sm'>
+                          {isLiveMode
+                            ? 'Scout in real-time'
+                            : 'Scout from recording'}
+                        </Text>
+                      </VStack>
+                      <HStack space='sm' className='items-center'>
+                        <Switch
+                          value={isLiveMode}
+                          onValueChange={setIsLiveMode}
+                        />
+                      </HStack>
+                    </HStack>
+                  </Card>
 
-                <Popover
-                  placement='top'
-                  size='xs'
-                  isOpen={isLiveMode ? undefined : false}
-                  trigger={(triggerProps) => (
-                    <Pressable {...triggerProps}>
-                      <Card variant='outline' className='p-4'>
-                        <HStack className='justify-between items-center'>
-                          <VStack className='flex-1'>
-                            <Text
-                              className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                  {/* Playback Speed */}
+                  <Popover
+                    placement='top'
+                    size='xs'
+                    isOpen={isLiveMode ? undefined : false}
+                    trigger={(triggerProps) => (
+                      <Pressable {...triggerProps}>
+                        <Card variant='outline' className='p-4 gap-2'>
+                          <VStack space='sm'>
+                            <VStack className='flex-1'>
+                              <Text
+                                className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                              >
+                                Playback Speed
+                              </Text>
+                              <Text
+                                className={`font-sm ${isLiveMode ? 'text-typography-200' : 'text-typography-500'}`}
+                              >
+                                Cannot change during scouting
+                              </Text>
+                            </VStack>
+
+                            <HStack
+                              space='xs'
+                              className='flex-wrap justify-between'
                             >
-                              Download Video
-                            </Text>
+                              {speedOptions.map((speed) => (
+                                <Button
+                                  key={speed}
+                                  size='sm'
+                                  variant={
+                                    playbackSpeed === speed && !isLiveMode
+                                      ? 'solid'
+                                      : 'outline'
+                                  }
+                                  action={
+                                    playbackSpeed === speed && !isLiveMode
+                                      ? 'primary'
+                                      : 'secondary'
+                                  }
+                                  onPress={() =>
+                                    !isLiveMode && setPlaybackSpeed(speed)
+                                  }
+                                  className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
+                                  disabled={isLiveMode}
+                                >
+                                  <ButtonText
+                                    className={
+                                      isLiveMode ? 'text-typography-400' : ''
+                                    }
+                                  >
+                                    {speed}x
+                                  </ButtonText>
+                                </Button>
+                              ))}
+                            </HStack>
                           </VStack>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            action='secondary'
-                            className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
-                            disabled={
-                              isLiveMode ||
-                              activeDownloads.has(match.match_number) ||
-                              (videoRecord?.isDownloaded ?? false)
-                            }
-                            onPress={() => {
-                              startDownload(match.match_number);
-                            }}
-                          >
-                            {activeDownloads.has(match.match_number) ? (
-                              <ActivityIndicator size='small' />
-                            ) : (
-                              <ButtonText>
-                                {videoRecord?.isDownloaded
-                                  ? 'Downloaded'
-                                  : 'Download'}
-                              </ButtonText>
-                            )}
-                          </Button>
-                        </HStack>
-                      </Card>
-                    </Pressable>
-                  )}
-                >
-                  {isLiveMode && (
-                    <>
-                      <PopoverBackdrop />
-                      <PopoverContent>
-                        <PopoverArrow />
-                        <PopoverBody>
-                          <Text className='text-typography-900'>
-                            Video downloads are only available in video mode
-                          </Text>
-                        </PopoverBody>
-                      </PopoverContent>
-                    </>
-                  )}
-                </Popover>
-                <Button
-                  size='lg'
-                  action='positive'
-                  disabled={
-                    !selectedTeam ||
-                    (!isLiveMode && !videoRecord?.isDownloaded)
-                  }
-                  className={
-                    !selectedTeam ||
-                    (!isLiveMode && !videoRecord?.isDownloaded)
-                      ? 'opacity-40'
-                      : ''
-                  }
-                  onPress={() => {
-                    if (!selectedTeam) return;
-                    if (!isLiveMode && !videoRecord?.isDownloaded) return;
-                    setIsScoutSheetOpen(false);
-                    if (isLiveMode) {
-                      router.push(
-                        `/scout-live?matchNumber=${match.match_number}&teamNumber=${selectedTeam.number}`,
-                      );
-                    } else {
-                      router.push(
-                        `/scout-video?matchNumber=${match.match_number}&speed=${playbackSpeed}&teamNumber=${selectedTeam.number}`,
-                      );
+                          <HStack className='justify-between items-center'>
+                            <VStack className='flex-1'>
+                              <Text
+                                className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                              >
+                                Download Video
+                              </Text>
+                            </VStack>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              action='secondary'
+                              className={`min-w-[50px] ${isLiveMode ? 'opacity-40' : ''}`}
+                              disabled={
+                                isLiveMode ||
+                                activeDownloads.has(match.match_number) ||
+                                (videoRecord?.isDownloaded ?? false)
+                              }
+                              onPress={() => {
+                                startDownload(match.match_number);
+                              }}
+                            >
+                              {activeDownloads.has(match.match_number) ? (
+                                <ActivityIndicator size='small' />
+                              ) : (
+                                <ButtonText>
+                                  {videoRecord?.isDownloaded
+                                    ? 'Downloaded'
+                                    : 'Download'}
+                                </ButtonText>
+                              )}
+                            </Button>
+                          </HStack>
+                          <HStack className='justify-between items-center'>
+                            <VStack className='flex-1'>
+                              <Text
+                                className={`font-semibold ${isLiveMode ? 'text-typography-400' : ''}`}
+                              >
+                                Mute Video
+                              </Text>
+                            </VStack>
+                            <Checkbox
+                              value='mute'
+                              isChecked={muteVideo}
+                              onChange={setMuteVideo}
+                              isDisabled={isLiveMode}
+                              size='lg'
+                            >
+                              <CheckboxIndicator>
+                                <CheckboxIcon as={Check} />
+                              </CheckboxIndicator>
+                            </Checkbox>
+                          </HStack>
+                        </Card>
+                      </Pressable>
+                    )}
+                  >
+                    {isLiveMode && (
+                      <>
+                        <PopoverBackdrop />
+                        <PopoverContent>
+                          <PopoverArrow />
+                          <PopoverBody>
+                            <Text className='text-typography-900'>
+                              Speed controls are only available in video mode
+                            </Text>
+                          </PopoverBody>
+                        </PopoverContent>
+                      </>
+                    )}
+                  </Popover>
+                  <Button
+                    size='lg'
+                    action='positive'
+                    disabled={
+                      !selectedTeam ||
+                      (!isLiveMode && !videoRecord?.isDownloaded)
                     }
-                  }}
-                >
-                  <ButtonText>
-                    {!selectedTeam
-                      ? 'Select a Team'
-                      : !isLiveMode && !videoRecord?.isDownloaded
-                        ? 'Download Video First'
-                        : `Start Scouting Team ${selectedTeam.number}`}
-                  </ButtonText>
-                </Button>
+                    className={
+                      !selectedTeam ||
+                      (!isLiveMode && !videoRecord?.isDownloaded)
+                        ? 'opacity-40'
+                        : ''
+                    }
+                    onPress={() => {
+                      if (!selectedTeam) return;
+                      if (!isLiveMode && !videoRecord?.isDownloaded) return;
+                      setIsScoutSheetOpen(false);
+                      if (isLiveMode) {
+                        router.push(
+                          `/scout-live?matchNumber=${match.match_number}&teamNumber=${selectedTeam.number}`,
+                        );
+                      } else {
+                        router.push(
+                          `/scout-video?matchNumber=${match.match_number}&speed=${playbackSpeed}&teamNumber=${selectedTeam.number}&muted=${muteVideo}`,
+                        );
+                      }
+                    }}
+                  >
+                    <ButtonText>
+                      {!selectedTeam
+                        ? 'Select a Team'
+                        : !isLiveMode && !videoRecord?.isDownloaded
+                          ? 'Download Video First'
+                          : `Start Scouting Team ${selectedTeam.number}`}
+                    </ButtonText>
+                  </Button>
 
-                <Button
-                  size='md'
-                  variant='outline'
-                  action='secondary'
-                  onPress={() => setIsScoutSheetOpen(false)}
-                >
-                  <ButtonText>Cancel</ButtonText>
-                </Button>
-              </VStack>
+                  <Button
+                    size='md'
+                    variant='outline'
+                    action='secondary'
+                    onPress={() => setIsScoutSheetOpen(false)}
+                  >
+                    <ButtonText>Cancel</ButtonText>
+                  </Button>
+                </VStack>
               </ScrollView>
             </ActionsheetContent>
           </Actionsheet>

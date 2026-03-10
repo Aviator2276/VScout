@@ -10,6 +10,14 @@ import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Save, RotateCcw, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogBackdrop,
+} from '@/components/ui/alert-dialog';
 import { RobotAction, RobotActionRecord } from '@/types/scouting';
 import { ACTION_COLORS, ACTION_LABELS } from './actionColors';
 import { MatchTimeline } from './MatchTimeline';
@@ -47,6 +55,8 @@ export function ScoutingEndScreen({
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [notes, setNotes] = useState('');
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [showRestartDialog, setShowRestartDialog] = useState(false);
 
   const stats = useMemo(() => {
     const totals: Record<RobotAction, number> = {
@@ -86,7 +96,13 @@ export function ScoutingEndScreen({
   }
 
   function handleDiscard() {
+    setShowDiscardDialog(false);
     router.back();
+  }
+
+  function handleRestart() {
+    setShowRestartDialog(false);
+    onRestart();
   }
 
   return (
@@ -118,7 +134,8 @@ export function ScoutingEndScreen({
             <VStack space='sm'>
               {ALL_ACTIONS.map((action) => {
                 const duration = stats[action];
-                const pct = totalDuration > 0 ? (duration / totalDuration) * 100 : 0;
+                const pct =
+                  totalDuration > 0 ? (duration / totalDuration) * 100 : 0;
                 if (duration === 0) return null;
 
                 return (
@@ -165,7 +182,35 @@ export function ScoutingEndScreen({
           </Card>
 
           {/* Actions */}
-          <VStack space='sm' className='mt-auto pt-4'>
+          <VStack space='sm' className=''>
+            <HStack className='grid grid-cols-2 gap-2'>
+              <Button
+                size='lg'
+                variant='solid'
+                action='negative'
+                onPress={() => setShowDiscardDialog(true)}
+              >
+                <Icon
+                  as={Trash2}
+                  size='md'
+                  className='mr-2 text-typography-0'
+                />
+                <ButtonText>Discard</ButtonText>
+              </Button>
+              <Button
+                size='lg'
+                variant='outline'
+                action='secondary'
+                onPress={() => setShowRestartDialog(true)}
+              >
+                <Icon
+                  as={RotateCcw}
+                  size='md'
+                  className='mr-2 text-typography-700'
+                />
+                <ButtonText>Restart</ButtonText>
+              </Button>
+            </HStack>
             <Button
               size='lg'
               action='positive'
@@ -175,27 +220,69 @@ export function ScoutingEndScreen({
               <Icon as={Save} size='md' className='mr-2 text-typography-0' />
               <ButtonText>{saving ? 'Saving...' : 'Save & Upload'}</ButtonText>
             </Button>
-            <Button
-              size='lg'
-              variant='outline'
-              action='secondary'
-              onPress={onRestart}
-            >
-              <Icon as={RotateCcw} size='md' className='mr-2 text-typography-700' />
-              <ButtonText>Restart</ButtonText>
-            </Button>
-            <Button
-              size='lg'
-              variant='outline'
-              action='negative'
-              onPress={handleDiscard}
-            >
-              <Icon as={Trash2} size='md' className='mr-2' />
-              <ButtonText>Discard</ButtonText>
-            </Button>
           </VStack>
         </VStack>
       </ScrollView>
+
+      {/* Discard Confirmation Dialog */}
+      <AlertDialog
+        isOpen={showDiscardDialog}
+        onClose={() => setShowDiscardDialog(false)}
+      >
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='md'>Discard Session?</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className='text-typography-500'>
+              Are you sure you want to discard this scouting session? All data will be lost.
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button
+              variant='outline'
+              action='secondary'
+              onPress={() => setShowDiscardDialog(false)}
+            >
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+            <Button action='negative' onPress={handleDiscard}>
+              <ButtonText>Discard</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Restart Confirmation Dialog */}
+      <AlertDialog
+        isOpen={showRestartDialog}
+        onClose={() => setShowRestartDialog(false)}
+      >
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='md'>Restart Session?</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className='text-typography-500'>
+              Are you sure you want to restart? Your current scouting data will be cleared.
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button
+              variant='outline'
+              action='secondary'
+              onPress={() => setShowRestartDialog(false)}
+            >
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+            <Button action='primary' onPress={handleRestart}>
+              <ButtonText>Restart</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Box>
   );
 }

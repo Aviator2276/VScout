@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { RobotAction, ActionSegment, RobotActionRecord } from '@/types/scouting';
+import {
+  RobotAction,
+  ActionSegment,
+  RobotActionRecord,
+} from '@/types/scouting';
 import {
   AUTO_DURATION,
   HOLD_DURATION,
@@ -11,7 +15,7 @@ import {
 import { db } from '@/utils/db';
 import { saveScoutRecord } from '@/api/scout';
 
-export type SessionState = 'ready' | 'running' | 'finished';
+export type SessionState = 'ready' | 'running' | 'paused' | 'finished';
 
 interface ActionLogEntry {
   matchTimeSec: number;
@@ -43,6 +47,8 @@ export interface ScoutingSession {
   toggleDisabled: () => void;
   toggleClimbing: () => void;
   toggleDefending: () => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
   resetSession: () => void;
   getRecordData: () => RobotActionRecord;
   saveToDb: (notes?: string) => Promise<void>;
@@ -69,7 +75,11 @@ export function useScoutingSession({
   const sessionStateRef = useRef<SessionState>('ready');
   const elapsedRealMsRef = useRef(0);
   const lastActionChangeSecRef = useRef<number>(0);
-  const pendingTraversingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPausedRef = useRef(false);
+  const pausedElapsedRef = useRef(0);
+  const pendingTraversingRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   // Keep ref in sync
   useEffect(() => {
@@ -83,23 +93,28 @@ export function useScoutingSession({
   const period = getPeriodAtTime(elapsedMatchSec);
 
   // RAF loop
-  const tick = useCallback((timestamp: number) => {
-    if (sessionStateRef.current !== 'running') return;
+  const tick = useCallback(
+    (timestamp: number) => {
+      if (sessionStateRef.current !== 'running') return;
+      if (isPausedRef.current) return;
 
-    const realElapsed = timestamp - startTimeRef.current;
-    elapsedRealMsRef.current = realElapsed;
-    const matchSec = (realElapsed / 1000) * playbackSpeed;
+      const realElapsed = timestamp - startTimeRef.current;
+      elapsedRealMsRef.current = realElapsed;
+      const matchSec = (realElapsed / 1000) * playbackSpeed;
 
-    if (matchSec >= TOTAL_MATCH_DURATION) {
-      setElapsedRealMs(TOTAL_MATCH_DURATION / playbackSpeed * 1000);
-      setSessionState('finished');
-      sessionStateRef.current = 'finished';
-      return;
-    }
+      const END_BUFFER_SEC = 3;
+      if (matchSec >= TOTAL_MATCH_DURATION + END_BUFFER_SEC) {
+        setElapsedRealMs((TOTAL_MATCH_DURATION / playbackSpeed) * 1000);
+        setSessionState('finished');
+        sessionStateRef.current = 'finished';
+        return;
+      }
 
-    setElapsedRealMs(realElapsed);
-    rafRef.current = requestAnimationFrame(tick);
-  }, [playbackSpeed]);
+      setElapsedRealMs(realElapsed);
+      rafRef.current = requestAnimationFrame(tick);
+    },
+    [playbackSpeed],
+  );
 
   // Cleanup RAF and pending timers on unmount
   useEffect(() => {
@@ -136,49 +151,55 @@ export function useScoutingSession({
   const canChangeAction = useCallback((): boolean => {
     const currentRealMs = elapsedRealMsRef.current;
     const matchSec = (currentRealMs / 1000) * playbackSpeed;
-    return (matchSec - lastActionChangeSecRef.current) >= MIN_ACTION_DURATION_SEC;
+    return matchSec - lastActionChangeSecRef.current >= MIN_ACTION_DURATION_SEC;
   }, [playbackSpeed]);
 
-  const applyAction = useCallback((action: RobotAction) => {
-    const currentRealMs = elapsedRealMsRef.current;
-    const matchSec = (currentRealMs / 1000) * playbackSpeed;
-    lastActionChangeSecRef.current = matchSec;
-    setCurrentAction(action);
-    setActionLog((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.action === action) return prev;
-      return [...prev, { matchTimeSec: matchSec, action }];
-    });
-  }, [playbackSpeed]);
+  const applyAction = useCallback(
+    (action: RobotAction) => {
+      const currentRealMs = elapsedRealMsRef.current;
+      const matchSec = (currentRealMs / 1000) * playbackSpeed;
+      lastActionChangeSecRef.current = matchSec;
+      setCurrentAction(action);
+      setActionLog((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.action === action) return prev;
+        return [...prev, { matchTimeSec: matchSec, action }];
+      });
+    },
+    [playbackSpeed],
+  );
 
-  const setAction = useCallback((action: RobotAction) => {
-    const currentRealMs = elapsedRealMsRef.current;
-    const matchSec = (currentRealMs / 1000) * playbackSpeed;
-    const elapsed = matchSec - lastActionChangeSecRef.current;
+  const setAction = useCallback(
+    (action: RobotAction) => {
+      const currentRealMs = elapsedRealMsRef.current;
+      const matchSec = (currentRealMs / 1000) * playbackSpeed;
+      const elapsed = matchSec - lastActionChangeSecRef.current;
 
-    // Clear any pending traversing timeout
-    if (pendingTraversingRef.current !== null) {
-      clearTimeout(pendingTraversingRef.current);
-      pendingTraversingRef.current = null;
-    }
-
-    // Always update the displayed state to match the joystick
-    setCurrentAction(action);
-
-    if (elapsed >= MIN_ACTION_DURATION_SEC) {
-      applyAction(action);
-    } else {
-      // Schedule the action to log after the remaining cooldown
-      const remainingSec = MIN_ACTION_DURATION_SEC - elapsed;
-      const remainingRealMs = (remainingSec / playbackSpeed) * 1000;
-      pendingTraversingRef.current = setTimeout(() => {
+      // Clear any pending traversing timeout
+      if (pendingTraversingRef.current !== null) {
+        clearTimeout(pendingTraversingRef.current);
         pendingTraversingRef.current = null;
-        if (sessionStateRef.current === 'running') {
-          applyAction(action);
-        }
-      }, remainingRealMs);
-    }
-  }, [playbackSpeed, applyAction]);
+      }
+
+      // Always update the displayed state to match the joystick
+      setCurrentAction(action);
+
+      if (elapsed >= MIN_ACTION_DURATION_SEC) {
+        applyAction(action);
+      } else {
+        // Schedule the action to log after the remaining cooldown
+        const remainingSec = MIN_ACTION_DURATION_SEC - elapsed;
+        const remainingRealMs = (remainingSec / playbackSpeed) * 1000;
+        pendingTraversingRef.current = setTimeout(() => {
+          pendingTraversingRef.current = null;
+          if (sessionStateRef.current === 'running') {
+            applyAction(action);
+          }
+        }, remainingRealMs);
+      }
+    },
+    [playbackSpeed, applyAction],
+  );
 
   const toggleDisabled = useCallback(() => {
     if (!canChangeAction()) return;
@@ -223,6 +244,31 @@ export function useScoutingSession({
     });
   }, [setAction, canChangeAction]);
 
+  const pauseSession = useCallback(() => {
+    if (sessionStateRef.current !== 'running' || isPausedRef.current) return;
+    isPausedRef.current = true;
+    pausedElapsedRef.current = elapsedRealMsRef.current;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (pendingTraversingRef.current !== null) {
+      clearTimeout(pendingTraversingRef.current);
+      pendingTraversingRef.current = null;
+    }
+    setSessionState('paused');
+    sessionStateRef.current = 'paused';
+  }, []);
+
+  const resumeSession = useCallback(() => {
+    if (sessionStateRef.current !== 'paused' || !isPausedRef.current) return;
+    isPausedRef.current = false;
+    startTimeRef.current = performance.now() - pausedElapsedRef.current;
+    setSessionState('running');
+    sessionStateRef.current = 'running';
+    rafRef.current = requestAnimationFrame(tick);
+  }, [tick]);
+
   const resetSession = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -238,6 +284,8 @@ export function useScoutingSession({
     setIsDefending(false);
     setActionLog([]);
     lastActionChangeSecRef.current = 0;
+    isPausedRef.current = false;
+    pausedElapsedRef.current = 0;
     if (pendingTraversingRef.current !== null) {
       clearTimeout(pendingTraversingRef.current);
       pendingTraversingRef.current = null;
@@ -254,7 +302,8 @@ export function useScoutingSession({
 
     for (let i = 0; i < actionLog.length; i++) {
       const entry = actionLog[i];
-      const nextTime = i + 1 < actionLog.length ? actionLog[i + 1].matchTimeSec : matchEnd;
+      const nextTime =
+        i + 1 < actionLog.length ? actionLog[i + 1].matchTimeSec : matchEnd;
 
       // Determine overlap with auto phase (0 to autoEnd)
       const autoStart = Math.max(entry.matchTimeSec, 0);
@@ -282,16 +331,26 @@ export function useScoutingSession({
       auto: autoSegments,
       tele: teleSegments,
     };
-  }, [actionLog, competitionCode, matchType, setNumber, matchNumber, teamNumber]);
+  }, [
+    actionLog,
+    competitionCode,
+    matchType,
+    setNumber,
+    matchNumber,
+    teamNumber,
+  ]);
 
-  const saveToDb = useCallback(async (notes?: string) => {
-    const record = getRecordData();
-    if (notes) record.notes = notes;
-    // Save to local robotActions table
-    await db.robotActions.put(record);
-    // Save to scoutRecords for upload tracking
-    await saveScoutRecord(record);
-  }, [getRecordData]);
+  const saveToDb = useCallback(
+    async (notes?: string) => {
+      const record = getRecordData();
+      if (notes) record.notes = notes;
+      // Save to local robotActions table
+      await db.robotActions.put(record);
+      // Save to scoutRecords for upload tracking
+      await saveScoutRecord(record);
+    },
+    [getRecordData],
+  );
 
   return {
     sessionState,
@@ -309,6 +368,8 @@ export function useScoutingSession({
     toggleDisabled,
     toggleClimbing,
     toggleDefending,
+    pauseSession,
+    resumeSession,
     resetSession,
     getRecordData,
     saveToDb,
