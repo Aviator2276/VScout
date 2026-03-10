@@ -379,7 +379,31 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
     from django_q.models import OrmQ
     from django_q.tasks import async_task
 
-    # Check for downloaded-but-not-clipped matches first
+    # Check for clipped-but-missing-fuel-timeline matches first
+    no_timeline = (
+        Match.objects.filter(
+            competition=competition,
+            has_played=True,
+            video_clipped=True,
+            fuel_timeline__isnull=True,
+            match_type="qualification",
+        )
+        .order_by("match_number")
+        .first()
+    )
+    if no_timeline:
+        timeline_task_name = f"fuel_timeline_{competition_code}_match_{no_timeline.match_number}"
+        already_queued = any(timeline_task_name in (q.name() or "") for q in OrmQ.objects.all())
+        if not already_queued:
+            logger.info(f"Queuing fuel timeline task for match {no_timeline.match_number} ({competition_code})")
+            async_task(
+                "backend.tasks.compute_fuel_timeline_task",
+                no_timeline.pk,
+                task_name=timeline_task_name,
+            )
+            return {"success": True, "message": f"Queued fuel timeline for match {no_timeline.match_number}"}
+
+    # Check for downloaded-but-not-clipped matches
     unclipped = (
         Match.objects.filter(
             competition=competition,
