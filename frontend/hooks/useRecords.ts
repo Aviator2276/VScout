@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { db } from '@/utils/db';
-import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
+import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord } from '@/types/record';
 
-export type RecordType = 'match' | 'prescout' | 'picture';
+export type RecordType = 'match' | 'prescout' | 'picture' | 'scout';
 
 export interface UnifiedRecord {
   type: RecordType;
@@ -14,7 +14,7 @@ export interface UnifiedRecord {
   competitionCode: string;
   teamNumber: number;
   teamName: string;
-  data: MatchRecord | PrescoutRecord | PictureRecord;
+  data: MatchRecord | PrescoutRecord | PictureRecord | ScoutRecord;
 }
 
 function getStatusPriority(status: string): number {
@@ -49,8 +49,9 @@ export function useRecords(): UseRecordsResult {
   const matchRecords = useLiveQuery(() => db.matchRecords.toArray(), []);
   const prescoutRecords = useLiveQuery(() => db.prescoutRecords.toArray(), []);
   const pictureRecords = useLiveQuery(() => db.pictureRecords.toArray(), []);
+  const scoutRecords = useLiveQuery(() => db.scoutRecords.toArray(), []);
 
-  const isLoading = matchRecords === undefined || prescoutRecords === undefined || pictureRecords === undefined;
+  const isLoading = matchRecords === undefined || prescoutRecords === undefined || pictureRecords === undefined || scoutRecords === undefined;
 
   // Transform and sort records, memoized to avoid recalculation
   const records = useMemo(() => {
@@ -100,6 +101,20 @@ export function useRecords(): UseRecordsResult {
       });
     });
 
+    scoutRecords.forEach((record: ScoutRecord) => {
+      unifiedRecords.push({
+        type: 'scout',
+        id: `scout-${record.info.competitionCode}-${record.match_type}-${record.set_number}-${record.match_number}-${record.team.number}`,
+        status: record.info.status,
+        created_at: record.info.created_at,
+        last_retry: record.info.last_retry,
+        competitionCode: record.info.competitionCode,
+        teamNumber: record.team.number,
+        teamName: record.team.name,
+        data: record,
+      });
+    });
+
     // Sort by status priority (uploading first, then pending, then synced)
     // Within same priority, sort by created_at descending (newest first)
     unifiedRecords.sort((a, b) => {
@@ -109,7 +124,7 @@ export function useRecords(): UseRecordsResult {
     });
 
     return unifiedRecords;
-  }, [matchRecords, prescoutRecords, pictureRecords, isLoading]);
+  }, [matchRecords, prescoutRecords, pictureRecords, scoutRecords, isLoading]);
 
   // Calculate counts
   const counts = useMemo((): RecordCounts => {

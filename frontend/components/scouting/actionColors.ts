@@ -37,6 +37,11 @@ export const ACTION_COLORS: Record<RobotAction, ActionColor> = {
     text: colors.white,
     tw: 'bg-pink-500',
   },
+  herding: {
+    bg: colors.orange[500],
+    text: colors.white,
+    tw: 'bg-orange-500',
+  },
   disabled: {
     bg: colors.red[500],
     text: colors.white,
@@ -55,6 +60,7 @@ export const ACTION_LABELS: Record<RobotAction, string> = {
   defending: 'Defending',
   intake: 'Intake',
   outtake: 'Outtake',
+  herding: 'Herding',
   disabled: 'Disabled',
   climbing: 'Climbing',
 };

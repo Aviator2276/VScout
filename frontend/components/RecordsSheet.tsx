@@ -6,7 +6,7 @@ import { FlatList, Pressable, ScrollView } from 'react-native';
 import { cssInterop } from 'nativewind';
 import { deleteRecord } from '@/api/records';
 import { db } from '@/utils/db';
-import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
+import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord } from '@/types/record';
 import { useApp } from '@/contexts/AppContext';
 import { Button, ButtonText } from '@/components/ui/button';
 import {
@@ -85,6 +85,14 @@ export function RecordsSheet({ isOpen, onClose }: RecordsSheetProps) {
           const pictureData = data as PictureRecord;
           await db.pictureRecords.put({
             ...pictureData,
+            info: updatedInfo,
+          });
+          break;
+        }
+        case 'scout': {
+          const scoutData = data as ScoutRecord;
+          await db.scoutRecords.put({
+            ...scoutData,
             info: updatedInfo,
           });
           break;

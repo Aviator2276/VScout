@@ -31,3 +31,15 @@ export interface PictureRecord {
   team: Team;
   picture: string;
 }
+
+export interface ScoutRecord {
+  info: RecordInfo;
+  team: Team;
+  match_type: string;
+  set_number: number;
+  match_number: number;
+  is_playoff: boolean;
+  notes?: string;
+  auto: { duration: number; action: string }[];
+  tele: { duration: number; action: string }[];
+}

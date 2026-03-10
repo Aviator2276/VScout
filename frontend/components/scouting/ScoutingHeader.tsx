@@ -6,9 +6,10 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
-import { ChevronLeft, LogOut } from 'lucide-react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { RobotAction } from '@/types/scouting';
 import { ACTION_COLORS } from './actionColors';
+import { VStack } from '../ui/vstack';
 
 interface ScoutingHeaderProps {
   matchType: string;
@@ -104,7 +105,7 @@ export function ScoutingHeader({
         : 'Teleop';
 
   return (
-    <HStack className='items-center justify-between px-3 py-2'>
+    <HStack className='w-full grid grid-cols-3 px-3 py-2'>
       {/* Hold-to-exit button */}
       <Pressable
         onPressIn={startHold}
@@ -121,7 +122,7 @@ export function ScoutingHeader({
           className='relative overflow-hidden rounded-md border border-outline-300'
           style={
             {
-              width: 80,
+              width: 100,
               height: 36,
               WebkitUserSelect: 'none',
               userSelect: 'none',
@@ -134,7 +135,7 @@ export function ScoutingHeader({
             className='absolute top-0 left-0 bottom-0 bg-error-500/30'
             style={{ width: `${holdProgress * 100}%` as any }}
           />
-          <HStack className='flex-1 items-center justify-center gap-1 z-10'>
+          <HStack className='flex-1 items-center justify-center gap-1 pr-1 z-10'>
             <Icon
               as={ChevronLeft}
               size='xs'
@@ -149,27 +150,36 @@ export function ScoutingHeader({
                 } as any
               }
             >
-              Exit
+              Hold to Exit
             </Text>
           </HStack>
         </Box>
       </Pressable>
 
       {/* Action badge */}
-      <Animated.View style={{ opacity: sessionRunning ? pulseAnim : 1 }}>
-        <Badge
-          size='lg'
-          variant='solid'
-          style={{ backgroundColor: actionColor.bg }}
-        >
-          <BadgeText style={{ color: actionColor.text }}>
-            {currentAction.charAt(0).toUpperCase() + currentAction.slice(1)}
-          </BadgeText>
-        </Badge>
-      </Animated.View>
+      <VStack className='justify-center items-center'>
+        <Text size='2xs' className='text-typography-500 text-center capitalize'>
+          {matchType} {matchNumber} · Team {teamNumber}
+        </Text>
+        <Animated.View style={{ opacity: sessionRunning ? pulseAnim : 1 }}>
+          <Badge
+            size='md'
+            variant='solid'
+            style={{ backgroundColor: actionColor.bg }}
+            className='text-center'
+          >
+            <BadgeText
+              style={{ color: actionColor.text }}
+              className='text-center'
+            >
+              {currentAction.charAt(0).toUpperCase() + currentAction.slice(1)}
+            </BadgeText>
+          </Badge>
+        </Animated.View>{' '}
+      </VStack>
 
       {/* Timer + match info */}
-      <HStack space='sm' className='items-center'>
+      <HStack space='sm' className='items-center justify-end'>
         <Badge
           size='lg'
           variant='outline'
@@ -185,9 +195,6 @@ export function ScoutingHeader({
             {phaseLabel} {displayCountdown}
           </BadgeText>
         </Badge>
-        <Text className='text-xs text-typography-500 capitalize'>
-          {matchType} {matchNumber} · T{teamNumber}
-        </Text>
       </HStack>
     </HStack>
   );

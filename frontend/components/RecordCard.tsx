@@ -15,6 +15,7 @@ import {
   CloudUpload,
   Trash2,
   RefreshCw,
+  Gamepad2,
 } from 'lucide-react-native';
 import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
 import { Button, ButtonIcon } from '@/components/ui/button';
@@ -57,6 +58,8 @@ function getTypeIcon(type: string) {
       return Binoculars;
     case 'picture':
       return Camera;
+    case 'scout':
+      return Gamepad2;
     default:
       return ClipboardList;
   }
@@ -160,7 +163,9 @@ export function RecordCard({
                   ? 'Prescouting form'
                   : record.type === 'picture'
                     ? 'Picture'
-                    : 'unknown'} for {record.teamNumber}
+                    : record.type === 'scout'
+                      ? 'Scout session'
+                      : 'unknown'} for {record.teamNumber}
             </Text>
             {record.last_retry !== record.created_at && (
               <Text className='text-typography-500 text-xs'>

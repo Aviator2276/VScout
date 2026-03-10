@@ -12,9 +12,9 @@ interface UseScoutingInputParams {
 
 const KEY_TO_ACTION: Record<string, RobotAction> = {
   ArrowUp: 'shooting',
-  ArrowDown: 'defending',
+  ArrowDown: 'outtake',
   ArrowLeft: 'intake',
-  ArrowRight: 'outtake',
+  ArrowRight: 'herding',
 };
 
 export function useScoutingInput({
@@ -120,9 +120,9 @@ export function useScoutingInput({
       lastDpadRef.current = currentDpad;
       const dpadToAction: Record<string, RobotAction> = {
         up: 'shooting',
-        down: 'defending',
+        down: 'outtake',
         left: 'intake',
-        right: 'outtake',
+        right: 'herding',
         center: 'traversing',
       };
       onActionChange(dpadToAction[currentDpad]);

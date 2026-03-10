@@ -18,6 +18,7 @@ import { ScoutingJoystick } from '@/components/scouting/ScoutingJoystick';
 import { ScoutingToggles } from '@/components/scouting/ScoutingToggles';
 import { ScoutingEndScreen } from '@/components/scouting/ScoutingEndScreen';
 import { getVideoUrl, revokeVideoUrl } from '@/utils/videoStorage';
+import { usePreventZoom } from '@/hooks/usePreventZoom';
 
 function useIsMobileWeb(): boolean {
   const { width } = useWindowDimensions();
@@ -44,6 +45,7 @@ export default function ScoutVideoScreen() {
   const { width, height } = useWindowDimensions();
 
   useKeepAwake();
+  usePreventZoom();
 
   const matchNum = parseInt(matchNumber || '0', 10);
   const teamNum = parseInt(teamNumber || '0', 10);
@@ -100,6 +102,15 @@ export default function ScoutVideoScreen() {
       videoRef.current.pause();
     }
   }, [session.sessionState]);
+
+  // Pause video when leaving the screen
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
+  }, []);
 
   // Wrap startSession to also play the video
   const handleStart = useCallback(() => {
@@ -199,8 +210,8 @@ export default function ScoutVideoScreen() {
       />
 
       <HStack className='flex-1'>
-        <Box className='flex-1 pl-2'>
-          <Box className='flex-1 bg-background-950 overflow-hidden rounded-xl'>
+        <Box className='flex-1 pl-2 justify-center'>
+          <Box className='bg-background-950 aspect-video overflow-hidden rounded-xl items-center'>
             {videoUrl ? (
               <video
                 ref={videoRef}
@@ -210,7 +221,6 @@ export default function ScoutVideoScreen() {
                 muted={false}
                 style={{
                   width: '100%',
-                  height: '100%',
                   objectFit: 'cover',
                   borderRadius: 12,
                 }}
@@ -232,8 +242,10 @@ export default function ScoutVideoScreen() {
             <ScoutingToggles
               isDisabled={session.isDisabled}
               isClimbing={session.isClimbing}
+              isDefending={session.isDefending}
               onToggleDisabled={session.toggleDisabled}
               onToggleClimbing={session.toggleClimbing}
+              onToggleDefending={session.toggleDefending}
               sessionRunning={session.sessionState === 'running'}
             />
           </Box>
@@ -242,6 +254,7 @@ export default function ScoutVideoScreen() {
             disabled={
               session.isDisabled ||
               session.isClimbing ||
+              session.isDefending ||
               session.sessionState !== 'running'
             }
             onActionChange={session.setAction}

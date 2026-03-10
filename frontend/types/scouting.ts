@@ -4,6 +4,7 @@ export type RobotAction =
   | 'defending'
   | 'intake'
   | 'outtake'
+  | 'herding'
   | 'climbing'
   | 'disabled';
 
@@ -20,4 +21,5 @@ export interface RobotActionRecord {
   team_number: number;
   auto: ActionSegment[];
   tele: ActionSegment[];
+  notes?: string;
 }

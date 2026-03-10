@@ -26,7 +26,8 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { db } from '@/utils/db';
 import { uploadPrescout, uploadTeamPicture } from '@/api/teams';
-import { PrescoutRecord } from '@/types/record';
+import { PrescoutRecord, ScoutRecord } from '@/types/record';
+import { uploadScoutRecord } from '@/api/scout';
 import { useRecords } from '@/hooks/useRecords';
 
 interface UplinkStatusProps {
@@ -177,6 +178,20 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
         }
       }
 
+      // Get pending scout records
+      const pendingScouts = await db.scoutRecords
+        .filter((r) => r.info.status === 'pending')
+        .toArray();
+
+      for (const record of pendingScouts) {
+        try {
+          await uploadScoutRecord(record);
+          setLastUploadTime(new Date());
+        } catch (error) {
+          console.error('Failed to upload scout record:', error);
+        }
+      }
+
     } finally {
       isProcessingRef.current = false;
       setIsProcessing(false);
@@ -228,6 +243,17 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
 
     for (const record of errorPictures) {
       await db.pictureRecords.put({
+        ...record,
+        info: { ...record.info, status: 'pending' },
+      });
+    }
+
+    const errorScouts = await db.scoutRecords
+      .filter((r) => r.info.status === 'error')
+      .toArray();
+
+    for (const record of errorScouts) {
+      await db.scoutRecords.put({
         ...record,
         info: { ...record.info, status: 'pending' },
       });

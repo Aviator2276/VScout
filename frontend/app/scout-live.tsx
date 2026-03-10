@@ -16,6 +16,7 @@ import { MatchTimeline } from '@/components/scouting/MatchTimeline';
 import { ScoutingJoystick } from '@/components/scouting/ScoutingJoystick';
 import { ScoutingToggles } from '@/components/scouting/ScoutingToggles';
 import { ScoutingEndScreen } from '@/components/scouting/ScoutingEndScreen';
+import { usePreventZoom } from '@/hooks/usePreventZoom';
 
 export default function ScoutLiveScreen() {
   const { matchNumber, teamNumber } = useLocalSearchParams<{
@@ -26,6 +27,7 @@ export default function ScoutLiveScreen() {
   const [match, setMatch] = useState<Match | null>(null);
 
   useKeepAwake();
+  usePreventZoom();
 
   const matchNum = parseInt(matchNumber || '0', 10);
   const teamNum = parseInt(teamNumber || '0', 10);
@@ -125,8 +127,10 @@ export default function ScoutLiveScreen() {
           <ScoutingToggles
             isDisabled={session.isDisabled}
             isClimbing={session.isClimbing}
+            isDefending={session.isDefending}
             onToggleDisabled={session.toggleDisabled}
             onToggleClimbing={session.toggleClimbing}
+            onToggleDefending={session.toggleDefending}
             sessionRunning={session.sessionState === 'running'}
           />
         </Box>
@@ -134,7 +138,7 @@ export default function ScoutLiveScreen() {
         {/* Joystick */}
         <Box className='items-center pb-8'>
           <ScoutingJoystick
-            disabled={session.isDisabled || session.isClimbing || session.sessionState !== 'running'}
+            disabled={session.isDisabled || session.isClimbing || session.isDefending || session.sessionState !== 'running'}
             onActionChange={session.setAction}
           />
         </Box>

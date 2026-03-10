@@ -13,9 +13,9 @@ interface ScoutingJoystickProps {
 const DIRECTION_MAP: Record<string, RobotAction> = {
   [Direction.Center]: 'traversing',
   [Direction.Top]: 'shooting',
-  [Direction.Bottom]: 'defending',
+  [Direction.Bottom]: 'outtake',
   [Direction.Left]: 'intake',
-  [Direction.Right]: 'outtake',
+  [Direction.Right]: 'herding',
 };
 
 export function ScoutingJoystick({
@@ -86,16 +86,16 @@ export function ScoutingJoystick({
           }}
         >
           <Text
-            className={`text-xs font-semibold ${disabled ? 'text-typography-300' : 'text-pink-500'}`}
+            className={`text-xs font-semibold ${disabled ? 'text-typography-300' : 'text-orange-500'}`}
           >
-            Outtake
+            Herding
           </Text>
         </View>
       </Box>
       <Text
-        className={`text-xs font-semibold mt-1 ${disabled ? 'text-typography-300' : 'text-amber-500'}`}
+        className={`text-xs font-semibold mt-1 ${disabled ? 'text-typography-300' : 'text-pink-500'}`}
       >
-        Defending
+        Outtake
       </Text>
     </Box>
   );

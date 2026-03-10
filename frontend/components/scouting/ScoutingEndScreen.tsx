@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, TextInput } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
@@ -20,7 +20,7 @@ interface ScoutingEndScreenProps {
   teamNumber: number;
   recordData: RobotActionRecord;
   actionLog: { matchTimeSec: number; action: RobotAction }[];
-  onSave: () => Promise<void>;
+  onSave: (notes?: string) => Promise<void>;
   onRestart: () => void;
 }
 
@@ -30,6 +30,7 @@ const ALL_ACTIONS: RobotAction[] = [
   'defending',
   'intake',
   'outtake',
+  'herding',
   'climbing',
   'disabled',
 ];
@@ -44,7 +45,8 @@ export function ScoutingEndScreen({
   onRestart,
 }: ScoutingEndScreenProps) {
   const router = useRouter();
-  const [saving, setSaving] = React.useState(false);
+  const [saving, setSaving] = useState(false);
+  const [notes, setNotes] = useState('');
 
   const stats = useMemo(() => {
     const totals: Record<RobotAction, number> = {
@@ -53,6 +55,7 @@ export function ScoutingEndScreen({
       defending: 0,
       intake: 0,
       outtake: 0,
+      herding: 0,
       climbing: 0,
       disabled: 0,
     };
@@ -74,7 +77,7 @@ export function ScoutingEndScreen({
   async function handleSave() {
     setSaving(true);
     try {
-      await onSave();
+      await onSave(notes.trim() || undefined);
       router.back();
     } catch (err) {
       console.error('Failed to save scouting data:', err);
@@ -138,6 +141,27 @@ export function ScoutingEndScreen({
                 );
               })}
             </VStack>
+          </Card>
+
+          {/* Notes */}
+          <Card variant='outline' className='p-4'>
+            <Text className='font-semibold mb-2'>Notes</Text>
+            <TextInput
+              value={notes}
+              onChangeText={setNotes}
+              placeholder='Add any comments about this match...'
+              multiline
+              numberOfLines={3}
+              style={{
+                borderWidth: 1,
+                borderColor: '#d1d5db',
+                borderRadius: 8,
+                padding: 10,
+                fontSize: 14,
+                minHeight: 80,
+                textAlignVertical: 'top',
+              }}
+            />
           </Card>
 
           {/* Actions */}

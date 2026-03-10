@@ -9,6 +9,7 @@ import {
   getPeriodAtTime,
 } from '@/utils/matchTimeline';
 import { db } from '@/utils/db';
+import { saveScoutRecord } from '@/api/scout';
 
 export type SessionState = 'ready' | 'running' | 'finished';
 
@@ -32,6 +33,7 @@ export interface ScoutingSession {
   currentAction: RobotAction;
   isDisabled: boolean;
   isClimbing: boolean;
+  isDefending: boolean;
   currentPhase: 'auto' | 'hold' | 'teleop';
   displayCountdown: string;
   periodLabel: string;
@@ -40,9 +42,10 @@ export interface ScoutingSession {
   setAction: (action: RobotAction) => void;
   toggleDisabled: () => void;
   toggleClimbing: () => void;
+  toggleDefending: () => void;
   resetSession: () => void;
   getRecordData: () => RobotActionRecord;
-  saveToDb: () => Promise<void>;
+  saveToDb: (notes?: string) => Promise<void>;
 }
 
 export function useScoutingSession({
@@ -58,6 +61,7 @@ export function useScoutingSession({
   const [currentAction, setCurrentAction] = useState<RobotAction>('traversing');
   const [isDisabled, setIsDisabled] = useState(false);
   const [isClimbing, setIsClimbing] = useState(false);
+  const [isDefending, setIsDefending] = useState(false);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
   const rafRef = useRef<number | null>(null);
@@ -127,7 +131,7 @@ export function useScoutingSession({
     rafRef.current = requestAnimationFrame(tick);
   }, [tick]);
 
-  const MIN_ACTION_DURATION_SEC = 1;
+  const MIN_ACTION_DURATION_SEC = 0.5;
 
   const canChangeAction = useCallback((): boolean => {
     const currentRealMs = elapsedRealMsRef.current;
@@ -182,6 +186,7 @@ export function useScoutingSession({
       const newVal = !prev;
       if (newVal) {
         setIsClimbing(false);
+        setIsDefending(false);
         setAction('disabled');
       } else {
         setAction('traversing');
@@ -195,7 +200,22 @@ export function useScoutingSession({
     setIsClimbing((prev) => {
       const newVal = !prev;
       if (newVal) {
+        setIsDefending(false);
         setAction('climbing');
+      } else {
+        setAction('traversing');
+      }
+      return newVal;
+    });
+  }, [setAction, canChangeAction]);
+
+  const toggleDefending = useCallback(() => {
+    if (!canChangeAction()) return;
+    setIsDefending((prev) => {
+      const newVal = !prev;
+      if (newVal) {
+        setIsClimbing(false);
+        setAction('defending');
       } else {
         setAction('traversing');
       }
@@ -215,6 +235,7 @@ export function useScoutingSession({
     setCurrentAction('traversing');
     setIsDisabled(false);
     setIsClimbing(false);
+    setIsDefending(false);
     setActionLog([]);
     lastActionChangeSecRef.current = 0;
     if (pendingTraversingRef.current !== null) {
@@ -263,9 +284,13 @@ export function useScoutingSession({
     };
   }, [actionLog, competitionCode, matchType, setNumber, matchNumber, teamNumber]);
 
-  const saveToDb = useCallback(async () => {
+  const saveToDb = useCallback(async (notes?: string) => {
     const record = getRecordData();
+    if (notes) record.notes = notes;
+    // Save to local robotActions table
     await db.robotActions.put(record);
+    // Save to scoutRecords for upload tracking
+    await saveScoutRecord(record);
   }, [getRecordData]);
 
   return {
@@ -274,6 +299,7 @@ export function useScoutingSession({
     currentAction,
     isDisabled,
     isClimbing,
+    isDefending,
     currentPhase,
     displayCountdown,
     periodLabel: period.label,
@@ -282,6 +308,7 @@ export function useScoutingSession({
     setAction,
     toggleDisabled,
     toggleClimbing,
+    toggleDefending,
     resetSession,
     getRecordData,
     saveToDb,
