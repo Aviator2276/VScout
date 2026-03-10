@@ -417,7 +417,7 @@ def list_robot_actions(
     return queryset
 
 
-@api.post("/robot-actions/bulk")
+@api.post("/robot-actions/bulk", response=list[RobotActionSchema])
 def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
     """
     Bulk create robot actions from auto and teleop periods.

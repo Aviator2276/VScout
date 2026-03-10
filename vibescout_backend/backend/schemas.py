@@ -339,7 +339,7 @@ class RobotActionCreateSchema(Schema):
 class RobotActionItemSchema(Schema):
     """Schema for individual action items in auto/tele arrays"""
 
-    duration: int  # Duration in seconds
+    duration: float  # Duration in seconds
     action: str  # Action type (shoot, traverse, climb, etc.)
 
 
