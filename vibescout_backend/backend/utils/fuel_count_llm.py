@@ -58,4 +58,5 @@ def scores_from_images(match_folder: str) -> dict:
     }
 
 
-scores_from_images(os.path.join(_ROOT, "match_images/match_qualification_15_day1"))
+if __name__ == "__main__":
+    scores_from_images(os.path.join(_ROOT, "match_images/match_qualification_15_day1"))
