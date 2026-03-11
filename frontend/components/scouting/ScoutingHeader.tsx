@@ -118,7 +118,7 @@ export function ScoutingHeader({
         : 'Teleop';
 
   return (
-    <HStack className='w-full grid grid-cols-3 px-3 pt-1 items-center'>
+    <HStack className='w-full grid grid-cols-3 px-3 py-1 items-center'>
       {/* Hold-to-exit button */}
       <Pressable
         onPressIn={startHold}
