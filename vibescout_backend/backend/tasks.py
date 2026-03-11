@@ -253,9 +253,10 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
         blue_dir.mkdir()
 
         # Crop coords (W:H:X:Y) at 640x360 — coords are swapped due to cropper flipping
+        # Blue score is on the right side of the scoreboard (x=582), red is on the left (x=30)
         crops = [
-            ("red",  "18:10:582:24", str(red_dir / "%03d.jpg")),
-            ("blue", "18:10:30:24",  str(blue_dir / "%03d.jpg")),
+            ("blue", "18:10:582:24", str(blue_dir / "%03d.jpg")),
+            ("red",  "18:10:30:24",  str(red_dir / "%03d.jpg")),
         ]
         for alliance, crop, out_pattern in crops:
             w, h, x, y = crop.split(":")
@@ -277,6 +278,14 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
         match.save(update_fields=["fuel_timeline"])
         logger.info(f"Saved fuel_timeline for match {match.match_number}")
 
+        # Queue fuel attribution now that timeline is ready
+        from django_q.tasks import async_task
+        async_task(
+            "backend.tasks.attribute_fuel_to_robots_task",
+            match.pk,
+            task_name=f"fuel_attribution_{match.competition.code}_match_{match.match_number}",
+        )
+
         return {
             "success": True,
             "match_id": match_id,
@@ -287,6 +296,168 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
         return {"success": False, "error": str(e)}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def attribute_fuel_to_robots_task(match_id: int) -> dict:
+    """
+    Attribute fuel scored to individual robots using the LLM fuel timeline and
+    scouted RobotAction records.
+
+    For each second in the timeline, computes the score delta and assigns it
+    equally among robots on that alliance that are shooting at that second.
+    Only processes an alliance if all 3 robots have been scouted.
+
+    Writes results to per-robot auto_fuel, teleop_fuel, and fuel_scored fields.
+    """
+    from .models import Match, RobotAction
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        logger.error(f"Match {match_id} not found")
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    if not match.fuel_timeline:
+        logger.info(f"No fuel timeline for match {match_id}, skipping fuel attribution")
+        return {"success": False, "error": "No fuel timeline available"}
+
+    def parse_score(s):
+        try:
+            return int(s)
+        except (ValueError, TypeError):
+            return None
+
+    alliance_configs = {
+        "blue": {
+            "teams": [match.blue_team_1, match.blue_team_2, match.blue_team_3],
+            "positions": ["blue_1", "blue_2", "blue_3"],
+            "timeline_key": "blue",
+        },
+        "red": {
+            "teams": [match.red_team_1, match.red_team_2, match.red_team_3],
+            "positions": ["red_1", "red_2", "red_3"],
+            "timeline_key": "red",
+        },
+    }
+
+    updates = {}
+
+    for alliance, config in alliance_configs.items():
+        teams = config["teams"]
+        positions = config["positions"]
+        timeline_key = config["timeline_key"]
+
+        # Only process if all 3 robots have been scouted
+        scouted = sum(
+            1 for team in teams
+            if RobotAction.objects.filter(match=match, team=team).exists()
+        )
+        if scouted < 3:
+            logger.info(
+                f"Alliance {alliance} only has {scouted}/3 robots scouted for match "
+                f"{match.match_number}, skipping"
+            )
+            continue
+
+        timeline = match.fuel_timeline.get(timeline_key, [])
+        if not timeline:
+            continue
+
+        # Parse OCR strings to ints, forward-filling None gaps
+        raw = [parse_score(s) for s in timeline]
+        last_valid = 0
+        parsed_scores = []
+        for s in raw:
+            if s is not None:
+                last_valid = s
+            parsed_scores.append(last_valid)
+
+        # Pre-fetch actions for each robot
+        actions_by_team = {}
+        for team in teams:
+            actions_by_team[team.pk] = list(
+                RobotAction.objects.filter(match=match, team=team).values(
+                    "action_type", "start_time", "end_time"
+                )
+            )
+
+        auto_fuel = {pos: 0.0 for pos in positions}
+        teleop_fuel = {pos: 0.0 for pos in positions}
+
+        # Lookahead accounts for fuel flight time, FMS delay, and human scouting error
+        SCORE_LOOKAHEAD = 8  # seconds
+        # Orphaned deltas above this threshold are redistributed proportionally
+        ORPHAN_REDISTRIBUTE_THRESHOLD = 3
+
+        orphaned_auto = 0.0
+        orphaned_teleop = 0.0
+
+        prev_score = parsed_scores[0] if parsed_scores else 0
+        # sec_idx is the match second (frame N = second N of the clipped match)
+        for sec_idx, score in enumerate(parsed_scores[1:], start=1):
+            delta = score - prev_score
+            prev_score = score
+
+            if delta <= 0:
+                continue
+
+            is_auto = sec_idx < 15
+
+            # Find robots shooting in the window [sec_idx - SCORE_LOOKAHEAD, sec_idx]
+            window_start = sec_idx - SCORE_LOOKAHEAD
+            shooting = []
+            for team, pos in zip(teams, positions):
+                for action in actions_by_team[team.pk]:
+                    if (
+                        action["action_type"] == "shooting"
+                        and float(action["start_time"]) <= sec_idx
+                        and float(action["end_time"]) > window_start
+                    ):
+                        shooting.append(pos)
+                        break
+
+            if not shooting:
+                # Accumulate large orphans for redistribution
+                if delta > ORPHAN_REDISTRIBUTE_THRESHOLD:
+                    if is_auto:
+                        orphaned_auto += delta
+                    else:
+                        orphaned_teleop += delta
+                continue
+
+            share = delta / len(shooting)
+            for pos in shooting:
+                if is_auto:
+                    auto_fuel[pos] += share
+                else:
+                    teleop_fuel[pos] += share
+
+        # Redistribute large orphans proportionally based on each robot's attributed fuel
+        total_attributed = sum(auto_fuel[p] + teleop_fuel[p] for p in positions)
+        if total_attributed > 0 and (orphaned_auto + orphaned_teleop) > 0:
+            for pos in positions:
+                robot_share = (auto_fuel[pos] + teleop_fuel[pos]) / total_attributed
+                auto_fuel[pos] += orphaned_auto * robot_share
+                teleop_fuel[pos] += orphaned_teleop * robot_share
+
+        for pos in positions:
+            auto = round(auto_fuel[pos])
+            teleop = round(teleop_fuel[pos])
+            updates[f"{pos}_auto_fuel"] = auto
+            updates[f"{pos}_teleop_fuel"] = teleop
+            updates[f"{pos}_fuel_scored"] = auto + teleop
+
+    if updates:
+        for field, value in updates.items():
+            setattr(match, field, value)
+        match.save(update_fields=list(updates.keys()))
+        logger.info(
+            f"Attributed fuel for match {match.match_number} "
+            f"({match.competition.code}): {updates}"
+        )
+        return {"success": True, "match_id": match_id, "updates": updates}
+
+    return {"success": True, "match_id": match_id, "message": "No alliances ready yet"}
 
 
 def clip_match_video_task(match_id: int) -> dict:
@@ -516,13 +687,13 @@ def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
     from django.utils import timezone
     from django_q.models import Schedule
 
-    Schedule.objects.filter(name="compute_stream_offsets_periodic").delete()
+    Schedule.objects.filter(name=f"compute_stream_offsets_{competition_code}").delete()
     logger.info(f"Unscheduled compute_stream_offsets for {competition_code}")
 
-    check_matches_interval = int(os.getenv("TASK_CHECK_MATCHES_INTERVAL_MINUTES", "5"))
+    check_matches_interval = 1  # minutes
 
     Schedule.objects.get_or_create(
-        name="check_new_matches_periodic",
+        name=f"check_new_matches_{competition_code}",
         defaults=dict(
             func="backend.tasks.check_and_sync_new_matches",
             args=f'"{competition_code}"',
@@ -532,7 +703,7 @@ def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
         ),
     )
     Schedule.objects.get_or_create(
-        name="check_video_downloads_periodic",
+        name=f"check_video_downloads_{competition_code}",
         defaults=dict(
             func="backend.tasks.check_and_download_videos",
             args=f'"{competition_code}"',

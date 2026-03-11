@@ -341,6 +341,7 @@ class RobotActionItemSchema(Schema):
 
     duration: float  # Duration in seconds
     action: str  # Action type (shoot, traverse, climb, etc.)
+    fuel: Optional[int] = None  # Fuel scored during this action (shooting only)
 
 
 class BulkRobotActionsSchema(Schema):

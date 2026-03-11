@@ -527,6 +527,15 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
             created_actions.append(robot_action)
             current_time = end_time
 
+    # Queue fuel attribution in case this completes an alliance
+    if match.fuel_timeline is not None:
+        from django_q.tasks import async_task
+        async_task(
+            "backend.tasks.attribute_fuel_to_robots_task",
+            match.pk,
+            task_name=f"fuel_attribution_{match.competition.code}_match_{match.match_number}",
+        )
+
     return created_actions
 
 
@@ -546,17 +555,7 @@ def get_bulk_robot_actions(
 
     actions = RobotAction.objects.filter(match=match, team=team).order_by("start_time")
 
-    auto_actions = []
-    tele_actions = []
-    for action in actions:
-        duration = int(action.end_time - action.start_time)
-        item = {"duration": duration, "action": action.action_type}
-        if action.start_time < 15:
-            auto_actions.append(item)
-        else:
-            tele_actions.append(item)
-
-    # Determine team position in match to look up fuel from match model
+    # Determine team position to look up attributed fuel totals
     position_map = {
         "blue_1": match.blue_team_1_id,
         "blue_2": match.blue_team_2_id,
@@ -569,6 +568,35 @@ def get_bulk_robot_actions(
 
     auto_fuel = getattr(match, f"{position}_auto_fuel", 0) if position else 0
     tele_fuel = getattr(match, f"{position}_teleop_fuel", 0) if position else 0
+
+    # Calculate total shooting duration in each period to distribute fuel proportionally
+    auto_shoot_duration = sum(
+        float(a.end_time - a.start_time)
+        for a in actions
+        if a.action_type == "shooting" and a.start_time < 15
+    )
+    tele_shoot_duration = sum(
+        float(a.end_time - a.start_time)
+        for a in actions
+        if a.action_type == "shooting" and a.start_time >= 15
+    )
+
+    auto_actions = []
+    tele_actions = []
+    for action in actions:
+        duration = float(action.end_time - action.start_time)
+        item = {"duration": duration, "action": action.action_type}
+
+        if action.action_type == "shooting":
+            if action.start_time < 15:
+                item["fuel"] = round(auto_fuel * (duration / auto_shoot_duration)) if auto_shoot_duration else 0
+            else:
+                item["fuel"] = round(tele_fuel * (duration / tele_shoot_duration)) if tele_shoot_duration else 0
+
+        if action.start_time < 15:
+            auto_actions.append(item)
+        else:
+            tele_actions.append(item)
 
     return {
         "team_number": team_number,

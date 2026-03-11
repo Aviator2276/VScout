@@ -336,13 +336,13 @@ class Match(models.Model):
 
 class RobotAction(models.Model):
     ACTION_CHOICES = [
-        ("traveling", "Traveling"),
+        ("traversing", "Traversing"),
         ("shooting", "Shooting"),
-        ("passing", "Passing"),
-        ("collecting", "Collecting"),
         ("defending", "Defending"),
+        ("intake", "Intake"),
+        ("outtake", "Outtake"),
+        ("herding", "Herding"),
         ("disabled", "Disabled"),
-        ("idle", "Idle"),
         ("climbing", "Climbing"),
     ]
 

@@ -3,12 +3,12 @@ import json
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Match, Team, Competition, TeamInfo
+from .models import Match, Team, Competition, TeamInfo, RobotAction
 
 
 @admin.register(Match)
 class MatchAdmin(admin.ModelAdmin):
-    list_display = ['match_number', 'match_type', 'competition', 'has_played', 'video_available', 'video_clipped', 'has_fuel_timeline']
+    list_display = ['match_number', 'match_type', 'competition', 'has_played', 'blue_total_score', 'red_total_score', 'video_available', 'video_clipped', 'has_fuel_timeline']
     list_filter = ['competition', 'match_type', 'has_played', 'video_clipped']
     search_fields = ['match_number']
     readonly_fields = ['fuel_timeline_pretty']
@@ -27,6 +27,17 @@ class MatchAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {
             'fields': ['competition', 'match_number', 'match_type', 'set_number', 'has_played'],
+        }),
+        ('Score Breakdown', {
+            'fields': [
+                'blue_total_score', 'red_total_score',
+                'blue_auto_points', 'red_auto_points',
+                'blue_teleop_points', 'red_teleop_points',
+                'blue_endgame_points', 'red_endgame_points',
+                'blue_penalties', 'red_penalties',
+                'blue_ranking_points', 'red_ranking_points',
+                'winning_alliance',
+            ],
         }),
         ('Video', {
             'fields': ['video_available', 'video_clipped'],
@@ -79,3 +90,26 @@ class TeamInfoAdmin(admin.ModelAdmin):
     list_display = ['team', 'competition', 'ranking_points', 'win', 'lose', 'tie']
     list_filter = ['competition', 'team']
     search_fields = ['team__number', 'team__name', 'competition__name']
+
+
+@admin.register(RobotAction)
+class RobotActionAdmin(admin.ModelAdmin):
+    list_display = ['team', 'match', 'action_type', 'start_time', 'end_time', 'fuel', 'is_playoff', 'recorded_by']
+    list_filter = ['action_type', 'is_playoff', 'match__competition', 'team']
+    search_fields = ['team__number', 'team__name', 'match__match_number', 'notes']
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = [
+        (None, {
+            'fields': ['match', 'team', 'action_type', 'is_playoff'],
+        }),
+        ('Timing', {
+            'fields': ['start_time', 'end_time'],
+        }),
+        ('Details', {
+            'fields': ['fuel', 'notes', 'recorded_by'],
+        }),
+        ('Metadata', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse'],
+        }),
+    ]

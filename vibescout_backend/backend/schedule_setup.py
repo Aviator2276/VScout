@@ -3,10 +3,10 @@ Setup scheduled tasks for VibeScout background jobs.
 
 This module configures periodic tasks based on environment variables.
 Tasks are automatically registered when Django starts up.
+One set of schedules is created per competition found in the database.
 """
 
 import logging
-import os
 from datetime import timedelta
 
 from django.utils import timezone
@@ -17,33 +17,21 @@ logger = logging.getLogger(__name__)
 
 def setup_scheduled_tasks():
     """
-    Setup all scheduled tasks based on environment variables.
+    Setup all scheduled tasks based on competitions in the database.
 
     This function is called automatically when Django starts (via apps.py).
     It clears existing schedules and recreates them to ensure consistency.
+    One match-sync + video-download schedule pair is created per competition.
 
-    Environment Variables:
-        TASK_CHECK_MATCHES_INTERVAL_MINUTES: How often to check for new matches (default: 5)
-        COMPCODE: Competition code to monitor for new matches
-        BACKGROUND_DEV: If true, tasks run immediately; if false, queued for qcluster
     """
 
-    # Check if background tasks should be enabled
-    background_enabled = os.getenv("BACKGROUND_TASKS_ENABLED", "true").lower() == "true"
-
-    if not background_enabled:
-        logger.info(
-            "Background tasks disabled by BACKGROUND_TASKS_ENABLED env variable"
-        )
-        return
-
-    # Clear existing schedules to prevent duplicates and ensure consistency
+    # Clear existing schedules to prevent duplicates
     existing_count = Schedule.objects.count()
     if existing_count > 0:
         Schedule.objects.all().delete()
         logger.info(f"Cleared {existing_count} existing scheduled task(s)")
 
-    # Clear all queued, completed, and failed tasks on startup
+    # Clear queued/completed/failed tasks on startup
     from django_q.models import Failure, OrmQ, Success
 
     queued = OrmQ.objects.all().delete()[0]
@@ -51,19 +39,23 @@ def setup_scheduled_tasks():
     failure = Failure.objects.all().delete()[0]
     logger.info(f"Cleared task history on startup: {queued} queued, {success} completed, {failure} failed")
 
-    # Get schedule interval from environment (in minutes)
-    check_matches_interval = int(os.getenv("TASK_CHECK_MATCHES_INTERVAL_MINUTES", "5"))
+    check_matches_interval = 1  # minutes
 
-    # Get competition code
-    competition_code = os.getenv("COMPCODE")
+    from backend.models import Competition, Match
 
-    if not competition_code:
-        logger.warning("COMPCODE not set - match checking and video download tasks will not be scheduled")
-    else:
-        from backend.models import Competition, Match
+    competitions = list(Competition.objects.all())
+
+    if not competitions:
+        logger.warning("No competitions in database — no tasks scheduled")
+        return
+
+    for i, competition in enumerate(competitions):
+        code = competition.code
+
+        # Stagger start times slightly so competitions don't all run at once
+        offset_minutes = (i * check_matches_interval) / max(len(competitions), 1)
 
         try:
-            competition = Competition.objects.get(code=competition_code)
             first_match = (
                 Match.objects.filter(
                     competition=competition,
@@ -77,58 +69,50 @@ def setup_scheduled_tasks():
             first_match_has_video = False
 
         if not first_match_has_video:
-            # Offset may not be set yet — schedule bootstrap + match sync together
             Schedule.objects.create(
-                name="compute_stream_offsets_periodic",
+                name=f"compute_stream_offsets_{code}",
                 func="backend.tasks.compute_stream_offsets",
-                args=f'"{competition_code}"',
+                args=f'"{code}"',
                 schedule_type=Schedule.MINUTES,
                 minutes=check_matches_interval,
                 repeats=-1,
             )
-            logger.info(
-                f"Scheduled compute_stream_offsets task every {check_matches_interval} minutes for {competition_code}"
-            )
+            logger.info(f"Scheduled compute_stream_offsets for {code} every {check_matches_interval}m")
+
             Schedule.objects.create(
-                name="check_new_matches_periodic",
+                name=f"check_new_matches_{code}",
                 func="backend.tasks.check_and_sync_new_matches",
-                args=f'"{competition_code}"',
+                args=f'"{code}"',
                 schedule_type=Schedule.MINUTES,
                 minutes=check_matches_interval,
                 next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
                 repeats=-1,
             )
-            logger.info(
-                f"Scheduled match sync task every {check_matches_interval} minutes for {competition_code}"
-            )
+            logger.info(f"Scheduled match sync for {code} every {check_matches_interval}m")
         else:
-            # First match already has a video, offset is known — go straight to normal tasks
             Schedule.objects.create(
-                name="check_new_matches_periodic",
+                name=f"check_new_matches_{code}",
                 func="backend.tasks.check_and_sync_new_matches",
-                args=f'"{competition_code}"',
+                args=f'"{code}"',
                 schedule_type=Schedule.MINUTES,
                 minutes=check_matches_interval,
+                next_run=timezone.now() + timedelta(minutes=offset_minutes),
                 repeats=-1,
             )
-            logger.info(
-                f"Scheduled match checking task every {check_matches_interval} minutes for {competition_code}"
-            )
+            logger.info(f"Scheduled match sync for {code} every {check_matches_interval}m")
 
             Schedule.objects.create(
-                name="check_video_downloads_periodic",
+                name=f"check_video_downloads_{code}",
                 func="backend.tasks.check_and_download_videos",
-                args=f'"{competition_code}"',
+                args=f'"{code}"',
                 schedule_type=Schedule.MINUTES,
                 minutes=check_matches_interval,
-                next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
+                next_run=timezone.now() + timedelta(minutes=offset_minutes + check_matches_interval / 2),
                 repeats=-1,
             )
-            logger.info(
-                f"Scheduled video download task every {check_matches_interval} minutes for {competition_code} (offset by {check_matches_interval / 2}m)"
-            )
+            logger.info(f"Scheduled video downloads for {code} every {check_matches_interval}m")
 
-    logger.info("Scheduled tasks configured successfully")
+    logger.info(f"Scheduled tasks configured for {len(competitions)} competition(s)")
 
 
 def clear_all_scheduled_tasks():

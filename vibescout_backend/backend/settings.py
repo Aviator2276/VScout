@@ -200,27 +200,18 @@ LOGGING = {
 }
 
 # Django Q2 Configuration
-# BACKGROUND_DEV determines if tasks run asynchronously (False/prod) or synchronously (True/dev)
-# When True (dev mode), tasks run immediately in the same process without needing qcluster
-# When False (prod mode), tasks are queued and require running `python manage.py qcluster`
-BACKGROUND_DEV = os.getenv("BACKGROUND_DEV", "true").lower() == "true"
-
 Q_CLUSTER = {
     "name": "VibeScout",
-    "workers": int(os.getenv("DJANGO_Q_WORKERS", "4")),  # Number of worker processes
-    "recycle": 500,  # Recycle worker after this many tasks
-    "timeout": int(
-        os.getenv("DJANGO_Q_TIMEOUT", "300")
-    ),  # Task timeout in seconds (5 minutes)
-    "retry": int(
-        os.getenv("DJANGO_Q_RETRY", "360")
-    ),  # Retry failed tasks after this many seconds (6 minutes)
-    "queue_limit": 50,  # Maximum tasks in queue
-    "bulk": 10,  # Number of tasks to process in bulk
-    "orm": "default",  # Use default database for task storage
-    "save_limit": 250,  # Keep last 250 successful tasks in database
-    "ack_failures": True,  # Acknowledge failed tasks
-    "max_attempts": 1,  # Number of retry attempts for failed tasks
-    "cached": False,  # Don't use cache for broker (using ORM)
-    "sync": BACKGROUND_DEV,  # Run tasks synchronously in dev, asynchronously in prod
+    "workers": 4,
+    "recycle": 500,
+    "timeout": 300,   # 5 minutes
+    "retry": 360,     # 6 minutes
+    "queue_limit": 50,
+    "bulk": 10,
+    "orm": "default",
+    "save_limit": 250,
+    "ack_failures": True,
+    "max_attempts": 1,
+    "cached": False,
+    "sync": False,    # Always async — requires qcluster
 }

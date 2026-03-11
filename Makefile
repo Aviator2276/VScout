@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 dev-reset-2026week0 export-cookies redownload-videos reclip-videos
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel
 
 init:
 	@echo "Installing backend dependencies..."
@@ -41,30 +41,24 @@ migrate:
 makemigrations:
 	cd vibescout_backend && uv run python manage.py makemigrations
 
-check:
-	cd vibescout_backend && uv run python manage.py check
-
 shell:
 	cd vibescout_backend && uv run python manage.py shell
 
-qcluster:
-	cd vibescout_backend && uv run python manage.py qcluster
-
 import-tba:
 	cd vibescout_backend && uv run python manage.py import_tba_events 2026week0
-
-update-rankings:
-	cd vibescout_backend && uv run python manage.py update_rankings 2025gacmp
-
-generate-competition:
-	@echo "Generating competition and playing all matches..."
-	cd vibescout_backend && uv run python manage.py generate_competition
 
 comp-setup-2026week0:
 	@echo "Initializing 2026week0 competition (Real Event, Blank Matches)..."
 	cd vibescout_backend && uv run python manage.py init_competition 2026week0 --stream-time-day-1 2117 --stream-link-day-1 "https://www.youtube.com/watch?v=eUdvSJ-mqtU"
 	@echo "Adding blank matches..."
 	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
+
+comp-setup-2026gadal:
+	@echo "Initializing 2026gadal competition (Real Event, Blank Matches)..."
+	cd vibescout_backend && uv run python manage.py init_competition 2026gadal
+	@echo "Adding blank matches..."
+	cd vibescout_backend && uv run python manage.py add_blank_matches 2026gadal
+	@echo "Done! Add stream links and first match video position in the Django admin."
 
 comp-reset:
 	@echo "Resetting database (deleting all data)..."
@@ -94,41 +88,8 @@ redownload-videos:
 reclip-videos:
 	cd vibescout_backend && uv run python manage.py reclip_videos $(COMP) $(if $(MATCH),--match $(MATCH),)
 
+attribute-fuel:
+	cd vibescout_backend && uv run python manage.py attribute_fuel $(if $(COMP),$(COMP),)
+
 export:
 	cd frontend && npm run build:web
-
-ocr-scores:
-	cd vibescout_backend/score_ocr && uv run python score_ocr.py
-
-# Competition Step-Through Commands
-comp-day1:
-	@echo "=== Playing Day 1 Matches (First Half of Qualifications) ==="
-	cd vibescout_backend && uv run python manage.py step_competition day1
-
-comp-day2:
-	@echo "=== Playing Day 2 Matches (Second Half of Qualifications) ==="
-	cd vibescout_backend && uv run python manage.py step_competition day2
-
-comp-select-1:
-	@echo "=== Alliance Selection Round 1 ==="
-	cd vibescout_backend && uv run python manage.py step_competition select-alliances-1
-
-comp-select-2:
-	@echo "=== Alliance Selection Round 2 ==="
-	cd vibescout_backend && uv run python manage.py step_competition select-alliances-2
-
-comp-select-3:
-	@echo "=== Alliance Selection Round 3 (Final) ==="
-	cd vibescout_backend && uv run python manage.py step_competition select-alliances-3
-
-comp-quarters:
-	@echo "=== Playing Quarterfinal Matches ==="
-	cd vibescout_backend && uv run python manage.py step_competition quarterfinals
-
-comp-semis:
-	@echo "=== Playing Semifinal Matches ==="
-	cd vibescout_backend && uv run python manage.py step_competition semifinals
-
-comp-finals:
-	@echo "=== Playing Finals Matches ==="
-	cd vibescout_backend && uv run python manage.py step_competition finals
