@@ -1,41 +1,25 @@
 import React from 'react';
-import { Pressable } from 'react-native';
 import { HStack } from '@/components/ui/hstack';
-import { Text } from '@/components/ui/text';
-import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
+import { Button, ButtonText } from '@/components/ui/button';
 import { Badge, BadgeText, BadgeIcon } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
-import {
-  Popover,
-  PopoverArrow,
-  PopoverBackdrop,
-  PopoverBody,
-  PopoverContent,
-} from '@/components/ui/popover';
 import {
   Wifi,
   WifiLow,
   WifiOff,
-  CirclePause,
   Bolt,
-  CirclePlay,
-  ListChecks,
-  LayoutList,
-  ListX,
-  ListPlus,
+  CircleX,
+  Check,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { NetworkQuality } from '@/hooks/useNetworkQuality';
-import { VideoDynamicDownloading } from '@/types/video';
+import { Checkbox, CheckboxIcon, CheckboxIndicator } from './ui/checkbox';
 
 interface VideoStatusHeaderProps {
   networkQuality: NetworkQuality;
   isDownloading: boolean;
-  isPaused: boolean;
-  videoDynamicDownloading: VideoDynamicDownloading;
   isAllSelected: boolean;
-  onStartDownloads: () => void;
-  onPauseDownloads: () => void;
+  onCancelDownloads: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
 }
@@ -52,31 +36,29 @@ const QUALITY_CONFIG: Record<
 export function VideoStatusHeader({
   networkQuality,
   isDownloading,
-  isPaused,
-  videoDynamicDownloading,
   isAllSelected,
-  onStartDownloads,
-  onPauseDownloads,
+  onCancelDownloads,
   onSelectAll,
   onDeselectAll,
 }: VideoStatusHeaderProps) {
   const router = useRouter();
   const qualityConfig = QUALITY_CONFIG[networkQuality];
-  const isAlwaysDownload = videoDynamicDownloading === 'always';
 
   return (
     <HStack className='items-center justify-between px-4 py-3 border-l border-r border-b rounded-b border-outline-100'>
       {/* Network Quality Badge */}
       <HStack space='sm' className='items-center'>
-        <Button
-          size='sm'
-          variant='solid'
-          action='secondary'
-          className='px-2'
-          onPress={isAllSelected ? onDeselectAll : onSelectAll}
+        <Checkbox
+          value='mute'
+          isChecked={isAllSelected}
+          onChange={isAllSelected ? onDeselectAll : onSelectAll}
+          size='lg'
+          className='ml-1'
         >
-          <ButtonIcon as={isAllSelected ? ListX : ListChecks} size='md' />
-        </Button>
+          <CheckboxIndicator>
+            <CheckboxIcon as={Check} />
+          </CheckboxIndicator>
+        </Checkbox>
         <Badge size='lg' variant='solid' action={qualityConfig.action}>
           <BadgeIcon as={qualityConfig.icon} className='my-[0.1rem]' />
           <BadgeText className='ml-1'>{qualityConfig.label}</BadgeText>
@@ -92,55 +74,19 @@ export function VideoStatusHeader({
         >
           <Icon as={Bolt} size='md' />
         </Button>
-        {isAlwaysDownload ? (
-          <Popover
-            placement='bottom'
-            size='xs'
-            trigger={(triggerProps) => (
-              <Pressable {...triggerProps}>
-                <Button
-                  size='sm'
-                  variant='solid'
-                  action='primary'
-                  disabled
-                  className='opacity-40'
-                  pointerEvents='none'
-                >
-                  <Icon
-                    as={CirclePlay}
-                    size='md'
-                    className='mr-1 text-typography-0'
-                  />
-                  <ButtonText>Start</ButtonText>
-                </Button>
-              </Pressable>
-            )}
-          >
-            <PopoverBackdrop />
-            <PopoverContent>
-              <PopoverArrow />
-              <PopoverBody>
-                <Text className='text-typography-900'>
-                  Downloads run automatically in &quot;Always&quot; mode.
-                </Text>
-              </PopoverBody>
-            </PopoverContent>
-          </Popover>
-        ) : (
+        {isDownloading && (
           <Button
             size='sm'
-            variant={isPaused ? 'solid' : 'outline'}
-            action={isPaused ? 'primary' : 'secondary'}
-            onPress={isPaused ? onStartDownloads : onPauseDownloads}
+            variant='solid'
+            action='negative'
+            onPress={onCancelDownloads}
           >
             <Icon
-              as={isPaused ? CirclePlay : CirclePause}
+              as={CircleX}
               size='md'
-              className={`mr-1 ${isPaused ? 'text-typography-0' : 'text-typography-700'}`}
+              className='mr-1 text-typography-0'
             />
-            <ButtonText>
-              {isDownloading && !isPaused ? 'Pause' : 'Start'}
-            </ButtonText>
+            <ButtonText>Cancel</ButtonText>
           </Button>
         )}
       </HStack>

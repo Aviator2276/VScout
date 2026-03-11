@@ -14,7 +14,6 @@ export function calculateClimbPoints(
   climbLevel?: number | string,
   isAutonomous: boolean = false,
 ): number {
-  // Autonomous climb: 15 points if robot climbed in autonomous
   if (isAutonomous) {
     return 15;
   }

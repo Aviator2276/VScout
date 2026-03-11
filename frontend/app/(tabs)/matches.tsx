@@ -24,7 +24,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import { Header } from '@/components/Header';
-import { Fab, FabIcon } from '@/components/ui/fab';
+import { Fab, FabIcon, FabLabel } from '@/components/ui/fab';
 import { Film, Video } from 'lucide-react-native';
 
 cssInterop(FlatList, {

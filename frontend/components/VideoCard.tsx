@@ -17,6 +17,7 @@ import {
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { VideoListItem, MatchStatus } from '@/hooks/useVideoManager';
+import { Checkbox, CheckboxIcon, CheckboxIndicator } from './ui/checkbox';
 
 const getStatusConfig = (status: MatchStatus) => {
   switch (status) {
@@ -47,20 +48,13 @@ export function VideoCard({
   const isDownloading = downloadProgress !== undefined;
   return (
     <Pressable onPress={() => onToggleSelect(video.match_number)}>
-      <Card variant='outline' size='md' className='mb-2 p-2'>
+      <Card variant='outline' size='md' className='mb-2 p-2 py-3'>
         <HStack className='items-center gap-2 justify-between'>
-          {/* Select Checkbox - visual only, card handles the click */}
-          <View
-            className={`w-5 h-5 border-2 rounded justify-center items-center ${
-              isSelected
-                ? 'bg-primary-600 border-primary-600'
-                : 'bg-transparent border-outline-400'
-            }`}
-          >
-            {isSelected && (
-              <Icon as={Check} size='sm' className='text-typography-50' />
-            )}
-          </View>
+          <Checkbox value='mute' isChecked={isSelected} size='md'>
+            <CheckboxIndicator>
+              <CheckboxIcon as={Check} />
+            </CheckboxIndicator>
+          </Checkbox>
 
           <VStack className='flex-1'>
             <HStack className='items-center gap-2'>
@@ -93,7 +87,7 @@ export function VideoCard({
               >
                 <BadgeIcon
                   size='lg'
-                  className='h-5 w-5'
+                  className='h-4 w-4'
                   as={video.isAvailable ? CloudCheck : CloudOff}
                 />
               </Badge>
@@ -106,7 +100,7 @@ export function VideoCard({
               >
                 <BadgeIcon
                   size='lg'
-                  className='h-5 w-5'
+                  className='h-4 w-4'
                   as={video.isDownloaded ? Save : SaveOff}
                 />
               </Badge>

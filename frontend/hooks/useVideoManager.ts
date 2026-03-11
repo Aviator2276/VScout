@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/utils/db';
-import { MatchVideo, VideoSelectionMode, VideoDynamicDownloading, VideoAutoDelete } from '@/types/video';
-import { Match } from '@/types/match';
-import { fetchAndStoreVideo, deleteLocalVideo, syncVideoAvailability } from '@/api/videos';
+import { MatchVideo, VideoSelectionMode } from '@/types/video';
+import { deleteLocalVideo, syncVideoAvailability } from '@/api/videos';
 import { useNetworkQuality, NetworkQuality } from '@/hooks/useNetworkQuality';
 import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 
@@ -23,10 +22,7 @@ interface VideoManagerState {
   selectedVideos: Set<number>;
   isLoading: boolean;
   isDownloading: boolean;
-  isPaused: boolean;
   videoSelectionMode: VideoSelectionMode;
-  videoDynamicDownloading: VideoDynamicDownloading;
-  videoAutoDelete: VideoAutoDelete;
   networkQuality: NetworkQuality;
   downloadProgress: Map<number, number>;
   downloadQueue: number[];
@@ -37,7 +33,7 @@ interface VideoManagerActions {
   selectAll: () => void;
   deselectAll: () => void;
   startDownloads: () => void;
-  pauseDownloads: () => void;
+  cancelDownloads: () => void;
   deleteSelected: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -46,45 +42,34 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
   const [videos, setVideos] = useState<VideoListItem[]>([]);
   const [selectedVideos, setSelectedVideos] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isPaused, setIsPaused] = useState(true);
-  const [videoSelectionMode, setVideoSelectionMode] = useState<VideoSelectionMode>('none');
-  const [videoDynamicDownloading, setVideoDynamicDownloading] = useState<VideoDynamicDownloading>('manual');
-  const [videoAutoDelete, setVideoAutoDelete] = useState<VideoAutoDelete>('no');
+  const [videoSelectionMode, setVideoSelectionMode] = useState<VideoSelectionMode>('manual');
   const { quality: networkQuality } = useNetworkQuality();
-  const { downloadProgress, setProgress, clearProgress, clearAllProgress, markActive, markInactive, isActive } = useVideoDownload();
-  const downloadAbortRef = useRef(false);
-  const [downloadQueue, setDownloadQueue] = useState<number[]>([]);
-  const downloadQueueRef = useRef<number[]>([]);
+  const {
+    downloadProgress,
+    downloadQueue,
+    addToQueue,
+    cancelAllDownloads,
+    isProcessingQueue,
+    lastCompletedAt,
+  } = useVideoDownload();
 
   useEffect(() => {
     loadConfig();
     loadVideos();
   }, []);
 
-  // Auto-delete check when videos or config change
   useEffect(() => {
-    if (videoAutoDelete === 'auto' && videoSelectionMode === 'auto') {
-      performAutoDelete();
+    if (lastCompletedAt > 0) {
+      loadVideos();
     }
-  }, [videos.length, videoAutoDelete, videoSelectionMode]);
+  }, [lastCompletedAt]);
 
   async function loadConfig() {
     try {
-      const [selectionMode, dynamicDownloading, autoDelete] = await Promise.all([
-        db.config.get({ key: 'videoSelectionMode' }),
-        db.config.get({ key: 'videoDynamicDownloading' }),
-        db.config.get({ key: 'videoAutoDelete' }),
-      ]);
+      const selectionMode = await db.config.get({ key: 'videoSelectionMode' });
 
-      if (selectionMode?.value) {
+      if (selectionMode?.value && (selectionMode.value === 'manual' || selectionMode.value === 'auto')) {
         setVideoSelectionMode(selectionMode.value as VideoSelectionMode);
-      }
-      if (dynamicDownloading?.value) {
-        setVideoDynamicDownloading(dynamicDownloading.value as VideoDynamicDownloading);
-      }
-      if (autoDelete?.value) {
-        setVideoAutoDelete(autoDelete.value as VideoAutoDelete);
       }
     } catch (error) {
       console.error('Failed to load video config:', error);
@@ -161,46 +146,6 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
     }
   }
 
-  async function performAutoDelete() {
-    try {
-      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
-      if (!compCode) return;
-
-      // Find the latest played match
-      const matches = await db.matches
-        .where('competitionCode')
-        .equals(compCode)
-        .toArray();
-
-      const playedMatches = matches
-        .filter((m) => m.has_played)
-        .sort((a, b) => b.match_number - a.match_number);
-
-      if (playedMatches.length === 0) return;
-
-      const latestPlayed = playedMatches[0].match_number;
-      const threshold = latestPlayed - 10;
-
-      // Delete videos for matches older than threshold
-      const videosToDelete = await db.matchVideos
-        .where('competitionCode')
-        .equals(compCode)
-        .filter((v) => v.isDownloaded && v.match_number < threshold)
-        .toArray();
-
-      for (const video of videosToDelete) {
-        await deleteLocalVideo(video.match_number);
-        console.log(`Auto-deleted video for match ${video.match_number}`);
-      }
-
-      if (videosToDelete.length > 0) {
-        await loadVideos();
-      }
-    } catch (error) {
-      console.error('Failed to perform auto-delete:', error);
-    }
-  }
-
   const toggleSelect = useCallback((matchNumber: number) => {
     setSelectedVideos((prev) => {
       const next = new Set(prev);
@@ -222,108 +167,24 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
   }, []);
 
   const startDownloads = useCallback(() => {
-    setIsPaused(false);
-    downloadAbortRef.current = false;
-
-    // Build list of videos to add to queue
     let toQueue: number[];
     if (videoSelectionMode === 'auto') {
       toQueue = videos
         .filter((v) => v.isAvailable && !v.isDownloaded && !v.autoDownloaded)
         .map((v) => v.match_number);
-    } else if (videoSelectionMode === 'manual') {
+      addToQueue(toQueue, true);
+    } else {
       toQueue = videos
         .filter((v) => selectedVideos.has(v.match_number) && v.isAvailable && !v.isDownloaded)
         .map((v) => v.match_number);
-    } else {
-      toQueue = [];
+      addToQueue(toQueue, false);
     }
+    setSelectedVideos(new Set());
+  }, [videos, videoSelectionMode, selectedVideos, addToQueue]);
 
-    // Merge into existing queue (avoid duplicates)
-    const existing = new Set(downloadQueueRef.current);
-    const merged = [...downloadQueueRef.current, ...toQueue.filter((n) => !existing.has(n))];
-    downloadQueueRef.current = merged;
-    setDownloadQueue([...merged]);
-
-    // Only start processing if not already running
-    if (!isDownloading) {
-      processDownloadQueue();
-    }
-  }, [videos, videoSelectionMode, videoDynamicDownloading, networkQuality, selectedVideos, isDownloading]);
-
-  const pauseDownloads = useCallback(() => {
-    setIsPaused(true);
-    downloadAbortRef.current = true;
-  }, []);
-
-  async function processDownloadQueue() {
-    if (isDownloading) return;
-    setIsDownloading(true);
-
-    try {
-      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
-      if (!compCode) return;
-
-      // Process queue items one at a time, checking for new additions each iteration
-      while (downloadQueueRef.current.length > 0) {
-        if (downloadAbortRef.current) break;
-
-        // Check network condition if optimal mode
-        if (videoDynamicDownloading === 'optimal' && networkQuality !== 'good') {
-          console.log('Network not optimal, pausing downloads');
-          setIsPaused(true);
-          break;
-        }
-
-        const matchNumber = downloadQueueRef.current[0];
-
-        // Skip if already being downloaded (e.g., from match page or auto-download)
-        if (isActive(matchNumber)) {
-          downloadQueueRef.current = downloadQueueRef.current.slice(1);
-          setDownloadQueue([...downloadQueueRef.current]);
-          continue;
-        }
-
-        // Fetch video from API and store in OPFS with progress tracking
-        // Progress UI is deferred until onStart (response.ok confirmed, not 404)
-        const fileSize = await fetchAndStoreVideo(
-          matchNumber,
-          (progress) => {
-            setProgress(matchNumber, progress);
-          },
-          () => {
-            markActive(matchNumber);
-            setProgress(matchNumber, 0);
-          },
-        );
-
-        // Remove from queue after download attempt
-        downloadQueueRef.current = downloadQueueRef.current.slice(1);
-        setDownloadQueue([...downloadQueueRef.current]);
-
-        // Clear progress after download completes
-        markInactive(matchNumber);
-        clearProgress(matchNumber);
-
-        if (fileSize !== null) {
-          // Mark as auto-downloaded if in auto mode
-          if (videoSelectionMode === 'auto') {
-            await db.matchVideos.update([compCode, matchNumber], {
-              autoDownloaded: true,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Download queue error:', error);
-    } finally {
-      setIsDownloading(false);
-      downloadQueueRef.current = [];
-      setDownloadQueue([]);
-      clearAllProgress();
-      await loadVideos();
-    }
-  }
+  const cancelDownloads = useCallback(() => {
+    cancelAllDownloads();
+  }, [cancelAllDownloads]);
 
   const deleteSelected = useCallback(async () => {
     try {
@@ -347,11 +208,8 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
     videos,
     selectedVideos,
     isLoading,
-    isDownloading,
-    isPaused,
+    isDownloading: isProcessingQueue,
     videoSelectionMode,
-    videoDynamicDownloading,
-    videoAutoDelete,
     networkQuality,
     downloadProgress,
     downloadQueue,
@@ -359,7 +217,7 @@ export function useVideoManager(): VideoManagerState & VideoManagerActions {
     selectAll,
     deselectAll,
     startDownloads,
-    pauseDownloads,
+    cancelDownloads,
     deleteSelected,
     refresh,
   };

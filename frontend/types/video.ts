@@ -9,6 +9,4 @@ export interface MatchVideo {
   fileSize?: number;
 }
 
-export type VideoSelectionMode = 'none' | 'manual' | 'auto';
-export type VideoDynamicDownloading = 'always' | 'optimal' | 'manual';
-export type VideoAutoDelete = 'no' | 'auto';
+export type VideoSelectionMode = 'manual' | 'auto';

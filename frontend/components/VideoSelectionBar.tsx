@@ -33,11 +33,9 @@ export function VideoSelectionBar({
             onPress={onDelete}
           >
             <Icon as={Trash2} size='sm' className='text-typography-0' />
-            <ButtonText>Delete</ButtonText>
           </Button>
           <Button size='sm' action='primary' onPress={onDownload}>
             <Icon as={Download} size='sm' className='text-typography-0' />
-            <ButtonText>Download</ButtonText>
           </Button>
         </HStack>
       </HStack>

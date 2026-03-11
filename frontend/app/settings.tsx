@@ -12,7 +12,11 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { db, getStorageInfo, StorageInfo } from '@/utils/db';
-import { deleteAllAppFiles, getTotalVideoStorageUsed, formatBytes } from '@/utils/videoStorage';
+import {
+  deleteAllAppFiles,
+  getTotalVideoStorageUsed,
+  formatBytes,
+} from '@/utils/videoStorage';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -46,11 +50,7 @@ import {
   Video,
   Film,
 } from 'lucide-react-native';
-import {
-  VideoSelectionMode,
-  VideoDynamicDownloading,
-  VideoAutoDelete,
-} from '@/types/video';
+import { VideoSelectionMode } from '@/types/video';
 import {
   parseCompetitionCode as parseCode,
   extractYear,
@@ -93,10 +93,7 @@ export default function SettingsScreen() {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [videoStorageBytes, setVideoStorageBytes] = useState<number>(0);
   const [videoSelectionMode, setVideoSelectionMode] =
-    useState<VideoSelectionMode>('none');
-  const [videoDynamicDownloading, setVideoDynamicDownloading] =
-    useState<VideoDynamicDownloading>('manual');
-  const [videoAutoDelete, setVideoAutoDelete] = useState<VideoAutoDelete>('no');
+    useState<VideoSelectionMode>('manual');
 
   useEffect(() => {
     loadCompetitions();
@@ -132,21 +129,25 @@ export default function SettingsScreen() {
   }
 
   if (!storage || !storage.available) {
-    return null;
+    return (
+      <AdaptiveSafeArea hasTabBar={false}>
+        <Header title='Settings' showBackButton />
+        <Box className='flex-1 items-center justify-center'>
+          <Text className='text-typography-500'>Loading...</Text>
+        </Box>
+      </AdaptiveSafeArea>
+    );
   }
 
   async function loadVideoConfig() {
     try {
-      const [selMode, dynDl, autoDel] = await Promise.all([
-        db.config.get({ key: 'videoSelectionMode' }),
-        db.config.get({ key: 'videoDynamicDownloading' }),
-        db.config.get({ key: 'videoAutoDelete' }),
-      ]);
-      if (selMode?.value)
+      const selMode = await db.config.get({ key: 'videoSelectionMode' });
+      if (
+        selMode?.value &&
+        (selMode.value === 'manual' || selMode.value === 'auto')
+      ) {
         setVideoSelectionMode(selMode.value as VideoSelectionMode);
-      if (dynDl?.value)
-        setVideoDynamicDownloading(dynDl.value as VideoDynamicDownloading);
-      if (autoDel?.value) setVideoAutoDelete(autoDel.value as VideoAutoDelete);
+      }
     } catch (error) {
       console.error('Failed to load video config:', error);
     }
@@ -155,21 +156,6 @@ export default function SettingsScreen() {
   async function handleVideoSelectionMode(value: VideoSelectionMode) {
     setVideoSelectionMode(value);
     await db.config.put({ key: 'videoSelectionMode', value });
-    // Reset auto delete if selection mode is not auto
-    if (value !== 'auto' && videoAutoDelete === 'auto') {
-      setVideoAutoDelete('no');
-      await db.config.put({ key: 'videoAutoDelete', value: 'no' });
-    }
-  }
-
-  async function handleVideoDynamicDownloading(value: VideoDynamicDownloading) {
-    setVideoDynamicDownloading(value);
-    await db.config.put({ key: 'videoDynamicDownloading', value });
-  }
-
-  async function handleVideoAutoDelete(value: VideoAutoDelete) {
-    setVideoAutoDelete(value);
-    await db.config.put({ key: 'videoAutoDelete', value });
   }
 
   async function loadCompetitions() {
@@ -329,11 +315,16 @@ export default function SettingsScreen() {
                       Video Storage
                     </Text>
                     <Text className='text-xs text-typography-600'>
-                      {formatBytes(videoStorageBytes)} / {storage.quotaFormatted}
+                      {formatBytes(videoStorageBytes)} /{' '}
+                      {storage.quotaFormatted}
                     </Text>
                   </HStack>
                   <Progress
-                    value={storage.quota > 0 ? (videoStorageBytes / storage.quota) * 100 : 0}
+                    value={
+                      storage.quota > 0
+                        ? (videoStorageBytes / storage.quota) * 100
+                        : 0
+                    }
                     size='sm'
                   >
                     <ProgressFilledTrack className='bg-warning-500' />
@@ -341,7 +332,8 @@ export default function SettingsScreen() {
                   <Text className='text-xs text-typography-600'>
                     {storage.quota > 0
                       ? ((videoStorageBytes / storage.quota) * 100).toFixed(1)
-                      : '0.0'}% of total storage
+                      : '0.0'}
+                    % of total storage
                   </Text>
                 </VStack>
               </VStack>
@@ -405,20 +397,9 @@ export default function SettingsScreen() {
                     <Heading size='md'>Selection Mode</Heading>
                     <Text className='text-primary-500 text-sm mb-2'>
                       Control which videos are downloaded. Auto will download
-                      all available matches once.
+                      match videos once as they become available.
                     </Text>
-                    <HStack space='sm' className='grid grid-cols-3 gap-1'>
-                      <Button
-                        size='md'
-                        variant={
-                          videoSelectionMode === 'none' ? 'solid' : 'outline'
-                        }
-                        action='secondary'
-                        onPress={() => handleVideoSelectionMode('none')}
-                        className='flex-1'
-                      >
-                        <ButtonText size='sm'>None</ButtonText>
-                      </Button>
+                    <HStack space='sm' className='grid grid-cols-2 gap-1'>
                       <Button
                         size='md'
                         variant={
@@ -438,99 +419,6 @@ export default function SettingsScreen() {
                         action='secondary'
                         onPress={() => handleVideoSelectionMode('auto')}
                         className='flex-1'
-                      >
-                        <ButtonText size='sm'>Auto</ButtonText>
-                      </Button>
-                    </HStack>
-                  </VStack>
-
-                  <VStack space='xs'>
-                    <Heading size='md'>Dynamic Downloading</Heading>
-                    <Text className='text-primary-500 text-sm mb-2'>
-                      Control when videos are downloaded. Always will download
-                      regardless of network stability. Optimal will try to
-                      download when the network is stable.
-                    </Text>
-                    <HStack space='sm' className='grid grid-cols-3 gap-1'>
-                      <Button
-                        size='md'
-                        variant={
-                          videoDynamicDownloading === 'always'
-                            ? 'solid'
-                            : 'outline'
-                        }
-                        action='secondary'
-                        onPress={() => handleVideoDynamicDownloading('always')}
-                        className='flex-1'
-                      >
-                        <ButtonText size='sm'>Always</ButtonText>
-                      </Button>
-                      <Button
-                        size='md'
-                        variant={
-                          videoDynamicDownloading === 'optimal'
-                            ? 'solid'
-                            : 'outline'
-                        }
-                        action='secondary'
-                        onPress={() => handleVideoDynamicDownloading('optimal')}
-                        className='flex-1'
-                      >
-                        <ButtonText size='sm'>Optimal</ButtonText>
-                      </Button>
-                      <Button
-                        size='md'
-                        variant={
-                          videoDynamicDownloading === 'manual'
-                            ? 'solid'
-                            : 'outline'
-                        }
-                        action='secondary'
-                        onPress={() => handleVideoDynamicDownloading('manual')}
-                        className='flex-1'
-                      >
-                        <ButtonText size='sm'>Manual</ButtonText>
-                      </Button>
-                    </HStack>
-                  </VStack>
-
-                  <VStack space='xs'>
-                    <Heading size='md'>Auto Delete</Heading>
-                    <Text className='text-primary-500 text-sm mb-2'>
-                      Automatically delete videos older than 10 matches from the
-                      current match.
-                    </Text>
-                    {videoSelectionMode !== 'auto' && (
-                      <Text className='text-typography-400 text-xs'>
-                        Auto delete requires Selection Mode to be Auto.
-                      </Text>
-                    )}
-                    <HStack space='sm' className='grid grid-cols-2 gap-1'>
-                      <Button
-                        size='md'
-                        variant={videoAutoDelete === 'no' ? 'solid' : 'outline'}
-                        action='secondary'
-                        onPress={() => handleVideoAutoDelete('no')}
-                        className='flex-1'
-                      >
-                        <ButtonText size='sm'>No</ButtonText>
-                      </Button>
-                      <Button
-                        size='md'
-                        variant={
-                          videoAutoDelete === 'auto' ? 'solid' : 'outline'
-                        }
-                        action={
-                          videoSelectionMode === 'auto'
-                            ? 'secondary'
-                            : 'secondary'
-                        }
-                        onPress={() =>
-                          videoSelectionMode === 'auto' &&
-                          handleVideoAutoDelete('auto')
-                        }
-                        disabled={videoSelectionMode !== 'auto'}
-                        className={`flex-1 ${videoSelectionMode !== 'auto' ? 'opacity-40' : ''}`}
                       >
                         <ButtonText size='sm'>Auto</ButtonText>
                       </Button>

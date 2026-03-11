@@ -10,8 +10,7 @@ import React, {
 import { fetchAndStoreVideo, syncVideoAvailability } from '@/api/videos';
 import { db } from '@/utils/db';
 import { useApp } from '@/contexts/AppContext';
-import { useNetworkQuality } from '@/hooks/useNetworkQuality';
-import { VideoSelectionMode, VideoDynamicDownloading } from '@/types/video';
+import { VideoSelectionMode } from '@/types/video';
 
 interface VideoDownloadContextType {
   /** Start downloading a video for a specific match. Runs in background. */
@@ -32,6 +31,16 @@ interface VideoDownloadContextType {
   markInactive: (matchNumber: number) => void;
   /** Check if a match is currently being downloaded (reads ref, not stale state) */
   isActive: (matchNumber: number) => boolean;
+  /** Current download queue (match numbers) */
+  downloadQueue: number[];
+  /** Add match numbers to the download queue */
+  addToQueue: (matchNumbers: number[], markAutoDownloaded?: boolean) => void;
+  /** Cancel all downloads and clear the queue */
+  cancelAllDownloads: () => void;
+  /** Whether the queue is currently being processed */
+  isProcessingQueue: boolean;
+  /** Timestamp of last completed download (for triggering UI refreshes) */
+  lastCompletedAt: number;
 }
 
 const VideoDownloadContext = createContext<VideoDownloadContextType | undefined>(
@@ -46,6 +55,13 @@ export function VideoDownloadProvider({ children }: { children: ReactNode }) {
     new Set(),
   );
   const activeRef = useRef<Set<number>>(new Set());
+  const [downloadQueue, setDownloadQueue] = useState<number[]>([]);
+  const downloadQueueRef = useRef<number[]>([]);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
+  const isProcessingRef = useRef(false);
+  const abortQueueRef = useRef(false);
+  const [lastCompletedAt, setLastCompletedAt] = useState(0);
+  const autoDownloadedSetRef = useRef<Set<number>>(new Set());
 
   const setProgress = useCallback((matchNumber: number, progress: number) => {
     setDownloadProgress((prev) => new Map(prev).set(matchNumber, progress));
@@ -118,14 +134,12 @@ export function VideoDownloadProvider({ children }: { children: ReactNode }) {
 
   // Auto-download: trigger when data refresh completes (lastDataUpdate changes)
   const { lastDataUpdate } = useApp();
-  const { quality: networkQuality } = useNetworkQuality();
   const lastProcessedRefresh = useRef<string | null>(null);
 
   useEffect(() => {
     if (!lastDataUpdate) return;
 
     const refreshKey = lastDataUpdate.toISOString();
-    // Skip if we already processed this refresh
     if (lastProcessedRefresh.current === refreshKey) return;
     lastProcessedRefresh.current = refreshKey;
 
@@ -134,29 +148,13 @@ export function VideoDownloadProvider({ children }: { children: ReactNode }) {
 
   async function checkAutoDownload() {
     try {
-      // Read video config
-      const [selModeRecord, dynDlRecord] = await Promise.all([
-        db.config.get({ key: 'videoSelectionMode' }),
-        db.config.get({ key: 'videoDynamicDownloading' }),
-      ]);
+      const selModeRecord = await db.config.get({ key: 'videoSelectionMode' });
+      const selectionMode = (selModeRecord?.value as VideoSelectionMode) || 'manual';
 
-      const selectionMode = (selModeRecord?.value as VideoSelectionMode) || 'none';
-      const dynamicDownloading = (dynDlRecord?.value as VideoDynamicDownloading) || 'manual';
-
-      // Only auto-download if selection mode is 'auto'
       if (selectionMode !== 'auto') return;
 
-      // Check dynamic downloading preference
-      if (dynamicDownloading === 'manual') return;
-      if (dynamicDownloading === 'optimal' && networkQuality !== 'good') {
-        console.log('[Auto-download] Network not optimal, skipping');
-        return;
-      }
-
-      // Sync video availability from latest match data
       await syncVideoAvailability();
 
-      // Find available videos that haven't been downloaded or auto-downloaded yet
       const compCode = (await db.config.get({ key: 'compCode' }))?.value;
       if (!compCode) return;
 
@@ -171,21 +169,92 @@ export function VideoDownloadProvider({ children }: { children: ReactNode }) {
 
       if (toDownload.length === 0) return;
 
-      console.log(`[Auto-download] Starting download of ${toDownload.length} videos`);
-
-      for (const video of toDownload) {
-        // Skip if already downloading
-        if (activeRef.current.has(video.match_number)) continue;
-
-        startDownload(video.match_number, async () => {
-          // Mark as auto-downloaded so we don't re-download
-          await db.matchVideos.update([compCode, video.match_number], {
-            autoDownloaded: true,
-          });
-        });
-      }
+      console.log(`[Auto-download] Queueing ${toDownload.length} new videos`);
+      addToQueue(
+        toDownload.map((v) => v.match_number),
+        true,
+      );
     } catch (error) {
       console.error('[Auto-download] Failed:', error);
+    }
+  }
+
+  const addToQueue = useCallback((matchNumbers: number[], markAutoDownloaded = false) => {
+    const existing = new Set(downloadQueueRef.current);
+    const newItems = matchNumbers.filter((n) => !existing.has(n) && !activeRef.current.has(n));
+    if (newItems.length === 0) return;
+    const merged = [...downloadQueueRef.current, ...newItems];
+    downloadQueueRef.current = merged;
+    setDownloadQueue([...merged]);
+    if (markAutoDownloaded) {
+      for (const n of newItems) autoDownloadedSetRef.current.add(n);
+    }
+    if (!isProcessingRef.current) {
+      processQueue();
+    }
+  }, []);
+
+  const cancelAllDownloads = useCallback(() => {
+    abortQueueRef.current = true;
+    downloadQueueRef.current = [];
+    setDownloadQueue([]);
+    autoDownloadedSetRef.current.clear();
+  }, []);
+
+  async function processQueue() {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    setIsProcessingQueue(true);
+    abortQueueRef.current = false;
+
+    try {
+      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+      if (!compCode) return;
+
+      while (downloadQueueRef.current.length > 0) {
+        if (abortQueueRef.current) break;
+
+        const matchNumber = downloadQueueRef.current[0];
+
+        if (activeRef.current.has(matchNumber)) {
+          downloadQueueRef.current = downloadQueueRef.current.slice(1);
+          setDownloadQueue([...downloadQueueRef.current]);
+          continue;
+        }
+
+        const fileSize = await fetchAndStoreVideo(
+          matchNumber,
+          (progress) => setProgress(matchNumber, progress),
+          () => {
+            markActive(matchNumber);
+            setProgress(matchNumber, 0);
+          },
+        );
+
+        downloadQueueRef.current = downloadQueueRef.current.slice(1);
+        setDownloadQueue([...downloadQueueRef.current]);
+
+        markInactive(matchNumber);
+        clearProgress(matchNumber);
+
+        if (fileSize !== null && autoDownloadedSetRef.current.has(matchNumber)) {
+          await db.matchVideos.update([compCode, matchNumber], {
+            autoDownloaded: true,
+          });
+          autoDownloadedSetRef.current.delete(matchNumber);
+        }
+
+        setLastCompletedAt(Date.now());
+      }
+    } catch (error) {
+      console.error('Download queue error:', error);
+    } finally {
+      isProcessingRef.current = false;
+      setIsProcessingQueue(false);
+      downloadQueueRef.current = [];
+      setDownloadQueue([]);
+      clearAllProgress();
+      autoDownloadedSetRef.current.clear();
     }
   }
 
@@ -201,6 +270,11 @@ export function VideoDownloadProvider({ children }: { children: ReactNode }) {
         markActive,
         markInactive,
         isActive,
+        downloadQueue,
+        addToQueue,
+        cancelAllDownloads,
+        isProcessingQueue,
+        lastCompletedAt,
       }}
     >
       {children}

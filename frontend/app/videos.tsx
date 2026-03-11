@@ -25,8 +25,6 @@ export default function VideosScreen() {
     selectedVideos,
     isLoading,
     isDownloading,
-    isPaused,
-    videoDynamicDownloading,
     networkQuality,
     downloadProgress,
     downloadQueue,
@@ -34,7 +32,7 @@ export default function VideosScreen() {
     selectAll,
     deselectAll,
     startDownloads,
-    pauseDownloads,
+    cancelDownloads,
     deleteSelected,
     refresh,
   } = useVideoManager();
@@ -52,11 +50,8 @@ export default function VideosScreen() {
         <VideoStatusHeader
           networkQuality={networkQuality}
           isDownloading={isDownloading}
-          isPaused={isPaused}
-          videoDynamicDownloading={videoDynamicDownloading}
           isAllSelected={selectedVideos.size > 0}
-          onStartDownloads={startDownloads}
-          onPauseDownloads={pauseDownloads}
+          onCancelDownloads={cancelDownloads}
           onSelectAll={selectAll}
           onDeselectAll={deselectAll}
         />
