@@ -38,6 +38,10 @@ ALLOWED_HOSTS = [
     "8000--main--django-playground--aviator2277.chargingcourses.com",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://8000--main--django-playground--aviator2277.chargingcourses.com",
+]
+
 
 # Application definition
 
