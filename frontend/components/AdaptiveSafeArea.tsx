@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, ViewProps } from 'react-native';
+import { ViewProps } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -28,33 +28,22 @@ export function AdaptiveSafeArea({
   const isOnRight = orientation === 'landscape-right';
   const tabBarWidth = 70;
 
-  // On Android web, SafeAreaView doubles up insets with explicit padding — zero them out
-  const isAndroidWeb =
-    Platform.OS === 'web' &&
-    typeof navigator !== 'undefined' &&
-    /android/i.test(navigator.userAgent);
-  const effectiveInsets = {
-    ...insets,
-    left: isAndroidWeb && isLandscapeMode ? 0 : insets.left,
-    right: isAndroidWeb && isLandscapeMode ? 0 : insets.right,
-  };
-
   return (
     <SafeAreaView
       className="bg-background-0 flex-1"
       style={{
-        paddingTop: effectiveInsets.top,
-        paddingBottom: isLandscapeMode ? effectiveInsets.bottom : 0,
+        paddingTop: insets.top,
+        paddingBottom: isLandscapeMode ? insets.bottom : 0,
         paddingLeft: isLandscapeMode
           ? isOnRight
-            ? effectiveInsets.left
+            ? insets.left
             : tabBarWidth
-          : effectiveInsets.left,
+          : insets.left,
         paddingRight: isLandscapeMode
           ? isOnRight
             ? tabBarWidth
-            : effectiveInsets.right
-          : effectiveInsets.right,
+            : insets.right
+          : insets.right,
         ...(typeof style === 'object' && style !== null ? style : {}),
       }}
       {...props}
