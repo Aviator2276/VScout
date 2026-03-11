@@ -15,6 +15,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Ensure system bin paths are available for subprocess calls (ffmpeg, etc.)
+os.environ["PATH"] = "/usr/bin:/usr/local/bin:" + os.environ.get("PATH", "")
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
