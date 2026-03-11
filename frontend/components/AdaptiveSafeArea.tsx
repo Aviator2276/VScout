@@ -42,6 +42,7 @@ export function AdaptiveSafeArea({
   return (
     <SafeAreaView
       className="bg-background-0 flex-1"
+      edges={isAndroidWeb && isLandscapeMode ? [] : undefined}
       style={{
         paddingTop: effectiveInsets.top,
         paddingBottom: isLandscapeMode ? effectiveInsets.bottom : 0,
