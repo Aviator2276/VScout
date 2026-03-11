@@ -210,7 +210,7 @@ _TIMER_CROP_Y = 325
 _SCAN_FPS = 5
 _MATCH_START_OFFSET = 1  # seconds before 0:19 to start clip
 _MATCH_DURATION = 170  # 150s match + 3s transition + 10s end buffer + 1s start offset + 5s FMS counter lag
-_MATCH_START_THRESHOLD = 700  # MSE threshold for template match
+_MATCH_START_THRESHOLD = 3900  # MSE threshold for template match (calibrated from 2026gadal)
 
 
 def _load_reference_019():

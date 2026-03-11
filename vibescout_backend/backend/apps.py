@@ -2,8 +2,20 @@ import logging
 import os
 
 from django.apps import AppConfig
+from django.db.backends.signals import connection_created
 
 logger = logging.getLogger(__name__)
+
+
+def _set_sqlite_wal(sender, connection, **kwargs):
+    """Enable WAL mode and set busy timeout for all SQLite connections."""
+    if connection.vendor == "sqlite":
+        connection.cursor().execute("PRAGMA journal_mode=WAL;")
+        connection.cursor().execute("PRAGMA synchronous=NORMAL;")
+        connection.cursor().execute("PRAGMA busy_timeout=20000;")
+
+
+connection_created.connect(_set_sqlite_wal)
 
 
 class BackendConfig(AppConfig):
