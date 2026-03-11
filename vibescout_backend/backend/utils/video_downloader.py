@@ -246,7 +246,7 @@ def find_match_start_timestamp(video_path: Path) -> float | None:
 
     # Pipe timer-region frames from ffmpeg as raw RGB
     cmd = [
-        "/usr/bin/ffmpeg", "-i", str(video_path),
+        "ffmpeg", "-i", str(video_path),
         "-vf", f"fps={_SCAN_FPS},crop={_TIMER_CROP_W}:{_TIMER_CROP_H}:{_TIMER_CROP_X}:{_TIMER_CROP_Y}",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1",
         "-loglevel", "error",
@@ -342,7 +342,7 @@ def clip_match_video(match, output_dir="match_videos") -> bool:
     clip_start = max(0, start_ts - _MATCH_START_OFFSET)
     tmp_path = video_path.with_suffix(".tmp.mp4")
     cmd = [
-        "/usr/bin/ffmpeg",
+        "ffmpeg",
         "-ss", str(clip_start),
         "-i", str(video_path),
         "-t", str(_MATCH_DURATION),
