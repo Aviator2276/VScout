@@ -121,16 +121,20 @@ export function ScoutingHeader({
     <HStack className='w-full grid grid-cols-3 px-3 py-1 items-center'>
       {/* Hold-to-exit button */}
       <Pressable
-        onPressIn={startHold}
-        onPressOut={cancelHold}
-        // @ts-ignore – web-only handler to prevent Android long-press context menu
+        onTouchStart={startHold}
+        onTouchEnd={cancelHold}
+        onTouchCancel={cancelHold}
+        // @ts-ignore – web-only handlers
+        onMouseDown={startHold}
+        onMouseUp={cancelHold}
+        onMouseLeave={cancelHold}
         onContextMenu={(e: any) => e.preventDefault()}
         style={
           {
             WebkitUserSelect: 'none',
             userSelect: 'none',
             WebkitTouchCallout: 'none',
-            touchAction: 'none',
+            touchAction: 'manipulation',
           } as any
         }
       >
