@@ -8,8 +8,8 @@ from .models import Match, Team, Competition, TeamInfo, RobotAction
 
 @admin.register(Match)
 class MatchAdmin(admin.ModelAdmin):
-    list_display = ['match_number', 'match_type', 'competition', 'has_played', 'blue_total_score', 'red_total_score', 'video_available', 'video_clipped', 'has_fuel_timeline']
-    list_filter = ['competition', 'match_type', 'has_played', 'video_clipped']
+    list_display = ['match_number', 'match_type', 'competition', 'has_played', 'blue_total_score', 'red_total_score', 'video_available', 'video_clipped', 'has_fuel_timeline', 'skip_processing']
+    list_filter = ['competition', 'match_type', 'has_played', 'video_clipped', 'skip_processing']
     search_fields = ['match_number']
     readonly_fields = ['fuel_timeline_pretty']
 
@@ -40,7 +40,7 @@ class MatchAdmin(admin.ModelAdmin):
             ],
         }),
         ('Video', {
-            'fields': ['video_available', 'video_clipped'],
+            'fields': ['video_available', 'video_clipped', 'skip_processing'],
         }),
         ('Fuel Timeline', {
             'fields': ['fuel_timeline_pretty'],

@@ -262,6 +262,7 @@ class Match(models.Model):
     video_available = models.BooleanField(default=False)
     video_clipped = models.BooleanField(default=False)
     fuel_timeline = models.JSONField(null=True, blank=True)
+    skip_processing = models.BooleanField(default=False)  # Skip video/OCR for broken stream matches
 
     def __str__(self):
         return f"Match {self.match_number} - {self.competition.name}"
@@ -296,7 +297,7 @@ class Match(models.Model):
         super().save(*args, **kwargs)
 
         # Queue video download task if conditions are met
-        if should_download_video:
+        if should_download_video and not self.skip_processing:
             # Check if competition has any stream links configured
             has_stream = any(
                 [

@@ -41,6 +41,12 @@ migrate:
 makemigrations:
 	cd vibescout_backend && uv run python manage.py makemigrations
 
+qcluster:
+	cd vibescout_backend && uv run python manage.py qcluster
+
+check:
+	cd vibescout_backend && uv run python manage.py check
+
 shell:
 	cd vibescout_backend && uv run python manage.py shell
 
@@ -90,6 +96,3 @@ reclip-videos:
 
 attribute-fuel:
 	cd vibescout_backend && uv run python manage.py attribute_fuel $(if $(COMP),$(COMP),)
-
-export:
-	cd frontend && npm run build:web

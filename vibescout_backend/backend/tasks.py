@@ -252,11 +252,11 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
         red_dir.mkdir()
         blue_dir.mkdir()
 
-        # Crop coords (W:H:X:Y) at 640x360 — coords are swapped due to cropper flipping
-        # Blue score is on the right side of the scoreboard (x=582), red is on the left (x=30)
+        # Crop coords (W:H:X:Y) at 640x360 — calibrated from 2026gadal (Dalton) scoreboard
+        # Blue score is on the LEFT side (bottom strip), red is mirrored on the RIGHT
         crops = [
-            ("blue", "18:10:582:24", str(blue_dir / "%03d.jpg")),
-            ("red",  "18:10:30:24",  str(red_dir / "%03d.jpg")),
+            ("blue", "83:25:45:333",  str(blue_dir / "%03d.jpg")),
+            ("red",  "83:25:512:333", str(red_dir / "%03d.jpg")),
         ]
         for alliance, crop, out_pattern in crops:
             w, h, x, y = crop.split(":")
@@ -541,6 +541,7 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
             competition=competition,
             has_played=True,
             video_available=False,
+            skip_processing=False,
             match_type="qualification",
         )
         .order_by("match_number")
@@ -556,6 +557,7 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
             competition=competition,
             has_played=True,
             video_clipped=True,
+            skip_processing=False,
             fuel_timeline__isnull=True,
             match_type="qualification",
         )
@@ -581,6 +583,7 @@ def check_and_download_videos(competition_code: Optional[str] = None) -> dict:
             has_played=True,
             video_available=True,
             video_clipped=False,
+            skip_processing=False,
             match_type="qualification",
         )
         .order_by("match_number")

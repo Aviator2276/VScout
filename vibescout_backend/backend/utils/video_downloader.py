@@ -202,10 +202,11 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
 
 
 # Timer crop constants (at 640x360): crop=W:H:X:Y
-_TIMER_CROP_W = 36
-_TIMER_CROP_H = 20
-_TIMER_CROP_X = 301
-_TIMER_CROP_Y = 24
+# Calibrated from 2026gadal (Dalton) scoreboard — bottom-center timer strip
+_TIMER_CROP_W = 70
+_TIMER_CROP_H = 32
+_TIMER_CROP_X = 283
+_TIMER_CROP_Y = 325
 _SCAN_FPS = 5
 _MATCH_START_OFFSET = 1  # seconds before 0:19 to start clip
 _MATCH_DURATION = 170  # 150s match + 3s transition + 10s end buffer + 1s start offset + 5s FMS counter lag
