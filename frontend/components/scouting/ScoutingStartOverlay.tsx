@@ -46,7 +46,8 @@ export function ScoutingStartOverlay({
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const isMobile = Platform.OS !== 'web' || width < 768;
-  const needsRotation = isMobile && isPortrait && !isLive && !!videoUrl;
+  // Video scouting on mobile always requires landscape orientation
+  const needsRotation = isMobile && isPortrait && !isLive;
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const spinAnim = useRef(new Animated.Value(0)).current;
 

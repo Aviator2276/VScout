@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Box } from '@/components/ui/box';
@@ -133,7 +136,7 @@ export default function ScoutLiveScreen() {
 
         {isLandscape ? (
           <HStack className='items-center justify-between px-4 pb-4' space='xl'>
-            <Box className='flex-shrink-0'>
+            <Box className='flex-shrink-0 pl-8'>
               <ScoutingToggles
                 isDisabled={session.isDisabled}
                 isClimbing={session.isClimbing}

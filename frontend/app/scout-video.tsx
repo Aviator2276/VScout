@@ -235,7 +235,7 @@ export default function ScoutVideoScreen() {
   const joystickMaxSize = Math.max(80, Math.min(160, sidebarHeight - 180));
 
   const content = (
-    <Box className='flex-1 scouting-no-select'>
+    <Box className='flex-1 scouting-no-select pb-1'>
       {/* Header */}
       <ScoutingHeader
         matchType={match?.match_type || 'qualification'}
