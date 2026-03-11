@@ -12,11 +12,13 @@ import { Box } from '@/components/ui/box';
 
 interface AdaptiveSafeAreaProps extends ViewProps {
   children: React.ReactNode;
+  hasTabBar?: boolean;
 }
 
 export function AdaptiveSafeArea({
   children,
   style,
+  hasTabBar = true,
   ...props
 }: AdaptiveSafeAreaProps) {
   const orientation = useOrientation();
@@ -45,11 +47,15 @@ export function AdaptiveSafeArea({
     paddingLeft: isLandscapeMode
       ? isOnRight
         ? effectiveInsets.left
-        : tabBarWidth
+        : hasTabBar
+          ? tabBarWidth
+          : effectiveInsets.left
       : effectiveInsets.left,
     paddingRight: isLandscapeMode
       ? isOnRight
-        ? tabBarWidth
+        ? hasTabBar
+          ? tabBarWidth
+          : effectiveInsets.right
         : effectiveInsets.right
       : effectiveInsets.right,
     ...(typeof style === 'object' && style !== null ? style : {}),

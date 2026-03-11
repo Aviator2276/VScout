@@ -234,7 +234,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <AdaptiveSafeArea>
+    <AdaptiveSafeArea hasTabBar={false}>
       <Header title='Settings' showBackButton />
       <Box className='flex-1 max-w-2xl self-center w-full'>
         <ScrollView ref={scrollViewRef} className='flex-1 pb-4 px-4 pt-4'>

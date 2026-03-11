@@ -46,7 +46,7 @@ export default function VideosScreen() {
   );
 
   return (
-    <AdaptiveSafeArea>
+    <AdaptiveSafeArea hasTabBar={false}>
       <Header title='Match Videos' showBackButton />
       <Box className='flex-1 max-w-2xl self-center w-full'>
         <VideoStatusHeader
