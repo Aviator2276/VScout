@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, ViewProps } from 'react-native';
+import { Platform, View, ViewProps } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -39,25 +39,40 @@ export function AdaptiveSafeArea({
     right: isAndroidWeb && isLandscapeMode ? 0 : insets.right,
   };
 
+  const paddingStyle = {
+    paddingTop: effectiveInsets.top,
+    paddingBottom: isLandscapeMode ? effectiveInsets.bottom : 0,
+    paddingLeft: isLandscapeMode
+      ? isOnRight
+        ? effectiveInsets.left
+        : tabBarWidth
+      : effectiveInsets.left,
+    paddingRight: isLandscapeMode
+      ? isOnRight
+        ? tabBarWidth
+        : effectiveInsets.right
+      : effectiveInsets.right,
+    ...(typeof style === 'object' && style !== null ? style : {}),
+  };
+
+  // On Android web, SafeAreaView adds CSS env() padding that can't be disabled.
+  // Use a plain View to avoid doubling.
+  if (isAndroidWeb && isLandscapeMode) {
+    return (
+      <View
+        className="bg-background-0 flex-1"
+        style={paddingStyle}
+        {...props}
+      >
+        {children}
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView
       className="bg-background-0 flex-1"
-      edges={isAndroidWeb && isLandscapeMode ? [] : undefined}
-      style={{
-        paddingTop: effectiveInsets.top,
-        paddingBottom: isLandscapeMode ? effectiveInsets.bottom : 0,
-        paddingLeft: isLandscapeMode
-          ? isOnRight
-            ? effectiveInsets.left
-            : tabBarWidth
-          : effectiveInsets.left,
-        paddingRight: isLandscapeMode
-          ? isOnRight
-            ? tabBarWidth
-            : effectiveInsets.right
-          : effectiveInsets.right,
-        ...(typeof style === 'object' && style !== null ? style : {}),
-      }}
+      style={paddingStyle}
       {...props}
     >
       {children}
