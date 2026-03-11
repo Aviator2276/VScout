@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel docker-build docker-run
 
 init:
 	@echo "Installing backend dependencies..."
@@ -96,3 +96,13 @@ reclip-videos:
 
 attribute-fuel:
 	cd vibescout_backend && uv run python manage.py attribute_fuel $(if $(COMP),$(COMP),)
+
+docker-build:
+	docker build -t vibescout-backend ./vibescout_backend
+
+docker-run:
+	docker run -p 8000:8000 \
+		-v $(PWD)/vibescout_backend/db.sqlite3:/app/db.sqlite3 \
+		-v $(PWD)/vibescout_backend/match_videos:/app/match_videos \
+		--env-file vibescout_backend/.env \
+		vibescout-backend
