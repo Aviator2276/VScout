@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Box } from '@/components/ui/box';
@@ -43,9 +43,16 @@ export default function ScoutLiveScreen() {
   usePreventZoom();
 
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isLandscape = width > height;
   const matchNum = parseInt(matchNumber || '0', 10);
   const teamNum = parseInt(teamNumber || '0', 10);
+
+  // Detect Android web to avoid SafeAreaView doubling insets
+  const isAndroidWeb =
+    Platform.OS === 'web' &&
+    typeof navigator !== 'undefined' &&
+    /android/i.test(navigator.userAgent);
 
   // Determine team alliance color
   const getTeamAlliance = (): 'blue' | 'red' | null => {
@@ -100,8 +107,11 @@ export default function ScoutLiveScreen() {
     loadMatch();
   }, [matchNumber]);
 
+  // On Android web in landscape, use View instead of SafeAreaView to avoid doubled insets
+  const Container = isAndroidWeb && isLandscape ? View : SafeAreaView;
+
   return (
-    <SafeAreaView className='flex-1 bg-background-0'>
+    <Container className='flex-1 bg-background-0'>
       <Box className='flex-1 scouting-no-select'>
         {/* Header */}
         <ScoutingHeader
@@ -224,6 +234,6 @@ export default function ScoutLiveScreen() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </SafeAreaView>
+    </Container>
   );
 }
