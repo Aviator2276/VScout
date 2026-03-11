@@ -771,6 +771,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
               <MatchTeamCard
                 stats={{
@@ -785,6 +788,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
               <MatchTeamCard
                 stats={{
@@ -799,6 +805,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
               <MatchTeamCard
                 stats={{
@@ -813,6 +822,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
               <MatchTeamCard
                 stats={{
@@ -827,6 +839,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
               <MatchTeamCard
                 stats={{
@@ -841,6 +856,9 @@ export default function MatchDetailScreen() {
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
               />
             </>
           )}

@@ -53,7 +53,7 @@ export function VideoStatusHeader({
           isChecked={isAllSelected}
           onChange={isAllSelected ? onDeselectAll : onSelectAll}
           size='lg'
-          className='ml-2'
+          className='ml-[0.35rem]'
         >
           <CheckboxIndicator>
             <CheckboxIcon as={Check} />
