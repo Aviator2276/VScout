@@ -53,7 +53,7 @@ export function VideoStatusHeader({
           isChecked={isAllSelected}
           onChange={isAllSelected ? onDeselectAll : onSelectAll}
           size='lg'
-          className='ml-1'
+          className='ml-2'
         >
           <CheckboxIndicator>
             <CheckboxIcon as={Check} />
@@ -81,11 +81,7 @@ export function VideoStatusHeader({
             action='negative'
             onPress={onCancelDownloads}
           >
-            <Icon
-              as={CircleX}
-              size='md'
-              className='mr-1 text-typography-0'
-            />
+            <Icon as={CircleX} size='md' className='mr-1 text-typography-0' />
             <ButtonText>Cancel</ButtonText>
           </Button>
         )}
