@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset default browser margins (fixes Android white bar / offset) */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 /* Custom joystick colors */
 .react-joystick {
   background: #525252 !important;

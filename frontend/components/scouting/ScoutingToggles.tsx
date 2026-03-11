@@ -4,6 +4,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Ban, ArrowUpFromLine, Shield } from 'lucide-react-native';
 import { VStack } from '../ui/vstack';
+import { Text } from '@/components/ui/text';
 
 interface ScoutingTogglesProps {
   isDisabled: boolean;
@@ -26,6 +27,9 @@ export function ScoutingToggles({
 }: ScoutingTogglesProps) {
   return (
     <VStack space='md' className='justify-center'>
+      <Text className='absolute text-2xs text-typography-400 text-center mb-0 self-center'>
+        Tap to toggle
+      </Text>
       <HStack space='md'>
         <Button
           size='lg'

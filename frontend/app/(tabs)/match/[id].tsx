@@ -324,7 +324,6 @@ export default function MatchDetailScreen() {
                   </HStack>
                 </Card> */}
 
-                  {/* Live/Video Mode Switch */}
                   <Card variant='outline' className='p-4 gap-2'>
                     <VStack space='sm'>
                       <Text className='font-semibold'>
@@ -388,7 +387,6 @@ export default function MatchDetailScreen() {
                     </HStack>
                   </Card>
 
-                  {/* Playback Speed */}
                   <Popover
                     placement='top'
                     size='xs'
@@ -412,7 +410,7 @@ export default function MatchDetailScreen() {
 
                             <HStack
                               space='xs'
-                              className='flex-wrap justify-between'
+                              className='flex-wrap grid grid-cols-5 gap-1'
                             >
                               {speedOptions.map((speed) => (
                                 <Button
@@ -509,7 +507,7 @@ export default function MatchDetailScreen() {
                           <PopoverArrow />
                           <PopoverBody>
                             <Text className='text-typography-900'>
-                              Speed controls are only available in video mode
+                              Video controls are only available in video mode
                             </Text>
                           </PopoverBody>
                         </PopoverContent>

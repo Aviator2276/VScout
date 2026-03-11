@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -17,6 +17,19 @@ import { ScoutingJoystick } from '@/components/scouting/ScoutingJoystick';
 import { ScoutingToggles } from '@/components/scouting/ScoutingToggles';
 import { ScoutingEndScreen } from '@/components/scouting/ScoutingEndScreen';
 import { usePreventZoom } from '@/hooks/usePreventZoom';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { Button, ButtonText } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 
 export default function ScoutLiveScreen() {
   const { matchNumber, teamNumber } = useLocalSearchParams<{
@@ -29,8 +42,20 @@ export default function ScoutLiveScreen() {
   useKeepAwake();
   usePreventZoom();
 
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
   const matchNum = parseInt(matchNumber || '0', 10);
   const teamNum = parseInt(teamNumber || '0', 10);
+
+  // Determine team alliance color
+  const getTeamAlliance = (): 'blue' | 'red' | null => {
+    if (!match) return null;
+    const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
+    const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
+    if (blueTeams.some((t) => t.number === teamNum)) return 'blue';
+    if (redTeams.some((t) => t.number === teamNum)) return 'red';
+    return null;
+  };
 
   const session = useScoutingSession({
     matchNumber: matchNum,
@@ -47,21 +72,16 @@ export default function ScoutLiveScreen() {
     onActionChange: session.setAction,
     onToggleDisabled: session.toggleDisabled,
     onToggleClimbing: session.toggleClimbing,
+    onToggleDefending: session.toggleDefending,
     sessionRunning: session.sessionState === 'running',
   });
 
-  // Lock to portrait on mount, restore on unmount
+  // Unlock orientation so landscape/portrait both work
   useEffect(() => {
     if (Platform.OS === 'web') {
-      (screen.orientation as any)?.lock?.('portrait').catch(() => {});
-      return () => {
-        (screen.orientation as any)?.unlock?.();
-      };
+      (screen.orientation as any)?.unlock?.();
     } else {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-      return () => {
-        ScreenOrientation.unlockAsync();
-      };
+      ScreenOrientation.unlockAsync();
     }
   }, []);
 
@@ -71,9 +91,7 @@ export default function ScoutLiveScreen() {
       if (!matchNumber) return;
       try {
         const matches = await getMatches();
-        const found = matches.find(
-          (m) => m.match_number === matchNum,
-        );
+        const found = matches.find((m) => m.match_number === matchNum);
         if (found) setMatch(found);
       } catch (err) {
         console.error('Failed to load match:', err);
@@ -81,23 +99,6 @@ export default function ScoutLiveScreen() {
     }
     loadMatch();
   }, [matchNumber]);
-
-  // End screen
-  if (session.sessionState === 'finished') {
-    return (
-      <SafeAreaView className='flex-1 bg-background-0'>
-        <ScoutingEndScreen
-          matchType={match?.match_type || 'qualification'}
-          matchNumber={matchNum}
-          teamNumber={teamNum}
-          recordData={session.getRecordData()}
-          actionLog={session.actionLog}
-          onSave={session.saveToDb}
-          onRestart={session.resetSession}
-        />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView className='flex-1 bg-background-0'>
@@ -112,49 +113,117 @@ export default function ScoutLiveScreen() {
           displayCountdown={session.displayCountdown}
           sessionRunning={session.sessionState === 'running'}
         />
-
         {/* Timeline */}
         <MatchTimeline
           actionLog={session.actionLog}
           elapsedMatchSec={session.elapsedMatchSec}
         />
 
-        {/* Spacer */}
         <Box className='flex-1' />
 
-        {/* Toggles */}
-        <Box className='px-4 pb-4'>
-          <ScoutingToggles
-            isDisabled={session.isDisabled}
-            isClimbing={session.isClimbing}
-            isDefending={session.isDefending}
-            onToggleDisabled={session.toggleDisabled}
-            onToggleClimbing={session.toggleClimbing}
-            onToggleDefending={session.toggleDefending}
-            sessionRunning={session.sessionState === 'running'}
-          />
-        </Box>
-
-        {/* Joystick */}
-        <Box className='items-center pb-8'>
-          <ScoutingJoystick
-            disabled={session.isDisabled || session.isClimbing || session.isDefending || session.sessionState !== 'running'}
-            onActionChange={session.setAction}
-          />
-        </Box>
+        {isLandscape ? (
+          <HStack className='items-center justify-between px-4 pb-4' space='xl'>
+            <Box className='flex-shrink-0'>
+              <ScoutingToggles
+                isDisabled={session.isDisabled}
+                isClimbing={session.isClimbing}
+                isDefending={session.isDefending}
+                onToggleDisabled={session.toggleDisabled}
+                onToggleClimbing={session.toggleClimbing}
+                onToggleDefending={session.toggleDefending}
+                sessionRunning={session.sessionState === 'running'}
+              />
+            </Box>
+            <ScoutingJoystick
+              disabled={
+                session.isDisabled ||
+                session.isClimbing ||
+                session.isDefending ||
+                session.sessionState !== 'running'
+              }
+              onActionChange={session.setAction}
+              size={Math.max(80, Math.min(160, height - 180))}
+            />
+          </HStack>
+        ) : (
+          <VStack className='items-center pb-4' space='sm'>
+            <Box className='px-4 w-full flex-shrink-0'>
+              <ScoutingToggles
+                isDisabled={session.isDisabled}
+                isClimbing={session.isClimbing}
+                isDefending={session.isDefending}
+                onToggleDisabled={session.toggleDisabled}
+                onToggleClimbing={session.toggleClimbing}
+                onToggleDefending={session.toggleDefending}
+                sessionRunning={session.sessionState === 'running'}
+              />
+            </Box>
+            <ScoutingJoystick
+              disabled={
+                session.isDisabled ||
+                session.isClimbing ||
+                session.isDefending ||
+                session.sessionState !== 'running'
+              }
+              onActionChange={session.setAction}
+              size={Math.max(80, Math.min(160, height - 350))}
+            />
+          </VStack>
+        )}
       </Box>
 
-      {/* Start overlay */}
       {session.sessionState === 'ready' && (
         <ScoutingStartOverlay
           matchType={match?.match_type || 'qualification'}
           matchNumber={matchNum}
           teamNumber={teamNum}
+          teamAlliance={getTeamAlliance()}
           playbackSpeed={1}
           isLive
           onStart={session.startSession}
         />
       )}
+
+      <ScoutingEndScreen
+        isOpen={session.sessionState === 'finished'}
+        matchType={match?.match_type || 'qualification'}
+        matchNumber={matchNum}
+        teamNumber={teamNum}
+        recordData={session.getRecordData()}
+        actionLog={session.actionLog}
+        onSave={session.saveToDb}
+        onRestart={session.resetSession}
+      />
+
+      {/* Stall detection alert */}
+      <AlertDialog isOpen={session.isStalled} onClose={session.clearStall}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='md'>Session Error</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className='text-typography-500'>
+              The scouting session timer has stopped unexpectedly. Please
+              restart your session to ensure accurate data.
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <HStack space='md' className='w-full justify-end'>
+              <Button
+                action='negative'
+                className='mt-2'
+                onPress={() => {
+                  session.clearStall();
+                  session.resetSession();
+                }}
+              >
+                <ButtonText>Restart Session</ButtonText>
+              </Button>
+            </HStack>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SafeAreaView>
   );
 }

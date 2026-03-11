@@ -9,6 +9,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Icon } from '@/components/ui/icon';
 import { Play, RotateCcw } from 'lucide-react-native';
+import { Badge, BadgeText } from '@/components/ui/badge';
 import {
   Modal,
   ModalBackdrop,
@@ -22,6 +23,7 @@ interface ScoutingStartOverlayProps {
   matchType: string;
   matchNumber: number;
   teamNumber: number;
+  teamAlliance?: 'blue' | 'red' | null;
   playbackSpeed: number;
   isLive: boolean;
   onStart: () => void;
@@ -33,6 +35,7 @@ export function ScoutingStartOverlay({
   matchType,
   matchNumber,
   teamNumber,
+  teamAlliance,
   playbackSpeed,
   isLive,
   onStart,
@@ -162,9 +165,26 @@ export function ScoutingStartOverlay({
 
               {/* Match info */}
               <VStack space='md' className='w-48 justify-center items-center'>
-                <Text className='text-typography-600 text-center'>
-                  Scouting Team {teamNumber}
-                </Text>
+                <HStack className='items-center justify-center gap-2'>
+                  <Text className='text-typography-600 text-center'>
+                    Scouting Team
+                  </Text>
+                  <Badge
+                    size='lg'
+                    variant='solid'
+                    className={
+                      teamAlliance === 'blue'
+                        ? 'bg-blue-500'
+                        : teamAlliance === 'red'
+                          ? 'bg-red-500'
+                          : 'bg-typography-500'
+                    }
+                  >
+                    <BadgeText className='text-white font-semibold'>
+                      {teamNumber}
+                    </BadgeText>
+                  </Badge>
+                </HStack>
                 <Text className='text-typography-500 text-sm text-center'>
                   Playback Speed: {playbackSpeed}x
                 </Text>
@@ -177,11 +197,6 @@ export function ScoutingStartOverlay({
                   onPress={onStart}
                   className='w-full'
                 >
-                  <Icon
-                    as={Play}
-                    size='md'
-                    className='mr-2 text-typography-0'
-                  />
                   <ButtonText>Start</ButtonText>
                 </Button>
                 <Button
@@ -218,9 +233,26 @@ export function ScoutingStartOverlay({
         </ModalHeader>
         <ModalBody>
           <VStack space='md' className='items-center'>
-            <Text className='text-typography-600 text-center'>
-              Scouting Team {teamNumber}
-            </Text>
+            <HStack className='items-center justify-center gap-2'>
+              <Text className='text-typography-600 text-center'>
+                Scouting Team
+              </Text>
+              <Badge
+                size='lg'
+                variant='solid'
+                className={
+                  teamAlliance === 'blue'
+                    ? 'bg-blue-500'
+                    : teamAlliance === 'red'
+                      ? 'bg-red-500'
+                      : 'bg-typography-500'
+                }
+              >
+                <BadgeText className='text-white font-semibold'>
+                  {teamNumber}
+                </BadgeText>
+              </Badge>
+            </HStack>
             {!isLive && (
               <Text className='text-typography-500 text-sm text-center'>
                 Playback Speed: {playbackSpeed}x
@@ -238,8 +270,7 @@ export function ScoutingStartOverlay({
             onPress={onStart}
             className='w-full'
           >
-            <Icon as={Play} size='md' className='mr-2 text-typography-0' />
-            <ButtonText>Start Scouting</ButtonText>
+            <ButtonText>Start</ButtonText>
           </Button>
           <Button
             size='lg'

@@ -42,6 +42,8 @@ export interface ScoutingSession {
   displayCountdown: string;
   periodLabel: string;
   actionLog: ActionLogEntry[];
+  isStalled: boolean;
+  clearStall: () => void;
   startSession: () => void;
   setAction: (action: RobotAction) => void;
   toggleDisabled: () => void;
@@ -80,6 +82,8 @@ export function useScoutingSession({
   const pendingTraversingRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const lastTickTimeRef = useRef<number>(0);
+  const [isStalled, setIsStalled] = useState(false);
 
   // Keep ref in sync
   useEffect(() => {
@@ -98,6 +102,7 @@ export function useScoutingSession({
       if (sessionStateRef.current !== 'running') return;
       if (isPausedRef.current) return;
 
+      lastTickTimeRef.current = Date.now();
       const realElapsed = timestamp - startTimeRef.current;
       elapsedRealMsRef.current = realElapsed;
       const matchSec = (realElapsed / 1000) * playbackSpeed;
@@ -115,6 +120,28 @@ export function useScoutingSession({
     },
     [playbackSpeed],
   );
+
+  // Stall detection: check every second if RAF hasn't ticked for 3s while running
+  useEffect(() => {
+    const STALL_THRESHOLD_MS = 3000;
+    const interval = setInterval(() => {
+      if (
+        sessionStateRef.current === 'running' &&
+        !isPausedRef.current &&
+        lastTickTimeRef.current > 0
+      ) {
+        const timeSinceLastTick = Date.now() - lastTickTimeRef.current;
+        if (timeSinceLastTick >= STALL_THRESHOLD_MS) {
+          setIsStalled(true);
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const clearStall = useCallback(() => {
+    setIsStalled(false);
+  }, []);
 
   // Cleanup RAF and pending timers on unmount
   useEffect(() => {
@@ -286,6 +313,8 @@ export function useScoutingSession({
     lastActionChangeSecRef.current = 0;
     isPausedRef.current = false;
     pausedElapsedRef.current = 0;
+    lastTickTimeRef.current = 0;
+    setIsStalled(false);
     if (pendingTraversingRef.current !== null) {
       clearTimeout(pendingTraversingRef.current);
       pendingTraversingRef.current = null;
@@ -363,6 +392,8 @@ export function useScoutingSession({
     displayCountdown,
     periodLabel: period.label,
     actionLog,
+    isStalled,
+    clearStall,
     startSession,
     setAction,
     toggleDisabled,

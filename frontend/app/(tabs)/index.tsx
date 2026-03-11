@@ -43,19 +43,19 @@ export default function HomeScreen() {
 
   return (
     <AdaptiveSafeArea>
-      <Fab
-        size='lg'
-        placement='bottom left'
-        isHovered={false}
-        isDisabled={false}
-        isPressed={false}
-        onPress={handleFeedback}
-      >
-        <FabIcon as={MessageSquareMore} />
-        <FabLabel>Feedback</FabLabel>
-      </Fab>
       <Header title='Home' isMainScreen />
       <Box className='flex-1 max-w-2xl self-center w-full'>
+        <Fab
+          size='lg'
+          placement='bottom left'
+          isHovered={false}
+          isDisabled={false}
+          isPressed={false}
+          onPress={handleFeedback}
+        >
+          <FabIcon as={MessageSquareMore} />
+          <FabLabel>Feedback</FabLabel>
+        </Fab>
         <ScrollView
           showsVerticalScrollIndicator={false}
           className='flex-1 px-4 pt-4'

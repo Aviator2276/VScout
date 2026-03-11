@@ -2,12 +2,14 @@ import React, { useCallback } from 'react';
 import { View } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
+import { HStack } from '@/components/ui/hstack';
 import Joystick, { Direction, DirectionCount, IJoystickChangeValue } from 'rc-joystick';
 import { RobotAction } from '@/types/scouting';
 
 interface ScoutingJoystickProps {
   disabled: boolean;
   onActionChange: (action: RobotAction) => void;
+  size?: number;
 }
 
 const DIRECTION_MAP: Record<string, RobotAction> = {
@@ -21,21 +23,22 @@ const DIRECTION_MAP: Record<string, RobotAction> = {
 export function ScoutingJoystick({
   disabled,
   onActionChange,
+  size,
 }: ScoutingJoystickProps) {
-  // Deadband: joystick must travel this many pixels from center to register a direction
-  // Max travel in insideMode = baseRadius - controllerRadius = 80 - 38 = 42px
-  const DEADBAND_PX = 15;
+  const baseRadius = size ? Math.round(size / 2) : 80;
+  const controllerRadius = Math.round(baseRadius * 0.475);
+  const deadbandPx = Math.round(baseRadius * 0.19);
 
   const handleChange = useCallback(
     (val: IJoystickChangeValue) => {
-      if (val.distance < DEADBAND_PX) {
+      if (val.distance < deadbandPx) {
         onActionChange('traversing');
       } else {
         const action = DIRECTION_MAP[val.direction] || 'traversing';
         onActionChange(action);
       }
     },
-    [onActionChange],
+    [onActionChange, deadbandPx],
   );
 
   const handleActiveChange = useCallback(
@@ -46,10 +49,11 @@ export function ScoutingJoystick({
   );
 
   return (
-    <Box className='w-full items-center'>
+    <Box className='items-center' style={{ position: 'relative' as any }}>
       {/* Direction labels */}
       <Text
         className={`text-xs font-semibold mb-1 ${disabled ? 'text-typography-300' : 'text-emerald-500'}`}
+        style={{ zIndex: 10 }}
       >
         Shooting
       </Text>
@@ -58,6 +62,7 @@ export function ScoutingJoystick({
           className='w-[60px] h-[60px] justify-center items-center'
           style={{
             transform: [{ rotate: '-90deg' }, { translateY: 16 }],
+            zIndex: 10,
           }}
         >
           <Text
@@ -68,8 +73,8 @@ export function ScoutingJoystick({
         </View>
         <Box style={{ opacity: disabled ? 0.4 : 1 }}>
           <Joystick
-            baseRadius={80}
-            controllerRadius={38}
+            baseRadius={baseRadius}
+            controllerRadius={controllerRadius}
             directionCount={DirectionCount.Five}
             insideMode
             autoReset
@@ -83,6 +88,7 @@ export function ScoutingJoystick({
           className='w-[60px] justify-center items-center'
           style={{
             transform: [{ rotate: '90deg' }, { translateY: 16 }],
+            zIndex: 10,
           }}
         >
           <Text
@@ -94,6 +100,7 @@ export function ScoutingJoystick({
       </Box>
       <Text
         className={`text-xs font-semibold mt-1 ${disabled ? 'text-typography-300' : 'text-pink-500'}`}
+        style={{ zIndex: 10 }}
       >
         Outtake
       </Text>

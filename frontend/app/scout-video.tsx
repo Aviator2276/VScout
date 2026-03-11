@@ -24,6 +24,17 @@ import { ScoutingToggles } from '@/components/scouting/ScoutingToggles';
 import { ScoutingEndScreen } from '@/components/scouting/ScoutingEndScreen';
 import { getVideoUrl, revokeVideoUrl } from '@/utils/videoStorage';
 import { usePreventZoom } from '@/hooks/usePreventZoom';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { Button, ButtonText } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 
 function useIsMobileWeb(): boolean {
   const { width } = useWindowDimensions();
@@ -57,6 +68,16 @@ export default function ScoutVideoScreen() {
   const matchNum = parseInt(matchNumber || '0', 10);
   const teamNum = parseInt(teamNumber || '0', 10);
 
+  // Determine team alliance color
+  const getTeamAlliance = (): 'blue' | 'red' | null => {
+    if (!match) return null;
+    const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
+    const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
+    if (blueTeams.some((t) => t.number === teamNum)) return 'blue';
+    if (redTeams.some((t) => t.number === teamNum)) return 'red';
+    return null;
+  };
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -77,6 +98,7 @@ export default function ScoutVideoScreen() {
     onActionChange: session.setAction,
     onToggleDisabled: session.toggleDisabled,
     onToggleClimbing: session.toggleClimbing,
+    onToggleDefending: session.toggleDefending,
     sessionRunning: session.sessionState === 'running',
   });
 
@@ -113,7 +135,11 @@ export default function ScoutVideoScreen() {
     if (session.sessionState === 'paused' && videoRef.current) {
       videoRef.current.pause();
     }
-    if (session.sessionState === 'running' && videoRef.current && countdown === null) {
+    if (
+      session.sessionState === 'running' &&
+      videoRef.current &&
+      countdown === null
+    ) {
       videoRef.current.play().catch(() => {});
     }
   }, [session.sessionState]);
@@ -155,7 +181,7 @@ export default function ScoutVideoScreen() {
     return () => clearTimeout(timer);
   }, [countdown, session.startSession, playbackSpeed]);
 
-  // On native phones, lock to landscape; on web, try the orientation API (phones only)
+  // Force landscape: lock orientation on native and mobile web
   useEffect(() => {
     if (Platform.OS !== 'web') {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
@@ -164,13 +190,24 @@ export default function ScoutVideoScreen() {
       };
     }
 
-    if (isMobileWeb) {
+    // On web, try the Screen Orientation API (mobile browsers)
+    const lockLandscape = () => {
       (screen.orientation as any)?.lock?.('landscape').catch(() => {});
-      return () => {
-        (screen.orientation as any)?.unlock?.();
-      };
-    }
-  }, [isMobileWeb]);
+    };
+    lockLandscape();
+
+    // Re-lock if orientation somehow changes (e.g. user rotates while lock failed)
+    const handleOrientationChange = () => lockLandscape();
+    screen.orientation?.addEventListener?.('change', handleOrientationChange);
+
+    return () => {
+      screen.orientation?.removeEventListener?.(
+        'change',
+        handleOrientationChange,
+      );
+      (screen.orientation as any)?.unlock?.();
+    };
+  }, []);
 
   // Load match data
   useEffect(() => {
@@ -190,44 +227,12 @@ export default function ScoutVideoScreen() {
   // On mobile web in portrait, rotate the entire content to simulate landscape
   const needsRotation = isMobileWeb && isPortrait;
 
-  // End screen
-  if (session.sessionState === 'finished') {
-    const endContent = (
-      <ScoutingEndScreen
-        matchType={match?.match_type || 'qualification'}
-        matchNumber={matchNum}
-        teamNumber={teamNum}
-        recordData={session.getRecordData()}
-        actionLog={session.actionLog}
-        onSave={session.saveToDb}
-        onRestart={session.resetSession}
-      />
-    );
-
-    if (needsRotation) {
-      return (
-        <View
-          style={{
-            width: height,
-            height: width,
-            transform: [{ rotate: '90deg' }],
-            position: 'absolute',
-            top: (height - width) / 2,
-            left: -(height - width) / 2,
-          }}
-          className='bg-background-0'
-        >
-          {endContent}
-        </View>
-      );
-    }
-
-    return (
-      <SafeAreaView className='flex-1 bg-background-0'>
-        {endContent}
-      </SafeAreaView>
-    );
-  }
+  // Dynamic joystick size: cap so toggles + joystick don't overlap
+  // Sidebar height is roughly `height - header(~50)`. Toggles take ~140px.
+  // Remaining space is for the joystick (including labels ~20px).
+  const effectiveHeight = needsRotation ? width : height;
+  const sidebarHeight = effectiveHeight - 50;
+  const joystickMaxSize = Math.max(80, Math.min(160, sidebarHeight - 180));
 
   const content = (
     <Box className='flex-1 scouting-no-select'>
@@ -276,8 +281,8 @@ export default function ScoutVideoScreen() {
           />
         </Box>
 
-        <Box className='w-64 items-center justify-evenly py-2'>
-          <Box className='w-full px-2'>
+        <Box className='w-64 items-center justify-between py-2'>
+          <Box className='w-full px-2 flex-shrink-0'>
             <ScoutingToggles
               isDisabled={session.isDisabled}
               isClimbing={session.isClimbing}
@@ -289,15 +294,18 @@ export default function ScoutVideoScreen() {
             />
           </Box>
 
-          <ScoutingJoystick
-            disabled={
-              session.isDisabled ||
-              session.isClimbing ||
-              session.isDefending ||
-              session.sessionState !== 'running'
-            }
-            onActionChange={session.setAction}
-          />
+          <Box className='flex-1 items-center justify-center'>
+            <ScoutingJoystick
+              disabled={
+                session.isDisabled ||
+                session.isClimbing ||
+                session.isDefending ||
+                session.sessionState !== 'running'
+              }
+              onActionChange={session.setAction}
+              size={joystickMaxSize}
+            />
+          </Box>
         </Box>
       </HStack>
 
@@ -306,6 +314,7 @@ export default function ScoutVideoScreen() {
           matchType={match?.match_type || 'qualification'}
           matchNumber={matchNum}
           teamNumber={teamNum}
+          teamAlliance={getTeamAlliance()}
           playbackSpeed={playbackSpeed}
           isLive={false}
           onStart={handleStartCountdown}
@@ -350,28 +359,67 @@ export default function ScoutVideoScreen() {
           </View>
         </View>
       )}
+
+      <ScoutingEndScreen
+        isOpen={session.sessionState === 'finished'}
+        matchType={match?.match_type || 'qualification'}
+        matchNumber={matchNum}
+        teamNumber={teamNum}
+        recordData={session.getRecordData()}
+        actionLog={session.actionLog}
+        onSave={session.saveToDb}
+        onRestart={session.resetSession}
+      />
+
+      {/* Stall detection alert */}
+      <AlertDialog isOpen={session.isStalled} onClose={session.clearStall}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='md'>Session Error</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className='text-typography-'>
+              The scouting session timer has stopped unexpectedly. Please
+              restart your session to ensure accurate data.
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <HStack space='md' className='w-full justify-end'>
+              <Button
+                action='negative'
+                className='mt-2'
+                onPress={() => {
+                  session.clearStall();
+                  session.resetSession();
+                }}
+              >
+                <ButtonText>Restart Session</ButtonText>
+              </Button>
+            </HStack>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Box>
   );
 
-  if (needsRotation) {
-    return (
-      <View
-        style={{
-          width: height,
-          height: width,
-          transform: [{ rotate: '90deg' }],
-          position: 'absolute',
-          top: (height - width) / 2,
-          left: -(height - width) / 2,
-        }}
-        className='bg-background-0'
-      >
-        {content}
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView className='flex-1 bg-background-0'>{content}</SafeAreaView>
+    <View
+      className='bg-background-0'
+      style={
+        needsRotation
+          ? {
+              width: height,
+              height: width,
+              transform: [{ rotate: '90deg' }],
+              position: 'absolute',
+              top: (height - width) / 2,
+              left: -(height - width) / 2,
+            }
+          : { flex: 1 }
+      }
+    >
+      {content}
+    </View>
   );
 }

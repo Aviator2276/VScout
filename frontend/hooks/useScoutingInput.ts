@@ -7,6 +7,7 @@ interface UseScoutingInputParams {
   onActionChange: (action: RobotAction) => void;
   onToggleDisabled: () => void;
   onToggleClimbing: () => void;
+  onToggleDefending: () => void;
   sessionRunning: boolean;
 }
 
@@ -22,6 +23,7 @@ export function useScoutingInput({
   onActionChange,
   onToggleDisabled,
   onToggleClimbing,
+  onToggleDefending,
   sessionRunning,
 }: UseScoutingInputParams) {
   const gamepadIndexRef = useRef<number | null>(null);
@@ -29,6 +31,7 @@ export function useScoutingInput({
   const lastDpadRef = useRef<string>('center');
   const lastAButtonRef = useRef<boolean>(false);
   const lastBButtonRef = useRef<boolean>(false);
+  const lastXButtonRef = useRef<boolean>(false);
 
   // Keyboard input
   useEffect(() => {
@@ -48,6 +51,13 @@ export function useScoutingInput({
       if (e.code === 'KeyC') {
         e.preventDefault();
         onToggleClimbing();
+        return;
+      }
+
+      // Toggle defending with D
+      if (e.code === 'KeyD') {
+        e.preventDefault();
+        onToggleDefending();
         return;
       }
 
@@ -77,7 +87,7 @@ export function useScoutingInput({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [disabled, onActionChange, onToggleDisabled, onToggleClimbing, sessionRunning]);
+  }, [disabled, onActionChange, onToggleDisabled, onToggleClimbing, onToggleDefending, sessionRunning]);
 
   // Gamepad input
   const pollGamepad = useCallback(() => {
@@ -142,8 +152,15 @@ export function useScoutingInput({
     }
     lastBButtonRef.current = bPressed;
 
+    // X button (button 2) - toggle defending
+    const xPressed = gamepad.buttons[2]?.pressed || false;
+    if (xPressed && !lastXButtonRef.current) {
+      onToggleDefending();
+    }
+    lastXButtonRef.current = xPressed;
+
     rafRef.current = requestAnimationFrame(pollGamepad);
-  }, [disabled, onActionChange, onToggleDisabled, onToggleClimbing, sessionRunning]);
+  }, [disabled, onActionChange, onToggleDisabled, onToggleClimbing, onToggleDefending, sessionRunning]);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !sessionRunning) return;
