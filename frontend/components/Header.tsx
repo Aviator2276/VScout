@@ -57,7 +57,7 @@ export function Header({
         {showBackButton && (
           <Button
             variant='link'
-            size='md'
+            size='sm'
             className='px-1 font-bold border-primary-500/5'
             onPress={handleBackNavigation}
           >
