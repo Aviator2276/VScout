@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Card } from '@/components/ui/card';
 import { Center } from '@/components/ui/center';
@@ -38,7 +44,8 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { startDownload, downloadProgress, activeDownloads } = useVideoDownload();
+  const { startDownload, downloadProgress, activeDownloads } =
+    useVideoDownload();
   const isDownloading = activeDownloads.has(matchNumber);
   const progress = downloadProgress.get(matchNumber) ?? 0;
 
@@ -85,7 +92,9 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
         setVideoUrl(url);
       } else {
         // Video file missing from OPFS (likely deleted) — refresh parent state
-        console.warn(`Video file not found for match ${matchNumber}, refreshing state`);
+        console.warn(
+          `Video file not found for match ${matchNumber}, refreshing state`,
+        );
         onDownloadComplete?.();
       }
     } catch (err) {
@@ -109,7 +118,7 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
     return (
       <Card
         variant='outline'
-        className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2 overflow-hidden'
+        className='w-[calc(100%+2rem)] -mx-4 aspect-video p-0 mb-2 overflow-hidden'
       >
         <video
           ref={videoRef}
@@ -136,7 +145,7 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
     return (
       <Card
         variant='outline'
-        className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2 overflow-hidden'
+        className='w-[calc(100%+2rem)] -mx-4 aspect-video p-0 mb-2 overflow-hidden'
       >
         <Center className='items-center justify-center h-full'>
           <ActivityIndicator size='large' />
@@ -151,18 +160,20 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
     return (
       <Card
         variant='outline'
-        className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2'
+        className='w-[calc(100%+2rem)] -mx-4 aspect-video p-0 mb-2'
       >
         <Center className='items-center justify-center h-full'>
           <VStack space='sm' className='items-center w-3/4 max-w-xs'>
-            {error && (
-              <Text className='text-error-500 text-sm'>{error}</Text>
-            )}
+            {error && <Text className='text-error-500 text-sm'>{error}</Text>}
             {isDownloading ? (
               <>
                 <HStack className='justify-between items-center w-full'>
-                  <Text className='text-typography-600 text-sm'>Downloading...</Text>
-                  <Text className='text-typography-600 text-sm'>{progress}%</Text>
+                  <Text className='text-typography-600 text-sm'>
+                    Downloading...
+                  </Text>
+                  <Text className='text-typography-600 text-sm'>
+                    {progress}%
+                  </Text>
                 </HStack>
                 <Progress value={progress} size='md' className='w-full'>
                   <ProgressFilledTrack className='bg-primary-500' />
@@ -192,7 +203,7 @@ export const MatchVideoPlayer = forwardRef(function MatchVideoPlayer(
   return (
     <Card
       variant='outline'
-      className='w-svw md:w-full aspect-video p-0 -ml-4 md:ml-0 mb-2'
+      className='w-[calc(100%+2rem)] -mx-4 aspect-video p-0 mb-2'
     >
       <Center className='items-center justify-center h-full'>
         <VStack space='sm' className='items-center'>
