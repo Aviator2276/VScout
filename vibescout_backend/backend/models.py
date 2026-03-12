@@ -297,7 +297,9 @@ class Match(models.Model):
         super().save(*args, **kwargs)
 
         # Queue video download task if conditions are met
-        if should_download_video and not self.skip_processing:
+        import os
+        offsite_processing = os.getenv("OFFSITE_PROCESSING", "false").lower() == "true"
+        if should_download_video and not self.skip_processing and not offsite_processing:
             # Check if competition has any stream links configured
             has_stream = any(
                 [

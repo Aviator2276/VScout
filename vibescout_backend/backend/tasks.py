@@ -128,10 +128,12 @@ def check_and_sync_new_matches(competition_code: Optional[str] = None) -> dict:
         # Match doesn't exist or error occurred
         error_msg = str(e).lower()
         if "404" in error_msg or "not found" in error_msg:
-            logger.info(f"Match {match_key} not found in TBA")
+            logger.info(f"Match {match_key} not found in TBA — unscheduling match sync for {competition_code}")
+            from django_q.models import Schedule
+            Schedule.objects.filter(name=f"check_new_matches_{competition_code}").delete()
             return {
                 "success": True,
-                "message": f"Match {start_match_number} not found in TBA",
+                "message": f"Match {start_match_number} not found in TBA — sync unscheduled",
                 "checked_match": start_match_number,
                 "match_found": False,
             }
@@ -225,6 +227,10 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
     Crops red/blue scoreboard regions from the clipped video into a temp directory,
     runs LLM inference on each frame, and saves the result to match.fuel_timeline.
     """
+    if os.getenv("OFFSITE_PROCESSING", "false").lower() == "true":
+        logger.info(f"OFFSITE_PROCESSING=True — skipping LLM OCR for match {match_id}")
+        return {"success": False, "error": "Offsite processing mode"}
+
     import shutil
     import subprocess
     import tempfile
@@ -467,6 +473,10 @@ def clip_match_video_task(match_id: int) -> dict:
     Scans the video for the first frame where the scoreboard timer shows 0:19,
     then trims from that point for 153 seconds (150s match + 3s buffer).
     """
+    if os.getenv("OFFSITE_PROCESSING", "false").lower() == "true":
+        logger.info(f"OFFSITE_PROCESSING=True — skipping video clip for match {match_id}")
+        return {"success": False, "error": "Offsite processing mode"}
+
     from .models import Match
     from .utils.video_downloader import clip_match_video
 
@@ -705,17 +715,20 @@ def compute_stream_offsets(competition_code: Optional[str] = None) -> dict:
             repeats=-1,
         ),
     )
-    Schedule.objects.get_or_create(
-        name=f"check_video_downloads_{competition_code}",
-        defaults=dict(
-            func="backend.tasks.check_and_download_videos",
-            args=f'"{competition_code}"',
-            schedule_type=Schedule.MINUTES,
-            minutes=check_matches_interval,
-            next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
-            repeats=-1,
-        ),
-    )
+
+    offsite_processing = os.getenv("OFFSITE_PROCESSING", "false").lower() == "true"
+    if not offsite_processing:
+        Schedule.objects.get_or_create(
+            name=f"check_video_downloads_{competition_code}",
+            defaults=dict(
+                func="backend.tasks.check_and_download_videos",
+                args=f'"{competition_code}"',
+                schedule_type=Schedule.MINUTES,
+                minutes=check_matches_interval,
+                next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
+                repeats=-1,
+            ),
+        )
     logger.info(f"Scheduled normal match sync and video download tasks for {competition_code}")
 
     return {"success": True, "message": "Offset computed and normal tasks scheduled"}
@@ -734,6 +747,10 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
     Returns:
         dict with download status
     """
+    if os.getenv("OFFSITE_PROCESSING", "false").lower() == "true":
+        logger.info(f"OFFSITE_PROCESSING=True — skipping video download for match {match_id}")
+        return {"success": False, "error": "Offsite processing mode"}
+
     from .models import Match
     from .utils.video_downloader import download_match_video
 

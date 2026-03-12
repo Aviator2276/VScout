@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.serializers import serialize
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
-from ninja import NinjaAPI
+from ninja import NinjaAPI, Schema
 
 from .models import Competition, Match, RobotAction, Team, TeamInfo
 from .schemas import (
@@ -654,3 +654,91 @@ def get_match_video(request, competition_code: str, match_number: int):
     response = FileResponse(open(video_path, "rb"), content_type="video/mp4")
     response["Content-Disposition"] = f'inline; filename="{video_path.name}"'
     return response
+
+
+# ---------------------------------------------------------------------------
+# Offsite processing endpoints
+# ---------------------------------------------------------------------------
+
+def _check_offsite_key(request):
+    """Returns True if the request carries a valid OFFSITE_API_KEY."""
+    import os
+    expected = os.getenv("OFFSITE_API_KEY")
+    if not expected:
+        return False
+    return request.headers.get("X-Offsite-Key") == expected
+
+
+@api.get("/offsite/pending")
+def offsite_pending(request):
+    """
+    Return matches that need video/OCR processing.
+    Requires X-Offsite-Key header matching OFFSITE_API_KEY env var.
+    """
+    from ninja.errors import HttpError
+    if not _check_offsite_key(request):
+        raise HttpError(403, "Invalid or missing offsite API key")
+
+    matches = Match.objects.filter(
+        has_played=True,
+        skip_processing=False,
+        fuel_timeline__isnull=True,
+    ).select_related("competition").order_by("competition__code", "match_number")
+
+    result = []
+    for match in matches:
+        comp = match.competition
+        result.append({
+            "match_id": match.pk,
+            "competition_code": comp.code,
+            "match_number": match.match_number,
+            "match_type": match.match_type,
+            "set_number": match.set_number,
+            "start_match_time": match.start_match_time,
+            "stream_link_day_1": comp.stream_link_day_1,
+            "stream_link_day_2": comp.stream_link_day_2,
+            "stream_link_day_3": comp.stream_link_day_3,
+            "offset_day_1": comp.offset_stream_time_to_unix_timestamp_day_1,
+            "offset_day_2": comp.offset_stream_time_to_unix_timestamp_day_2,
+            "offset_day_3": comp.offset_stream_time_to_unix_timestamp_day_3,
+            "first_match_pos_day_1": comp.first_match_video_position_day_1,
+            "first_match_pos_day_2": comp.first_match_video_position_day_2,
+            "first_match_pos_day_3": comp.first_match_video_position_day_3,
+        })
+    return result
+
+
+class _OffsiteSubmitBody(Schema):
+    fuel_timeline: dict
+
+
+@api.post("/offsite/submit/{match_id}")
+def offsite_submit(request, match_id: int, payload: _OffsiteSubmitBody):
+    """
+    Submit processed fuel_timeline for a match from the offsite machine.
+    Expects: {"fuel_timeline": {"blue": [...], "red": [...]}}
+    Requires X-Offsite-Key header.
+    """
+    from ninja.errors import HttpError
+    if not _check_offsite_key(request):
+        raise HttpError(403, "Invalid or missing offsite API key")
+
+    match = get_object_or_404(Match, pk=match_id)
+
+    fuel_timeline = payload.fuel_timeline
+    if not fuel_timeline:
+        raise HttpError(400, "fuel_timeline is required")
+
+    match.fuel_timeline = fuel_timeline
+    match.video_clipped = True
+    match.save(update_fields=["fuel_timeline", "video_clipped"])
+
+    # Queue fuel attribution
+    from django_q.tasks import async_task
+    async_task(
+        "backend.tasks.attribute_fuel_to_robots_task",
+        match.pk,
+        task_name=f"fuel_attribution_{match.competition.code}_match_{match.match_number}",
+    )
+
+    return {"success": True, "match_id": match_id, "match_number": match.match_number}

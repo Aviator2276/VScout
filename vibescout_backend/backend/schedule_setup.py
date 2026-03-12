@@ -7,6 +7,7 @@ One set of schedules is created per competition found in the database.
 """
 
 import logging
+import os
 from datetime import timedelta
 
 from django.utils import timezone
@@ -40,6 +41,9 @@ def setup_scheduled_tasks():
     logger.info(f"Cleared task history on startup: {queued} queued, {success} completed, {failure} failed")
 
     check_matches_interval = 1  # minutes
+    offsite_processing = os.getenv("OFFSITE_PROCESSING", "false").lower() == "true"
+    if offsite_processing:
+        logger.info("OFFSITE_PROCESSING=True — video download/clip tasks will not be scheduled")
 
     from backend.models import Competition, Match
 
@@ -69,6 +73,8 @@ def setup_scheduled_tasks():
             first_match_has_video = False
 
         if not first_match_has_video:
+            # Always schedule offset computation — it's pure math from TBA data,
+            # not video processing, so it runs even in offsite mode
             Schedule.objects.create(
                 name=f"compute_stream_offsets_{code}",
                 func="backend.tasks.compute_stream_offsets",
@@ -79,28 +85,18 @@ def setup_scheduled_tasks():
             )
             logger.info(f"Scheduled compute_stream_offsets for {code} every {check_matches_interval}m")
 
-            Schedule.objects.create(
-                name=f"check_new_matches_{code}",
-                func="backend.tasks.check_and_sync_new_matches",
-                args=f'"{code}"',
-                schedule_type=Schedule.MINUTES,
-                minutes=check_matches_interval,
-                next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
-                repeats=-1,
-            )
-            logger.info(f"Scheduled match sync for {code} every {check_matches_interval}m")
-        else:
-            Schedule.objects.create(
-                name=f"check_new_matches_{code}",
-                func="backend.tasks.check_and_sync_new_matches",
-                args=f'"{code}"',
-                schedule_type=Schedule.MINUTES,
-                minutes=check_matches_interval,
-                next_run=timezone.now() + timedelta(minutes=offset_minutes),
-                repeats=-1,
-            )
-            logger.info(f"Scheduled match sync for {code} every {check_matches_interval}m")
+        Schedule.objects.create(
+            name=f"check_new_matches_{code}",
+            func="backend.tasks.check_and_sync_new_matches",
+            args=f'"{code}"',
+            schedule_type=Schedule.MINUTES,
+            minutes=check_matches_interval,
+            next_run=timezone.now() + timedelta(minutes=check_matches_interval / 2),
+            repeats=-1,
+        )
+        logger.info(f"Scheduled match sync for {code} every {check_matches_interval}m")
 
+        if not offsite_processing:
             Schedule.objects.create(
                 name=f"check_video_downloads_{code}",
                 func="backend.tasks.check_and_download_videos",
