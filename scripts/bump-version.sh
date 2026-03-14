@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Bump the patch version in frontend/app.json and frontend/package.json
+# Version format: <prefix>-<major>.<minor>.<patch>
+# e.g., beta-1.0.0 -> beta-1.0.1
+
+set -e
+
+APP_JSON="frontend/app.json"
+PKG_JSON="frontend/package.json"
+
+# Extract version from app.json (e.g., "alpha-1.0.0")
+FULL_VERSION=$(node -e "console.log(require('./$APP_JSON').expo.version)")
+
+# Split prefix and semver
+PREFIX=$(echo "$FULL_VERSION" | sed 's/-[0-9]*\.[0-9]*\.[0-9]*//')
+SEMVER=$(echo "$FULL_VERSION" | grep -o '[0-9]*\.[0-9]*\.[0-9]*')
+
+if [ -z "$SEMVER" ]; then
+  echo "Error: Could not parse version from $APP_JSON (got: $FULL_VERSION)"
+  exit 1
+fi
+
+# Parse major.minor.patch
+IFS='.' read -r MAJOR MINOR PATCH <<< "$SEMVER"
+
+# Increment patch
+NEW_PATCH=$((PATCH + 1))
+NEW_VERSION="${PREFIX}-${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+echo "Bumping version: $FULL_VERSION -> $NEW_VERSION"
+
+# Update app.json
+node -e "
+const fs = require('fs');
+const app = JSON.parse(fs.readFileSync('$APP_JSON', 'utf8'));
+app.expo.version = '$NEW_VERSION';
+fs.writeFileSync('$APP_JSON', JSON.stringify(app, null, 2) + '\n');
+"
+
+# Update package.json version to match
+node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('$PKG_JSON', 'utf8'));
+pkg.version = '$NEW_VERSION';
+fs.writeFileSync('$PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
+"
+
+# Stage the updated files
+git add "$APP_JSON" "$PKG_JSON"
+
+echo "Version bumped to $NEW_VERSION"
