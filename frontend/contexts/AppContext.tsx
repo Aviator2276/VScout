@@ -17,6 +17,7 @@ import {
 import {
   cacheTeams,
   cacheTeamInfo,
+  syncTeamPictures,
   NoCompetitionCodeError as TeamNoCompCodeError,
 } from '@/api/teams';
 
@@ -110,6 +111,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [dataRefreshInterval]);
+
+  // Periodic picture sync (every 2 minutes), independent of data refresh
+  useEffect(() => {
+    if (!isOnline) return;
+
+    // Run picture sync on mount
+    syncTeamPictures().catch((err) =>
+      console.error('Periodic picture sync failed:', err),
+    );
+
+    const pictureSyncInterval = window.setInterval(() => {
+      syncTeamPictures().catch((err) =>
+        console.error('Periodic picture sync failed:', err),
+      );
+    }, 2 * 60 * 1000);
+
+    return () => clearInterval(pictureSyncInterval);
+  }, [isOnline]);
 
   // Update freshness status based on time elapsed
   useEffect(() => {

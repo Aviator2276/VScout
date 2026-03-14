@@ -146,6 +146,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           prescout_driver_years: info.prescout_driver_years,
           prescout_additional_comments: info.prescout_additional_comments,
           picture: info.picture,
+          pictureHash: info.pictureHash,
         },
       ]),
     );
@@ -184,6 +185,7 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           existingLocal?.prescout_additional_comments ||
           '',
         picture: info.picture || existingLocal?.picture || '',
+        pictureHash: existingLocal?.pictureHash || undefined,
       };
     });
 
@@ -343,7 +345,7 @@ interface PictureSyncResponse {
 }
 
 interface BatchPictureSyncResponse {
-  [teamNumber: string]: PictureSyncResponse;
+  teams: { [teamNumber: string]: PictureSyncResponse };
 }
 
 interface PictureResponse {
@@ -366,9 +368,10 @@ export async function fetchPictureHash(
   }
 
   try {
-    return await apiRequest<PictureSyncResponse>(
-      `/api/team-info/picture/sync?competition_code=${encodeURIComponent(compCode)}&team_number=${teamNumber}`,
+    const response = await apiRequest<BatchPictureSyncResponse>(
+      `/api/team-info/picture/sync?competition_code=${encodeURIComponent(compCode)}`,
     );
+    return response.teams?.[teamNumber.toString()] || null;
   } catch (error) {
     console.error(`Failed to fetch picture hash for team ${teamNumber}:`, error);
     return null;
@@ -404,7 +407,7 @@ export async function fetchTeamPicture(
  * Fetch all picture hashes for the current competition.
  * @returns A map of team numbers to their picture sync responses
  */
-export async function fetchAllPictureHashes(): Promise<BatchPictureSyncResponse | null> {
+export async function fetchAllPictureHashes(): Promise<{ [teamNumber: string]: PictureSyncResponse } | null> {
   const compCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!compCode) {
@@ -412,9 +415,10 @@ export async function fetchAllPictureHashes(): Promise<BatchPictureSyncResponse 
   }
 
   try {
-    return await apiRequest<BatchPictureSyncResponse>(
+    const response = await apiRequest<BatchPictureSyncResponse>(
       `/api/team-info/picture/sync?competition_code=${encodeURIComponent(compCode)}`,
     );
+    return response.teams || null;
   } catch (error) {
     console.error('Failed to fetch all picture hashes:', error);
     return null;
@@ -440,17 +444,28 @@ export async function syncTeamPictures(): Promise<void> {
       .equals(compCode)
       .toArray();
 
-    console.log(`Syncing pictures for ${teamInfoList.length} teams...`);
+    console.log(`[PictureSync] Syncing pictures for ${teamInfoList.length} teams...`);
 
     // Fetch all picture hashes in one request
     const allHashes = await fetchAllPictureHashes();
     if (!allHashes) {
-      console.log('Failed to fetch picture hashes, skipping sync');
+      console.log('[PictureSync] Failed to fetch picture hashes, skipping sync');
       return;
+    }
+
+    const hashKeys = Object.keys(allHashes);
+    const teamsWithPictures = hashKeys.filter((k) => allHashes[k]?.has_picture);
+    console.log(`[PictureSync] Server returned hashes for ${hashKeys.length} teams, ${teamsWithPictures.length} have pictures`);
+    if (teamsWithPictures.length > 0) {
+      console.log(`[PictureSync] Sample hash entry for team ${teamsWithPictures[0]}:`, JSON.stringify(allHashes[teamsWithPictures[0]]));
     }
 
     // Process teams in batches of 5 to avoid overwhelming the network
     const batchSize = 5;
+    let downloadCount = 0;
+    let skipCount = 0;
+    let noResponseCount = 0;
+
     for (let i = 0; i < teamInfoList.length; i += batchSize) {
       const batch = teamInfoList.slice(i, i + batchSize);
 
@@ -459,7 +474,10 @@ export async function syncTeamPictures(): Promise<void> {
           try {
             const syncResponse = allHashes[teamInfo.team_number.toString()];
 
-            if (!syncResponse) return;
+            if (!syncResponse) {
+              noResponseCount++;
+              return;
+            }
 
             // Check if we need to download the picture
             const needsDownload =
@@ -471,37 +489,38 @@ export async function syncTeamPictures(): Promise<void> {
               !syncResponse.has_picture && teamInfo.picture;
 
             if (needsDownload) {
-              console.log(`Downloading picture for team ${teamInfo.team_number}...`);
+              downloadCount++;
+              console.log(`[PictureSync] Downloading picture for team ${teamInfo.team_number} (server hash: ${syncResponse.hash}, local hash: ${teamInfo.pictureHash}, has_picture: ${syncResponse.has_picture} [${typeof syncResponse.has_picture}])...`);
               const picture = await fetchTeamPicture(teamInfo.team_number);
 
               if (picture) {
-                await db.teamInfo.update(
-                  [compCode, teamInfo.team_number],
-                  {
-                    picture,
-                    pictureHash: syncResponse.hash || undefined,
-                  },
-                );
-                console.log(`Updated picture for team ${teamInfo.team_number}`);
+                await db.teamInfo.put({
+                  ...teamInfo,
+                  picture,
+                  pictureHash: syncResponse.hash || undefined,
+                });
+                console.log(`[PictureSync] Updated picture for team ${teamInfo.team_number} (${picture.length} chars)`);
+              } else {
+                console.warn(`[PictureSync] fetchTeamPicture returned null for team ${teamInfo.team_number}`);
               }
             } else if (needsClear) {
-              await db.teamInfo.update(
-                [compCode, teamInfo.team_number],
-                {
-                  picture: '',
-                  pictureHash: undefined,
-                },
-              );
-              console.log(`Cleared picture for team ${teamInfo.team_number}`);
+              await db.teamInfo.put({
+                ...teamInfo,
+                picture: '',
+                pictureHash: undefined,
+              });
+              console.log(`[PictureSync] Cleared picture for team ${teamInfo.team_number}`);
+            } else {
+              skipCount++;
             }
           } catch (error) {
-            console.error(`Failed to sync picture for team ${teamInfo.team_number}:`, error);
+            console.error(`[PictureSync] Failed to sync picture for team ${teamInfo.team_number}:`, error);
           }
         }),
       );
     }
 
-    console.log('Picture sync completed');
+    console.log(`[PictureSync] Completed: ${downloadCount} downloads, ${skipCount} skipped (hash match), ${noResponseCount} no server response`);
   } catch (error) {
     console.error('Failed to sync team pictures:', error);
   }
@@ -589,10 +608,18 @@ export async function uploadTeamPicture(
 
     // Update local DB with the picture and new hash
     if (syncResponse?.hash) {
-      await db.teamInfo.update([compCode, teamNumber], {
-        picture: pictureUri,
-        pictureHash: syncResponse.hash,
-      });
+      const existingInfo = await db.teamInfo
+        .where('[competitionCode+team_number]')
+        .equals([compCode, teamNumber])
+        .first();
+
+      if (existingInfo) {
+        await db.teamInfo.put({
+          ...existingInfo,
+          picture: pictureUri,
+          pictureHash: syncResponse.hash,
+        });
+      }
     }
 
     return pictureUri;
