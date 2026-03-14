@@ -31,7 +31,7 @@ class IndexDb extends Dexie {
     });
 
     // Increment version number when changing table schema to migrate.
-    this.version(14).stores({
+    this.version(15).stores({
       config: '&key, value',
       matches:
         '[competitionCode+match_type+set_number+match_number], match_number, set_number, match_type, start_match_time, end_match_time, blue_team_1.number, blue_team_2.number, blue_team_3.number, red_team_1.number, red_team_2.number, red_team_3.number',
@@ -62,6 +62,43 @@ function createDb(): IndexDb {
 }
 
 export const db = createDb();
+
+/**
+ * Mark a team as scouted for a specific match
+ */
+export async function markTeamScouted(
+  competitionCode: string,
+  matchType: string,
+  setNumber: number,
+  matchNumber: number,
+  teamNumber: number
+): Promise<void> {
+  const match = await db.matches.get([
+    competitionCode,
+    matchType,
+    setNumber,
+    matchNumber,
+  ]);
+  if (!match) return;
+
+  // Find which position this team is in
+  const positions = [
+    { key: 'blue_1_scouted', team: match.blue_team_1 },
+    { key: 'blue_2_scouted', team: match.blue_team_2 },
+    { key: 'blue_3_scouted', team: match.blue_team_3 },
+    { key: 'red_1_scouted', team: match.red_team_1 },
+    { key: 'red_2_scouted', team: match.red_team_2 },
+    { key: 'red_3_scouted', team: match.red_team_3 },
+  ] as const;
+
+  const position = positions.find((p) => p.team.number === teamNumber);
+  if (!position) return;
+
+  await db.matches.put({
+    ...match,
+    [position.key]: true,
+  });
+}
 
 export interface StorageInfo {
   usage: number;

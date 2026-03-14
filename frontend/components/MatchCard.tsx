@@ -14,7 +14,7 @@ import {
   PopoverBody,
   PopoverContent,
 } from './ui/popover';
-import { CircleDashed, ImageDown, Video, VideoOff } from 'lucide-react-native';
+import { CircleDashed, CircleDot, CircleDotDashed, Video, VideoOff } from 'lucide-react-native';
 import { Icon } from './ui/icon';
 import { db } from '@/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -46,16 +46,55 @@ export function MatchCard({
 
   const isVideoDownloaded = videoRecord?.isDownloaded ?? false;
 
-  // Check if a team number matches the search query
-  const isTeamHighlighted = (teamNumber: number): boolean => {
-    if (!searchQuery.trim() || !searchQuery.startsWith('@')) {
-      return false;
+  // Count how many teams have been scouted
+  const scoutedCount = [
+    match.blue_1_scouted,
+    match.blue_2_scouted,
+    match.blue_3_scouted,
+    match.red_1_scouted,
+    match.red_2_scouted,
+    match.red_3_scouted,
+  ].filter(Boolean).length;
+
+  const getScoutedIcon = () => {
+    if (scoutedCount === 0) return CircleDashed;
+    if (scoutedCount === 6) return CircleDot;
+    return CircleDotDashed;
+  };
+
+  const getScoutedColor = () => {
+    if (scoutedCount === 0) return 'text-warning-500';
+    if (scoutedCount === 6) return 'text-success-500';
+    return 'text-info-500';
+  };
+
+  const getScoutedText = () => {
+    if (scoutedCount === 0) return 'Not Scouted';
+    if (scoutedCount === 6) return 'Fully Scouted';
+    return `${scoutedCount}/6 Scouted`;
+  };
+
+  // Check if match number matches search (less than 3 digits = match search)
+  const isMatchHighlighted = (): boolean => {
+    const query = searchQuery.trim();
+    if (!query) return false;
+    // If query is less than 3 digits, treat as match number search
+    if (query.length < 3) {
+      return match.match_number.toString().includes(query);
     }
-    const teamQuery = searchQuery.slice(1);
-    if (teamQuery.length < 2) {
-      return false;
-    }
-    return teamNumber.toString().includes(teamQuery);
+    return false;
+  };
+
+  // Check if a team matches the search query (by number or name)
+  const isTeamHighlighted = (team: { number: number; name: string }): boolean => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return false;
+    // Less than 3 characters = match number search only, don't highlight teams
+    if (query.length < 3) return false;
+    // Require at least 3 digits for team number search
+    const matchesNumber = team.number.toString().includes(query);
+    const matchesName = team.name.toLowerCase().includes(query);
+    return matchesNumber || matchesName;
   };
 
   // Format Unix timestamp to readable time
@@ -74,7 +113,11 @@ export function MatchCard({
 
   return (
     <Pressable onPress={handleCardPress}>
-      <Card variant='outline' size='md' className='mb-2 p-2'>
+      <Card
+        variant='outline'
+        size='md'
+        className={`mb-2 p-2 ${isMatchHighlighted() ? 'border-amber-400 border-2' : ''}`}
+      >
         <VStack space='md'>
           <HStack className='items-center justify-between gap-2'>
             <HStack space='xs' className='items-center'>
@@ -136,9 +179,9 @@ export function MatchCard({
                 trigger={(triggerProps) => (
                   <Pressable {...triggerProps}>
                     <Icon
-                      as={CircleDashed}
+                      as={getScoutedIcon()}
                       size='md'
-                      className='text-warning-500'
+                      className={getScoutedColor()}
                     />
                   </Pressable>
                 )}
@@ -147,7 +190,7 @@ export function MatchCard({
                 <PopoverContent>
                   <PopoverArrow />
                   <PopoverBody>
-                    <Text className='text-typography-900'>Not Scouted</Text>
+                    <Text className='text-typography-900'>{getScoutedText()}</Text>
                   </PopoverBody>
                 </PopoverContent>
               </Popover>
@@ -157,7 +200,7 @@ export function MatchCard({
           <VStack space='xs'>
             <HStack space='xs' className='flex-1 w-[calc(100%-1.25rem)] h-3'>
               {blueTeams.map((team, index) => {
-                const isHighlighted = isTeamHighlighted(team.number);
+                const isHighlighted = isTeamHighlighted(team);
                 return (
                   <Badge
                     size='lg'
@@ -173,7 +216,7 @@ export function MatchCard({
                 );
               })}
               {redTeams.map((team, index) => {
-                const isHighlighted = isTeamHighlighted(team.number);
+                const isHighlighted = isTeamHighlighted(team);
                 return (
                   <Badge
                     size='lg'

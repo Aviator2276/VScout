@@ -364,3 +364,9 @@ class BulkRobotActionsResponseSchema(Schema):
     tele: list[RobotActionItemSchema]
     auto_fuel: int
     tele_fuel: int
+
+
+class MatchRobotActionsResponseSchema(Schema):
+    """Schema for returning robot actions for all teams in a match"""
+
+    teams: list[BulkRobotActionsResponseSchema]

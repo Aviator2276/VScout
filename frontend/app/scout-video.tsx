@@ -278,6 +278,7 @@ export default function ScoutVideoScreen() {
           <MatchTimeline
             actionLog={session.actionLog}
             elapsedMatchSec={session.elapsedMatchSec}
+            missedActionTime={session.missedActionTime}
           />
         </Box>
 
@@ -290,6 +291,9 @@ export default function ScoutVideoScreen() {
               onToggleDisabled={session.toggleDisabled}
               onToggleClimbing={session.toggleClimbing}
               onToggleDefending={session.toggleDefending}
+              onMarkMissed={session.markMissed}
+              onUndoMissed={session.undoMissed}
+              onClearMissedPulse={session.clearMissedPulse}
               sessionRunning={session.sessionState === 'running'}
             />
           </Box>

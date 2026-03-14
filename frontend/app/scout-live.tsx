@@ -130,6 +130,7 @@ export default function ScoutLiveScreen() {
         <MatchTimeline
           actionLog={session.actionLog}
           elapsedMatchSec={session.elapsedMatchSec}
+          missedActionTime={session.missedActionTime}
         />
 
         <Box className='flex-1' />
@@ -144,6 +145,9 @@ export default function ScoutLiveScreen() {
                 onToggleDisabled={session.toggleDisabled}
                 onToggleClimbing={session.toggleClimbing}
                 onToggleDefending={session.toggleDefending}
+                onMarkMissed={session.markMissed}
+                onUndoMissed={session.undoMissed}
+                onClearMissedPulse={session.clearMissedPulse}
                 sessionRunning={session.sessionState === 'running'}
               />
             </Box>
@@ -168,6 +172,9 @@ export default function ScoutLiveScreen() {
                 onToggleDisabled={session.toggleDisabled}
                 onToggleClimbing={session.toggleClimbing}
                 onToggleDefending={session.toggleDefending}
+                onMarkMissed={session.markMissed}
+                onUndoMissed={session.undoMissed}
+                onClearMissedPulse={session.clearMissedPulse}
                 sessionRunning={session.sessionState === 'running'}
               />
             </Box>

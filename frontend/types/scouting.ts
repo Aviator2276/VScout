@@ -6,11 +6,13 @@ export type RobotAction =
   | 'outtake'
   | 'herding'
   | 'climbing'
-  | 'disabled';
+  | 'disabled'
+  | 'missed';
 
 export interface ActionSegment {
   duration: number;
   action: RobotAction;
+  fuel?: number;
 }
 
 export interface RobotActionRecord {
@@ -22,4 +24,6 @@ export interface RobotActionRecord {
   auto: ActionSegment[];
   tele: ActionSegment[];
   notes?: string;
+  auto_fuel?: number;
+  tele_fuel?: number;
 }

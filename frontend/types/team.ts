@@ -41,4 +41,13 @@ export interface TeamInfo {
   avg_climb_points_sd: string;
   avg_points_contributed: string;
   consistency_rating: string;
+  median_auto_fuel?: number;
+  sd_auto_fuel?: number;
+  median_tele_fuel?: number;
+  sd_tele_fuel?: number;
+  median_climb_level?: number;
+  sd_climb_level?: number;
+  median_points_contributed?: number;
+  sd_points_contributed?: number;
+  local_consistency?: number;
 }

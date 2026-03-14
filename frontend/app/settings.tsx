@@ -78,6 +78,9 @@ export default function SettingsScreen() {
     checkServerConnection,
     theme,
     setTheme,
+    swStatus,
+    forceAppUpdate,
+    isUpdatingApp,
   } = useApp();
   const router = useRouter();
   const { scrollTo } = useLocalSearchParams();
@@ -252,8 +255,26 @@ export default function SettingsScreen() {
                   <TableRow>
                     <TableData>App Offline mode:</TableData>
                     <TableData>
-                      <Badge size='lg' variant='solid' action='error'>
-                        <BadgeText>Unavailable</BadgeText>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action={
+                          swStatus === 'active'
+                            ? 'success'
+                            : swStatus === 'installing'
+                              ? 'warning'
+                              : 'error'
+                        }
+                      >
+                        <BadgeText>
+                          {swStatus === 'active'
+                            ? 'Available'
+                            : swStatus === 'installing'
+                              ? 'Installing'
+                              : swStatus === 'unsupported'
+                                ? 'Unsupported'
+                                : 'Unavailable'}
+                        </BadgeText>
                       </Badge>
                     </TableData>
                   </TableRow>
@@ -285,6 +306,18 @@ export default function SettingsScreen() {
                   </TableRow>
                 </TableFooter>
               </Table>
+              <Button
+                size='md'
+                action='primary'
+                variant='outline'
+                onPress={forceAppUpdate}
+                isDisabled={isUpdatingApp}
+                className='mt-3 mb-3'
+              >
+                <ButtonText>
+                  {isUpdatingApp ? 'Updating...' : 'Force Update App'}
+                </ButtonText>
+              </Button>
               <Heading size='lg' className='text-primary-500 mb-2'>
                 Storage Usage
               </Heading>
@@ -329,12 +362,22 @@ export default function SettingsScreen() {
                   >
                     <ProgressFilledTrack className='bg-warning-500' />
                   </Progress>
-                  <Text className='text-xs text-typography-600'>
-                    {storage.quota > 0
-                      ? ((videoStorageBytes / storage.quota) * 100).toFixed(1)
-                      : '0.0'}
-                    % of total storage
-                  </Text>
+                  <HStack className='justify-between items-center'>
+                    <Text className='text-xs text-typography-600'>
+                      {storage.quota > 0
+                        ? ((videoStorageBytes / storage.quota) * 100).toFixed(1)
+                        : '0.0'}
+                      % of total storage
+                    </Text>
+                    <Button
+                      size='xs'
+                      variant='link'
+                      action='primary'
+                      onPress={() => router.push('/videos')}
+                    >
+                      <ButtonText className='text-xs'>Manage Videos</ButtonText>
+                    </Button>
+                  </HStack>
                 </VStack>
               </VStack>
             </Card>

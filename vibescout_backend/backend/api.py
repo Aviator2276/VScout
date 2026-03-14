@@ -15,6 +15,7 @@ from .schemas import (
     BulkRobotActionsResponseSchema,
     BulkRobotActionsSchema,
     CompetitionSchema,
+    MatchRobotActionsResponseSchema,
     MatchSchema,
     PrescouttingUpdateSchema,
     RobotActionCreateSchema,
@@ -539,72 +540,85 @@ def bulk_create_robot_actions(request, payload: BulkRobotActionsSchema):
     return created_actions
 
 
-@api.get("/robot-actions/bulk", response=BulkRobotActionsResponseSchema)
+@api.get("/robot-actions/bulk", response=MatchRobotActionsResponseSchema)
 def get_bulk_robot_actions(
-    request, competition_code: str, match_number: int, team_number: int
+    request, competition_code: str, match_number: int
 ):
     """
-    Returns robot action durations and fuel counts for a team in a match.
+    Returns robot action durations and fuel counts for all teams in a match.
 
     Fuel counts come from the match's official TBA data (not scouter input).
     Actions are split into auto (start_time < 15) and tele (start_time >= 15).
     """
     competition = get_object_or_404(Competition, code=competition_code)
     match = get_object_or_404(Match, competition=competition, match_number=match_number)
-    team = get_object_or_404(Team, number=team_number)
 
-    actions = RobotAction.objects.filter(match=match, team=team).order_by("start_time")
+    # All actions for this match, ordered by start_time
+    all_actions = RobotAction.objects.filter(match=match).order_by("start_time")
 
-    # Determine team position to look up attributed fuel totals
-    position_map = {
-        "blue_1": match.blue_team_1_id,
-        "blue_2": match.blue_team_2_id,
-        "blue_3": match.blue_team_3_id,
-        "red_1": match.red_team_1_id,
-        "red_2": match.red_team_2_id,
-        "red_3": match.red_team_3_id,
-    }
-    position = next((pos for pos, tid in position_map.items() if tid == team.id), None)
+    # Group actions by team id
+    actions_by_team = {}
+    for action in all_actions:
+        actions_by_team.setdefault(action.team_id, []).append(action)
 
-    auto_fuel = getattr(match, f"{position}_auto_fuel", 0) if position else 0
-    tele_fuel = getattr(match, f"{position}_teleop_fuel", 0) if position else 0
+    # Map positions to team ids and fuel field names
+    positions = [
+        ("blue_1", match.blue_team_1_id, match.blue_team_1),
+        ("blue_2", match.blue_team_2_id, match.blue_team_2),
+        ("blue_3", match.blue_team_3_id, match.blue_team_3),
+        ("red_1", match.red_team_1_id, match.red_team_1),
+        ("red_2", match.red_team_2_id, match.red_team_2),
+        ("red_3", match.red_team_3_id, match.red_team_3),
+    ]
 
-    # Calculate total shooting duration in each period to distribute fuel proportionally
-    auto_shoot_duration = sum(
-        float(a.end_time - a.start_time)
-        for a in actions
-        if a.action_type == "shooting" and a.start_time < 15
-    )
-    tele_shoot_duration = sum(
-        float(a.end_time - a.start_time)
-        for a in actions
-        if a.action_type == "shooting" and a.start_time >= 15
-    )
+    teams_result = []
+    for position, team_id, team in positions:
+        if not team_id:
+            continue
 
-    auto_actions = []
-    tele_actions = []
-    for action in actions:
-        duration = float(action.end_time - action.start_time)
-        item = {"duration": duration, "action": action.action_type}
+        actions = actions_by_team.get(team_id, [])
 
-        if action.action_type == "shooting":
+        auto_fuel = getattr(match, f"{position}_auto_fuel", 0) or 0
+        tele_fuel = getattr(match, f"{position}_teleop_fuel", 0) or 0
+
+        # Calculate total shooting duration in each period to distribute fuel proportionally
+        auto_shoot_duration = sum(
+            float(a.end_time - a.start_time)
+            for a in actions
+            if a.action_type == "shooting" and a.start_time < 15
+        )
+        tele_shoot_duration = sum(
+            float(a.end_time - a.start_time)
+            for a in actions
+            if a.action_type == "shooting" and a.start_time >= 15
+        )
+
+        auto_actions = []
+        tele_actions = []
+        for action in actions:
+            duration = float(action.end_time - action.start_time)
+            item = {"duration": duration, "action": action.action_type}
+
+            if action.action_type == "shooting":
+                if action.start_time < 15:
+                    item["fuel"] = round(auto_fuel * (duration / auto_shoot_duration)) if auto_shoot_duration else 0
+                else:
+                    item["fuel"] = round(tele_fuel * (duration / tele_shoot_duration)) if tele_shoot_duration else 0
+
             if action.start_time < 15:
-                item["fuel"] = round(auto_fuel * (duration / auto_shoot_duration)) if auto_shoot_duration else 0
+                auto_actions.append(item)
             else:
-                item["fuel"] = round(tele_fuel * (duration / tele_shoot_duration)) if tele_shoot_duration else 0
+                tele_actions.append(item)
 
-        if action.start_time < 15:
-            auto_actions.append(item)
-        else:
-            tele_actions.append(item)
+        teams_result.append({
+            "team_number": team.number,
+            "auto": auto_actions,
+            "tele": tele_actions,
+            "auto_fuel": auto_fuel,
+            "tele_fuel": tele_fuel,
+        })
 
-    return {
-        "team_number": team_number,
-        "auto": auto_actions,
-        "tele": tele_actions,
-        "auto_fuel": auto_fuel,
-        "tele_fuel": tele_fuel,
-    }
+    return {"teams": teams_result}
 
 
 @api.get("/scary-api")

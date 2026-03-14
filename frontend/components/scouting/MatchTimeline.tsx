@@ -22,18 +22,21 @@ interface MatchTimelineProps {
   actionLog: ActionLogEntry[];
   elapsedMatchSec: number;
   isFinished?: boolean;
+  missedActionTime?: number | null;
 }
 
 interface DisplaySegment {
   startPct: number;
   widthPct: number;
   color: string;
+  pulse?: boolean;
 }
 
 export function MatchTimeline({
   actionLog,
   elapsedMatchSec,
   isFinished = false,
+  missedActionTime,
 }: MatchTimelineProps) {
   const endTime = isFinished ? TOTAL_MATCH_DURATION : elapsedMatchSec;
 
@@ -46,14 +49,18 @@ export function MatchTimeline({
       const entry = actionLog[i];
       const nextTime =
         i + 1 < actionLog.length ? actionLog[i + 1].matchTimeSec : endTime;
-      const color = ACTION_COLORS[entry.action].bg;
+      const color = ACTION_COLORS[entry.action]?.bg || '#6b7280';
+      const shouldPulse =
+        missedActionTime != null &&
+        entry.matchTimeSec === missedActionTime &&
+        entry.action === 'missed';
 
       const autoStart = Math.max(entry.matchTimeSec, 0);
       const autoEnd = Math.min(nextTime, AUTO_DURATION);
       if (autoStart < autoEnd) {
         const startPct = (autoStart / DISPLAYABLE_DURATION) * 100;
         const widthPct = ((autoEnd - autoStart) / DISPLAYABLE_DURATION) * 100;
-        result.push({ startPct, widthPct, color });
+        result.push({ startPct, widthPct, color, pulse: shouldPulse });
       }
 
       const holdEnd = AUTO_DURATION + HOLD_DURATION;
@@ -64,12 +71,12 @@ export function MatchTimeline({
         const displayWidth = teleEnd - teleStart;
         const startPct = (displayStart / DISPLAYABLE_DURATION) * 100;
         const widthPct = (displayWidth / DISPLAYABLE_DURATION) * 100;
-        result.push({ startPct, widthPct, color });
+        result.push({ startPct, widthPct, color, pulse: shouldPulse });
       }
     }
 
     return result;
-  }, [actionLog, endTime]);
+  }, [actionLog, endTime, missedActionTime]);
 
   // Tick marks at period boundaries (displayable periods only)
   const displayablePeriods = useMemo(
@@ -125,26 +132,20 @@ export function MatchTimeline({
 
   return (
     <Box className='w-full px-3 py-1'>
-      {/* Period labels */}
-      <View style={{ position: 'relative', height: 14 }}>
-        {periodLabels.map((p, idx) => (
-          <View
-            key={`label-${idx}`}
-            style={{
-              position: 'absolute',
-              left: `${p.startPct}%` as any,
-              width: `${p.widthPct}%` as any,
-              height: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Text className='text-[10px] text-typography-500 font-medium'>
-              {p.label}
-            </Text>
-          </View>
-        ))}
-      </View>
+      {/* Pulse animation for missed segments */}
+      {missedActionTime != null && (
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes missed-pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+              }
+              .missed-pulse { animation: missed-pulse 0.6s ease-in-out infinite; }
+            `,
+          }}
+        />
+      )}
 
       {/* Timeline bar */}
       <View
@@ -160,6 +161,7 @@ export function MatchTimeline({
         {segments.map((seg, idx) => (
           <View
             key={idx}
+            className={seg.pulse ? 'missed-pulse' : ''}
             style={{
               position: 'absolute',
               top: 0,
@@ -202,6 +204,27 @@ export function MatchTimeline({
             className='animate-pulse'
           />
         )}
+      </View>
+
+      {/* Period labels */}
+      <View style={{ position: 'relative', height: 14 }}>
+        {periodLabels.map((p, idx) => (
+          <View
+            key={`label-${idx}`}
+            style={{
+              position: 'absolute',
+              left: `${p.startPct}%` as any,
+              width: `${p.widthPct}%` as any,
+              height: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text className='text-[10px] text-typography-500 font-medium'>
+              {p.label}
+            </Text>
+          </View>
+        ))}
       </View>
     </Box>
   );

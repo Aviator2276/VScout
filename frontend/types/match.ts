@@ -75,4 +75,10 @@ export interface Match {
   blue_penalties: number;
   red_penalties: number;
   video_available: boolean;
+  blue_1_scouted?: boolean;
+  blue_2_scouted?: boolean;
+  blue_3_scouted?: boolean;
+  red_1_scouted?: boolean;
+  red_2_scouted?: boolean;
+  red_3_scouted?: boolean;
 }

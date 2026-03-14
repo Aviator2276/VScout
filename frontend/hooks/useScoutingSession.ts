@@ -12,8 +12,9 @@ import {
   getDisplayCountdown,
   getPeriodAtTime,
 } from '@/utils/matchTimeline';
-import { db } from '@/utils/db';
+import { db, markTeamScouted } from '@/utils/db';
 import { saveScoutRecord } from '@/api/scout';
+import { calculateSingleTeamStats } from '@/api/teamStats';
 
 export type SessionState = 'ready' | 'running' | 'paused' | 'finished';
 
@@ -43,12 +44,16 @@ export interface ScoutingSession {
   periodLabel: string;
   actionLog: ActionLogEntry[];
   isStalled: boolean;
+  missedActionTime: number | null;
   clearStall: () => void;
   startSession: () => void;
   setAction: (action: RobotAction) => void;
   toggleDisabled: () => void;
   toggleClimbing: () => void;
   toggleDefending: () => void;
+  markMissed: () => boolean;
+  undoMissed: () => void;
+  clearMissedPulse: () => void;
   pauseSession: () => void;
   resumeSession: () => void;
   resetSession: () => void;
@@ -71,6 +76,8 @@ export function useScoutingSession({
   const [isClimbing, setIsClimbing] = useState(false);
   const [isDefending, setIsDefending] = useState(false);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
+  const [missedActionTime, setMissedActionTime] = useState<number | null>(null);
+  const missedBackupRef = useRef<ActionLogEntry[] | null>(null);
 
   const rafRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -271,6 +278,66 @@ export function useScoutingSession({
     });
   }, [setAction, canChangeAction]);
 
+  const markMissed = useCallback((): boolean => {
+    const currentRealMs = elapsedRealMsRef.current;
+    const currentMatchSec = (currentRealMs / 1000) * playbackSpeed;
+
+    if (actionLog.length === 0) return false;
+
+    // Find the most recent shooting action by checking the last entry first,
+    // then the second-to-last (in case current action just changed from shooting)
+    let shootingIdx = -1;
+    const lastIdx = actionLog.length - 1;
+
+    // Check if the last action is shooting
+    if (actionLog[lastIdx].action === 'shooting') {
+      shootingIdx = lastIdx;
+    }
+    // Or if the second-to-last is shooting (user just moved away from shooting)
+    else if (lastIdx > 0 && actionLog[lastIdx - 1].action === 'shooting') {
+      shootingIdx = lastIdx - 1;
+    }
+
+    if (shootingIdx === -1) return false;
+
+    const shootingEntry = actionLog[shootingIdx];
+    const nextTime =
+      shootingIdx + 1 < actionLog.length
+        ? actionLog[shootingIdx + 1].matchTimeSec
+        : currentMatchSec;
+    const duration = nextTime - shootingEntry.matchTimeSec;
+
+    // Must be at least 0.25 seconds long
+    if (duration < 0.25) return false;
+
+    // Must not be more than 20 seconds ago
+    if (currentMatchSec - shootingEntry.matchTimeSec > 20) return false;
+
+    // Save backup for undo
+    missedBackupRef.current = [...actionLog];
+
+    // Replace the shooting action with missed
+    const newLog = [...actionLog];
+    newLog[shootingIdx] = { ...newLog[shootingIdx], action: 'missed' };
+    setActionLog(newLog);
+    setMissedActionTime(shootingEntry.matchTimeSec);
+
+    return true;
+  }, [actionLog, playbackSpeed]);
+
+  const undoMissed = useCallback(() => {
+    if (missedBackupRef.current) {
+      setActionLog(missedBackupRef.current);
+      missedBackupRef.current = null;
+      setMissedActionTime(null);
+    }
+  }, []);
+
+  const clearMissedPulse = useCallback(() => {
+    setMissedActionTime(null);
+    missedBackupRef.current = null;
+  }, []);
+
   const pauseSession = useCallback(() => {
     if (sessionStateRef.current !== 'running' || isPausedRef.current) return;
     isPausedRef.current = true;
@@ -315,6 +382,8 @@ export function useScoutingSession({
     pausedElapsedRef.current = 0;
     lastTickTimeRef.current = 0;
     setIsStalled(false);
+    setMissedActionTime(null);
+    missedBackupRef.current = null;
     if (pendingTraversingRef.current !== null) {
       clearTimeout(pendingTraversingRef.current);
       pendingTraversingRef.current = null;
@@ -377,8 +446,18 @@ export function useScoutingSession({
       await db.robotActions.put(record);
       // Save to scoutRecords for upload tracking
       await saveScoutRecord(record);
+      // Mark team as scouted in the match
+      await markTeamScouted(
+        competitionCode,
+        matchType,
+        setNumber,
+        matchNumber,
+        teamNumber
+      );
+      // Recalculate stats for this team
+      await calculateSingleTeamStats(teamNumber);
     },
-    [getRecordData],
+    [getRecordData, competitionCode, matchType, setNumber, matchNumber, teamNumber],
   );
 
   return {
@@ -393,12 +472,16 @@ export function useScoutingSession({
     periodLabel: period.label,
     actionLog,
     isStalled,
+    missedActionTime,
     clearStall,
     startSession,
     setAction,
     toggleDisabled,
     toggleClimbing,
     toggleDefending,
+    markMissed,
+    undoMissed,
+    clearMissedPulse,
     pauseSession,
     resumeSession,
     resetSession,

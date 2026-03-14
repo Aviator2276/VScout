@@ -52,6 +52,11 @@ export const ACTION_COLORS: Record<RobotAction, ActionColor> = {
     text: colors.white,
     tw: 'bg-blue-500',
   },
+  missed: {
+    bg: colors.rose[500],
+    text: colors.white,
+    tw: 'bg-rose-500',
+  },
 };
 
 export const ACTION_LABELS: Record<RobotAction, string> = {
@@ -63,4 +68,5 @@ export const ACTION_LABELS: Record<RobotAction, string> = {
   herding: 'Herding',
   disabled: 'Disabled',
   climbing: 'Climbing',
+  missed: 'Missed',
 };

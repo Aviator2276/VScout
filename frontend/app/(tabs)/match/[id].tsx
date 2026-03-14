@@ -59,7 +59,14 @@ import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 type TabType = 'overview' | 'scores';
 
 export default function MatchDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from, teamId } = useLocalSearchParams<{ id: string; from?: string; teamId?: string }>();
+
+  const getBackRoute = () => {
+    if (from === 'team' && teamId) {
+      return `/(tabs)/team/${teamId}`;
+    }
+    return '/(tabs)/matches';
+  };
   const router = useRouter();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,10 +102,13 @@ export default function MatchDetailScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
+      // Reload match data when screen comes into focus (e.g., after scouting)
+      loadMatchDetails();
+      
       return () => {
         videoPlayerRef.current?.pause();
       };
-    }, []),
+    }, [id]),
   );
 
   async function loadMatchDetails() {
@@ -167,6 +177,17 @@ export default function MatchDetailScreen() {
   const blueTeams = [match.blue_team_1, match.blue_team_2, match.blue_team_3];
   const redTeams = [match.red_team_1, match.red_team_2, match.red_team_3];
 
+  const scoutedStatus = {
+    blue_team_1: match.blue_1_scouted ?? false,
+    blue_team_2: match.blue_2_scouted ?? false,
+    blue_team_3: match.blue_3_scouted ?? false,
+    red_team_1: match.red_1_scouted ?? false,
+    red_team_2: match.red_2_scouted ?? false,
+    red_team_3: match.red_3_scouted ?? false,
+  };
+
+  const hasAnyScouted = Object.values(scoutedStatus).some(Boolean);
+
   const isMatchCompleted = (): boolean => {
     if (!match.end_match_time) return false;
     const currentTime = Math.floor(Date.now() / 1000);
@@ -179,7 +200,7 @@ export default function MatchDetailScreen() {
         title={'Match ' + match.match_number}
         isMainScreen={false}
         showBackButton
-        fallbackRoute='/(tabs)/matches'
+        fallbackRoute={getBackRoute()}
       />
       <Box className='max-w-2xl self-center w-full'>
         <ScrollView className='flex-1 px-4 pb-4 pt-2'>
@@ -233,25 +254,28 @@ export default function MatchDetailScreen() {
                   Blue Alliance
                 </Text>
                 <VStack className='gap-1'>
-                  {blueTeams.map((team, index) => (
-                    <Pressable
-                      key={`blue-${index}`}
-                      onPress={() =>
-                        router.push(
-                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                        )
-                      }
-                    >
-                      <HStack className='grid grid-cols-4 items-center p-1 bg-blue-500/20 rounded'>
-                        <Text className='col-span-1 font-medium'>
-                          {team.number}
-                        </Text>
-                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    </Pressable>
-                  ))}
+                  {blueTeams.map((team, index) => {
+                    const isScouted = scoutedStatus[`blue_team_${index + 1}` as keyof typeof scoutedStatus];
+                    return (
+                      <Pressable
+                        key={`blue-${index}`}
+                        onPress={() =>
+                          router.push(
+                            `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                          )
+                        }
+                      >
+                        <HStack className={`grid grid-cols-4 items-center p-1 rounded bg-blue-500/20 ${isScouted ? 'opacity-40' : ''}`}>
+                          <Text className='col-span-1 font-medium'>
+                            {team.number}
+                          </Text>
+                          <Text className='col-span-3 text-xs text-right truncate text-typography-600'>
+                            {team.name}
+                          </Text>
+                        </HStack>
+                      </Pressable>
+                    );
+                  })}
                 </VStack>
               </VStack>
               <VStack space='xs' className='w-full'>
@@ -259,28 +283,36 @@ export default function MatchDetailScreen() {
                   Red Alliance
                 </Text>
                 <VStack className='gap-1'>
-                  {redTeams.map((team, index) => (
-                    <Pressable
-                      key={`red-${index}`}
-                      onPress={() =>
-                        router.push(
-                          `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
-                        )
-                      }
-                    >
-                      <HStack className='grid grid-cols-4 items-center p-1 bg-red-500/20 rounded'>
-                        <Text className='col-span-1 font-medium'>
-                          {team.number}
-                        </Text>
-                        <Text className='col-span-3 text-xs text-right text-typography-600 truncate'>
-                          {team.name}
-                        </Text>
-                      </HStack>
-                    </Pressable>
-                  ))}
+                  {redTeams.map((team, index) => {
+                    const isScouted = scoutedStatus[`red_team_${index + 1}` as keyof typeof scoutedStatus];
+                    return (
+                      <Pressable
+                        key={`red-${index}`}
+                        onPress={() =>
+                          router.push(
+                            `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
+                          )
+                        }
+                      >
+                        <HStack className={`grid grid-cols-4 items-center p-1 rounded bg-red-500/20 ${isScouted ? 'opacity-40' : ''}`}>
+                          <Text className='col-span-1 font-medium'>
+                            {team.number}
+                          </Text>
+                          <Text className='col-span-3 text-xs text-right truncate text-typography-600'>
+                            {team.name}
+                          </Text>
+                        </HStack>
+                      </Pressable>
+                    );
+                  })}
                 </VStack>
               </VStack>
             </HStack>
+            {hasAnyScouted && (
+              <Text className='text-xs text-typography-400 mt-2'>
+                * Grayed out teams have already been scouted
+              </Text>
+            )}
           </Card>
 
           {/* Scout Button */}
@@ -344,27 +376,53 @@ export default function MatchDetailScreen() {
                           };
                           const isSelected =
                             selectedTeam?.number === team.number;
+                          const isScouted =
+                            scoutedStatus[key as keyof typeof scoutedStatus];
                           return (
-                            <Pressable
+                            <Popover
                               key={key}
-                              onPress={() => setSelectedTeam(team)}
-                              className='flex-1'
+                              placement='top'
+                              size='xs'
+                              trigger={(triggerProps) => (
+                                <Pressable
+                                  {...(isScouted ? triggerProps : {})}
+                                  onPress={() =>
+                                    !isScouted && setSelectedTeam(team)
+                                  }
+                                  className='flex-1'
+                                >
+                                  <Badge
+                                    size='lg'
+                                    variant='solid'
+                                    className={`${
+                                      alliance === 'blue'
+                                        ? 'bg-blue-500/75'
+                                        : 'bg-red-500/75'
+                                    } rounded font-medium justify-center py-1 ${
+                                      isSelected &&
+                                      !isScouted &&
+                                      '!border-amber-400 border-[0.15rem] py-[0.1rem]'
+                                    } ${
+                                      isScouted ? 'opacity-40' : ''
+                                    }`}
+                                  >
+                                    <BadgeText>
+                                      {team.number}
+                                    </BadgeText>
+                                  </Badge>
+                                </Pressable>
+                              )}
                             >
-                              <Badge
-                                size='lg'
-                                variant='solid'
-                                className={`${
-                                  alliance === 'blue'
-                                    ? 'bg-blue-500/75'
-                                    : 'bg-red-500/75'
-                                } rounded font-medium justify-center py-1 ${
-                                  isSelected &&
-                                  '!border-amber-400 border-[0.15rem] py-[0.1rem]'
-                                }`}
-                              >
-                                <BadgeText>{team.number}</BadgeText>
-                              </Badge>
-                            </Pressable>
+                              <PopoverBackdrop />
+                              <PopoverContent>
+                                <PopoverArrow />
+                                <PopoverBody>
+                                  <Text className='text-typography-900'>
+                                    Team {team.number} has already been scouted
+                                  </Text>
+                                </PopoverBody>
+                              </PopoverContent>
+                            </Popover>
                           );
                         })}
                       </HStack>

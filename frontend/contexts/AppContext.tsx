@@ -20,6 +20,11 @@ import {
   syncTeamPictures,
   NoCompetitionCodeError as TeamNoCompCodeError,
 } from '@/api/teams';
+import {
+  syncRobotActions,
+  NoCompetitionCodeError as ScoutNoCompCodeError,
+} from '@/api/scout';
+import { calculateAllTeamStats } from '@/api/teamStats';
 
 type DataFreshnessStatus = 'current' | 'aging' | 'stale';
 
@@ -43,6 +48,10 @@ interface AppContextType {
   // Upload trigger
   triggerUpload: () => void;
   registerUploadHandler: (handler: () => void) => void;
+  // Service worker / offline
+  swStatus: 'active' | 'installing' | 'unsupported' | 'none';
+  forceAppUpdate: () => Promise<void>;
+  isUpdatingApp: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +80,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     null,
   );
   const uploadHandlerRef = useRef<(() => void) | null>(null);
+  const [swStatus, setSwStatus] = useState<
+    'active' | 'installing' | 'unsupported' | 'none'
+  >('none');
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
 
   useEffect(() => {
     loadCompetitionCode();
@@ -80,6 +93,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     checkServerConnection();
     setupConnectionListeners();
     performDataRefresh();
+    checkServiceWorkerStatus();
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -341,6 +355,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('Refreshing team info data...');
       await cacheTeamInfo();
 
+      // Sync robot actions (depends on matches being cached first)
+      console.log('Syncing robot actions data...');
+      await syncRobotActions();
+
+      // Calculate team stats from match data
+      console.log('Calculating team stats...');
+      await calculateAllTeamStats();
+
       // Update timestamp and hash, store in db for persistence
       const now = new Date();
       await db.config.put({ key: 'lastDataUpdate', value: now.toISOString() });
@@ -354,7 +376,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (
         error instanceof MatchNoCompCodeError ||
-        error instanceof TeamNoCompCodeError
+        error instanceof TeamNoCompCodeError ||
+        error instanceof ScoutNoCompCodeError
       ) {
         console.log('No competition code set, skipping data refresh');
       } else {
@@ -398,6 +421,80 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to save theme:', error);
       throw error;
+    }
+  }
+
+  async function checkServiceWorkerStatus() {
+    if (!('serviceWorker' in navigator)) {
+      setSwStatus('unsupported');
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration?.active) {
+        setSwStatus('active');
+      } else if (registration?.installing || registration?.waiting) {
+        setSwStatus('installing');
+      } else {
+        setSwStatus('none');
+      }
+
+      // Listen for future state changes
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        setSwStatus('active');
+      });
+    } catch (error) {
+      console.error('Failed to check service worker status:', error);
+      setSwStatus('none');
+    }
+  }
+
+  async function forceAppUpdate() {
+    if (!('serviceWorker' in navigator)) return;
+
+    setIsUpdatingApp(true);
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        // Listen for the new SW to take over, then reload
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
+        // Force the SW to check for updates
+        await registration.update();
+
+        // If there's a waiting worker after the update check, tell it to activate
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          // controllerchange listener above will reload
+          return;
+        }
+
+        // Also listen for a new installing worker that may appear
+        if (registration.installing) {
+          registration.installing.addEventListener('statechange', (e) => {
+            const sw = e.target as ServiceWorker;
+            if (sw.state === 'installed' && registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+          return;
+        }
+
+        // No update found — app is already up to date
+        setIsUpdatingApp(false);
+      } else {
+        setIsUpdatingApp(false);
+      }
+    } catch (error) {
+      console.error('Failed to force app update:', error);
+      setIsUpdatingApp(false);
     }
   }
 
@@ -461,6 +558,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isRefreshingData,
         triggerUpload,
         registerUploadHandler,
+        swStatus,
+        forceAppUpdate,
+        isUpdatingApp,
       }}
     >
       {children}

@@ -4,4 +4,6 @@ module.exports = {
   swDest: 'dist/sw.js',
   ignoreURLParametersMatching: [/^utm_/, /^fbclid$/],
   maximumFileSizeToCacheInBytes: 5242880,
+  skipWaiting: true,
+  clientsClaim: true,
 };

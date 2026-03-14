@@ -1,6 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import { ScrollView, ActivityIndicator, FlatList } from 'react-native';
+import { Match } from '@/types/match';
+import { db } from '@/utils/db';
+import { TeamMatchCard } from '@/components/TeamMatchCard';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
@@ -39,7 +42,7 @@ import {
 import { TeamPictureCamera } from '@/components/TeamPictureCamera';
 import { useApp } from '@/contexts/AppContext';
 
-type TabType = 'overview' | 'prescout';
+type TabType = 'overview' | 'prescout' | 'matches';
 
 export default function TeamDetailScreen() {
   const { id, from, matchId } = useLocalSearchParams<{
@@ -57,6 +60,8 @@ export default function TeamDetailScreen() {
   const [showPrescoutAlert, setShowPrescoutAlert] = useState(false);
   const [showCameraView, setShowCameraView] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
+  const [teamMatches, setTeamMatches] = useState<Match[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(false);
 
   const getBackRoute = () => {
     if (from === 'match' && matchId) {
@@ -68,8 +73,39 @@ export default function TeamDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       loadTeamDetails();
+      loadTeamMatches();
     }, [id]),
   );
+
+  async function loadTeamMatches() {
+    try {
+      setMatchesLoading(true);
+      const teamNumber = parseInt(id || '0', 10);
+      if (!teamNumber || !competitionCode) return;
+
+      const allMatches = await db.matches
+        .where('competitionCode')
+        .equals(competitionCode)
+        .toArray();
+
+      const filtered = allMatches.filter(
+        (m) =>
+          m.blue_team_1.number === teamNumber ||
+          m.blue_team_2.number === teamNumber ||
+          m.blue_team_3.number === teamNumber ||
+          m.red_team_1.number === teamNumber ||
+          m.red_team_2.number === teamNumber ||
+          m.red_team_3.number === teamNumber,
+      );
+
+      filtered.sort((a, b) => a.match_number - b.match_number);
+      setTeamMatches(filtered);
+    } catch (err) {
+      console.error('Failed to load team matches:', err);
+    } finally {
+      setMatchesLoading(false);
+    }
+  }
 
   async function handlePictureCapture(capturedUri: string) {
     setUri(capturedUri);
@@ -211,19 +247,28 @@ export default function TeamDetailScreen() {
               size='xs'
               variant={activeTab === 'overview' ? 'solid' : 'link'}
               action='secondary'
-              className='w-1/2'
+              className='w-1/3'
               onPress={() => setActiveTab('overview')}
             >
               <Text className='text-center font-semibold'>Statistics</Text>
             </Button>
             <Button
               size='xs'
+              variant={activeTab === 'matches' ? 'solid' : 'link'}
+              action='secondary'
+              className='w-1/3'
+              onPress={() => setActiveTab('matches')}
+            >
+              <Text className='text-center font-semibold'>Matches</Text>
+            </Button>
+            <Button
+              size='xs'
               variant={activeTab === 'prescout' ? 'solid' : 'link'}
               action='secondary'
-              className='w-1/2'
+              className='w-1/3'
               onPress={() => setActiveTab('prescout')}
             >
-              <Text className='text-center font-semibold'>Prescout Info</Text>
+              <Text className='text-center font-semibold'>Prescout</Text>
             </Button>
           </HStack>
           {activeTab === 'overview' && (
@@ -242,71 +287,79 @@ export default function TeamDetailScreen() {
                       <BadgeIcon as={CircleGauge}></BadgeIcon>
                       <BadgeText className='capitalize ml-1'>
                         Consistency:{' '}
-                        {Math.round(parseFloat(team.consistency_rating) * 100)}%
+                        {team.local_consistency !== undefined
+                          ? Math.round(team.local_consistency * 100)
+                          : Math.round(parseFloat(team.consistency_rating) * 100)}%
                       </BadgeText>
                     </Badge>
                   </HStack>
 
                   <VStack space='xs'>
                     <HStack className='justify-between'>
-                      <Text className='text-typography-700'>Accuracy:</Text>
+                      <Text className='text-typography-700'>
+                        Median Auto Fuel:
+                      </Text>
                       <Text className='font-semibold'>
-                        {Math.round(parseFloat(team.accuracy) * 100)}%
+                        {team.median_auto_fuel ?? '-'} ±{' '}
+                        {team.sd_auto_fuel ?? '-'}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Average Auto Fuel:
+                        Median Teleop Fuel:
                       </Text>
                       <Text className='font-semibold'>
-                        {Math.round(parseFloat(team.avg_auto_fuel) * 10) / 10} ±{' '}
-                        {Math.round(parseFloat(team.avg_auto_fuel_sd) * 10) /
-                          10}
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>Average Fuel:</Text>
-                      <Text className='font-semibold'>
-                        {Math.round(parseFloat(team.avg_fuel_scored) * 10) / 10}{' '}
-                        ± {Math.round(parseFloat(team.avg_fuel_sd) * 10) / 10}
+                        {team.median_tele_fuel ?? '-'} ±{' '}
+                        {team.sd_tele_fuel ?? '-'}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Average Fuel Shuttle:
+                        Median Climb Level:
                       </Text>
                       <Text className='font-semibold'>
-                        {Math.round(parseFloat(team.avg_shuttle) * 10) / 10}
+                        L{team.median_climb_level ?? '-'} ±{' '}
+                        {team.sd_climb_level ?? '-'}
                       </Text>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Average Climb Level:
-                      </Text>
-                      <Text className='font-semibold'>
-                        L
-                        {Math.round(parseFloat(team.avg_climb_points) * 10) /
-                          10}{' '}
-                        ±{' '}
-                        {Math.round(parseFloat(team.avg_climb_points_sd) * 10) /
-                          10}
-                      </Text>
-                    </HStack>
-                    <HStack className='justify-between'>
-                      <Text className='text-typography-700'>
-                        Average Points Contributed:
+                        Median Points Contributed:
                       </Text>
                       <Badge size='md' variant='solid' action='info'>
                         <BadgeText>
-                          {Math.round(
-                            parseFloat(team.avg_points_contributed) * 10,
-                          ) / 10}
+                          {team.median_points_contributed ?? '-'} ±{' '}
+                          {team.sd_points_contributed ?? '-'}
                         </BadgeText>
                       </Badge>
                     </HStack>
                   </VStack>
                 </VStack>
               </Card>
+            </>
+          )}
+          {activeTab === 'matches' && (
+            <>
+              {matchesLoading ? (
+                <Center className='py-8'>
+                  <ActivityIndicator size='large' />
+                </Center>
+              ) : teamMatches.length === 0 ? (
+                <Card variant='outline' className='p-4 mb-2'>
+                  <Text className='text-center text-typography-500'>
+                    No matches found for this team
+                  </Text>
+                </Card>
+              ) : (
+                teamMatches.map((match) => (
+                  <TeamMatchCard
+                    key={`${match.match_type}-${match.set_number}-${match.match_number}`}
+                    match={match}
+                    teamNumber={parseInt(id || '0', 10)}
+                    competitionCode={competitionCode || ''}
+                  />
+                ))
+              )}
             </>
           )}
           {activeTab === 'prescout' && (

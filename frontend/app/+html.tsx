@@ -42,19 +42,24 @@ export default function Root({ children }: PropsWithChildren) {
         */}
         <ScrollViewStyleReset />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      console.log('Service Worker registered with scope:', registration.scope);
+    }).catch(function(error) {
+      console.error('Service Worker registration failed:', error);
+    });
+  });
+}
+`,
+          }}
+        />
+      </body>
     </html>
   );
 }
-
-const sw = `
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
-        }).catch(error => {
-            console.error('Service Worker registration failed:', error);
-        });
-    });
-}
-`;

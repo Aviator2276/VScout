@@ -8,9 +8,18 @@ import { HStack } from '@/components/ui/hstack';
 import { Badge, BadgeText, BadgeIcon } from '@/components/ui/badge';
 import { Heading } from '@/components/ui/heading';
 import { Divider } from '@/components/ui/divider';
-import { Team } from '@/types/match';
-import { ShieldPlus } from 'lucide-react-native';
+import { Match } from '@/types/match';
+import { ShieldPlus, ChevronDown } from 'lucide-react-native';
 import { calculateClimbPoints } from '@/utils/climbPoints';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionHeader,
+  AccordionTrigger,
+  AccordionTitleText,
+  AccordionIcon,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import {
   ChartConfig,
   ChartContainer,
@@ -20,7 +29,6 @@ import {
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 import { db } from '@/utils/db';
 import { RobotActionRecord } from '@/types/scouting';
-import { Box } from '@/components/ui/box';
 import { RobotAction } from '@/types/scouting';
 import {
   AUTO_DURATION,
@@ -32,24 +40,10 @@ import {
 } from '@/utils/matchTimeline';
 import { ACTION_COLORS } from '@/components/scouting/actionColors';
 
-export interface MatchTeamStats {
-  team: Team;
-  alliance: 'blue' | 'red';
-  position: 1 | 2 | 3;
-  autoFuel: number;
-  teleopFuel: number;
-  totalFuelScored: number;
-  autoClimb: boolean;
-  climbLevel: string;
-  totalAllianceScore: number;
-}
-
-interface MatchTeamCardProps {
-  stats: MatchTeamStats;
-  matchNumber?: number;
-  matchType?: string;
-  setNumber?: number;
-  competitionCode?: string;
+interface TeamMatchCardProps {
+  match: Match;
+  teamNumber: number;
+  competitionCode: string;
 }
 
 interface ActionLogEntry {
@@ -63,91 +57,50 @@ interface DisplaySegment {
   color: string;
 }
 
-export function MatchTeamCard({
-  stats,
-  matchNumber,
-  matchType,
-  setNumber,
+type PositionKey = 'blue_1' | 'blue_2' | 'blue_3' | 'red_1' | 'red_2' | 'red_3';
+
+function getTeamPosition(match: Match, teamNumber: number): { position: PositionKey; alliance: 'blue' | 'red'; slot: 1 | 2 | 3 } | null {
+  if (match.blue_team_1.number === teamNumber) return { position: 'blue_1', alliance: 'blue', slot: 1 };
+  if (match.blue_team_2.number === teamNumber) return { position: 'blue_2', alliance: 'blue', slot: 2 };
+  if (match.blue_team_3.number === teamNumber) return { position: 'blue_3', alliance: 'blue', slot: 3 };
+  if (match.red_team_1.number === teamNumber) return { position: 'red_1', alliance: 'red', slot: 1 };
+  if (match.red_team_2.number === teamNumber) return { position: 'red_2', alliance: 'red', slot: 2 };
+  if (match.red_team_3.number === teamNumber) return { position: 'red_3', alliance: 'red', slot: 3 };
+  return null;
+}
+
+export function TeamMatchCard({
+  match,
+  teamNumber,
   competitionCode,
-}: MatchTeamCardProps) {
+}: TeamMatchCardProps) {
   const router = useRouter();
-  const {
-    team,
-    alliance,
-    position,
-    autoFuel,
-    teleopFuel,
-    totalFuelScored,
-    autoClimb,
-    climbLevel,
-    totalAllianceScore,
-  } = stats;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [robotActions, setRobotActions] = useState<RobotActionRecord | null>(null);
 
-  const allianceColor =
-    alliance === 'blue' ? 'bg-blue-500/20' : 'bg-red-500/20';
-  const allianceBorderColor =
-    alliance === 'blue' ? 'border-blue-500' : 'border-red-500';
-
-  const handlePress = () => {
-    if (matchNumber) {
-      router.push(
-        `/(tabs)/team/${team.number}?from=match&matchId=${matchNumber}`,
-      );
-    } else {
-      router.push(`/(tabs)/team/${team.number}`);
-    }
-  };
-
-  // Using Tailwind amber-500 color to match Gluestack theme
-  const fuelColor = '#f59e0b'; // amber-500
-
-  const chartConfig = {
-    fuel: {
-      label: 'Fuel Scored',
-      color: fuelColor,
-    },
-  } satisfies ChartConfig;
-
-  // Fetch robot actions for fuel chart
-  const [robotActions, setRobotActions] = useState<RobotActionRecord | null>(
-    null,
-  );
+  const positionInfo = getTeamPosition(match, teamNumber);
 
   useEffect(() => {
-    if (
-      !competitionCode ||
-      !matchType ||
-      matchNumber === undefined ||
-      setNumber === undefined
-    ) {
-      return;
-    }
-
     async function loadRobotActions() {
       try {
         const cached = await db.robotActions
-          .where(
-            '[competitionCode+match_type+set_number+match_number+team_number]',
-          )
+          .where('[competitionCode+match_type+set_number+match_number+team_number]')
           .equals([
-            competitionCode!,
-            matchType!,
-            setNumber!,
-            matchNumber!,
-            team.number,
+            competitionCode,
+            match.match_type,
+            match.set_number,
+            match.match_number,
+            teamNumber,
           ])
           .first();
-
         setRobotActions(cached || null);
       } catch (error) {
         console.error('Failed to load robot actions:', error);
       }
     }
-
     loadRobotActions();
-  }, [competitionCode, matchType, setNumber, matchNumber, team.number]);
+  }, [competitionCode, match.match_type, match.set_number, match.match_number, teamNumber]);
 
-  // Build cumulative fuel chart data from robot actions
   const chartData = useMemo(() => {
     if (!robotActions) return [{ time: 0, fuel: 0 }];
 
@@ -155,7 +108,6 @@ export function MatchTeamCard({
     let currentTime = 0;
     let cumulativeFuel = 0;
 
-    // Process auto segments
     for (const segment of robotActions.auto) {
       currentTime += segment.duration;
       if (segment.fuel) {
@@ -167,11 +119,9 @@ export function MatchTeamCard({
       });
     }
 
-    // Skip hold period, continue from teleop start
     currentTime = AUTO_DURATION + HOLD_DURATION;
     points.push({ time: currentTime, fuel: cumulativeFuel });
 
-    // Process tele segments
     for (const segment of robotActions.tele) {
       currentTime += segment.duration;
       if (segment.fuel) {
@@ -186,14 +136,12 @@ export function MatchTeamCard({
     return points;
   }, [robotActions]);
 
-  // Convert robot actions to actionLog format for timeline display
   const actionLog = useMemo((): ActionLogEntry[] => {
     if (!robotActions) return [];
 
     const log: ActionLogEntry[] = [];
     let currentTime = 0;
 
-    // Process auto segments
     for (const segment of robotActions.auto) {
       log.push({
         matchTimeSec: currentTime,
@@ -202,7 +150,6 @@ export function MatchTeamCard({
       currentTime += segment.duration;
     }
 
-    // Skip hold period, continue from teleop start
     currentTime = AUTO_DURATION + HOLD_DURATION;
     for (const segment of robotActions.tele) {
       log.push({
@@ -215,7 +162,6 @@ export function MatchTeamCard({
     return log;
   }, [robotActions]);
 
-  // Timeline segments for display
   const timelineSegments = useMemo((): DisplaySegment[] => {
     if (actionLog.length === 0) return [];
 
@@ -224,8 +170,7 @@ export function MatchTeamCard({
 
     for (let i = 0; i < actionLog.length; i++) {
       const entry = actionLog[i];
-      const nextTime =
-        i + 1 < actionLog.length ? actionLog[i + 1].matchTimeSec : endTime;
+      const nextTime = i + 1 < actionLog.length ? actionLog[i + 1].matchTimeSec : endTime;
       const color = ACTION_COLORS[entry.action]?.bg || '#6b7280';
 
       const autoStart = Math.max(entry.matchTimeSec, 0);
@@ -251,11 +196,7 @@ export function MatchTeamCard({
     return result;
   }, [actionLog]);
 
-  // Period labels and tick marks
-  const displayablePeriods = useMemo(
-    () => MATCH_PERIODS.filter((p) => p.displayable),
-    [],
-  );
+  const displayablePeriods = useMemo(() => MATCH_PERIODS.filter((p) => p.displayable), []);
 
   const tickMarks = useMemo(() => {
     const ticks: number[] = [];
@@ -293,6 +234,33 @@ export function MatchTeamCard({
     });
   }, [displayablePeriods]);
 
+  if (!positionInfo) return null;
+
+  const { position, alliance, slot } = positionInfo;
+
+  const autoFuel = (match as any)[`${position}_auto_fuel`] as number ?? 0;
+  const teleopFuel = (match as any)[`${position}_teleop_fuel`] as number ?? 0;
+  const totalFuelScored = (match as any)[`${position}_fuel_scored`] as number ?? 0;
+  const autoClimb = (match as any)[`${position}_auto_climb`] as boolean ?? false;
+  const climbLevel = (match as any)[`${position}_climb`] as string ?? 'None';
+  const totalAllianceScore = alliance === 'blue' ? match.blue_total_score : match.red_total_score;
+
+  const allianceBorderColor = alliance === 'blue' ? 'border-blue-500' : 'border-red-500';
+  const allianceColor = alliance === 'blue' ? 'bg-blue-500/20' : 'bg-red-500/20';
+
+  const handlePress = () => {
+    router.push(`/(tabs)/match/${match.match_number}?from=team&teamId=${teamNumber}`);
+  };
+
+  const fuelColor = '#f59e0b';
+
+  const chartConfig = {
+    fuel: {
+      label: 'Fuel Scored',
+      color: fuelColor,
+    },
+  } satisfies ChartConfig;
+
   return (
     <Card
       variant='outline'
@@ -308,12 +276,18 @@ export function MatchTeamCard({
                 variant='solid'
                 action={alliance === 'blue' ? 'info' : 'error'}
               >
-                <BadgeText>{position}</BadgeText>
+                <BadgeText>{slot}</BadgeText>
               </Badge>
-              <Heading size='md'>{team.number}</Heading>
-              <Text className='text-typography-600 truncate line-clamp-1'>
-                {team.name || 'Unknown Team'}
-              </Text>
+              <Heading size='md' className='capitalize'>
+                {match.match_type} #{match.match_number}
+              </Heading>
+              <Badge
+                size='sm'
+                variant='solid'
+                action={match.has_played ? 'success' : 'muted'}
+              >
+                <BadgeText>{match.has_played ? 'Played' : 'Upcoming'}</BadgeText>
+              </Badge>
             </HStack>
             <HStack className='gap-1'>
               <Badge
@@ -361,7 +335,6 @@ export function MatchTeamCard({
               </HStack>
             </HStack>
           </VStack>
-          {/* Climb Stats */}
           <VStack space='xs'>
             <Text className='text-sm font-semibold text-typography-700'>
               Climb Scored
@@ -400,8 +373,7 @@ export function MatchTeamCard({
               <Text className='text-xs text-typography-500'>Climb:</Text>
               <Badge size='sm' variant='solid' action='muted'>
                 <BadgeText>
-                  {calculateClimbPoints(climbLevel) +
-                    calculateClimbPoints('', autoClimb)}
+                  {calculateClimbPoints(climbLevel) + calculateClimbPoints('', autoClimb)}
                 </BadgeText>
               </Badge>
             </HStack>
@@ -422,90 +394,115 @@ export function MatchTeamCard({
             </HStack>
           </VStack>
         </HStack>
-        <VStack>
-          <ChartContainer config={chartConfig} className='min-h-[200px] w-full'>
-            <LineChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey='time'
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                scale='time'
-                type='number'
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Line
-                dataKey='fuel'
-                type='monotone'
-                stroke={fuelColor}
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ChartContainer>
-          <View
-            style={{
-              height: 10,
-              borderRadius: 4,
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-            className='bg-background-200'
-          >
-            {timelineSegments.map((seg, idx) => (
-              <View
-                key={idx}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: `${seg.startPct}%` as any,
-                  width: `${seg.widthPct}%` as any,
-                  backgroundColor: seg.color,
-                }}
-              />
-            ))}
+        <Accordion
+          type='single'
+          variant='unfilled'
+          size='sm'
+          className='w-full'
+        >
+          <AccordionItem value='details'>
+            <AccordionHeader className='py-1'>
+              <AccordionTrigger className='py-1'>
+                {({ isExpanded }: { isExpanded: boolean }) => (
+                  <>
+                    <AccordionTitleText className='text-xs font-medium'>
+                      {isExpanded ? 'Hide' : 'Show'} Graph & Timeline
+                    </AccordionTitleText>
+                    <AccordionIcon as={ChevronDown} className='ml-1 w-3 h-3' />
+                  </>
+                )}
+              </AccordionTrigger>
+            </AccordionHeader>
+            <AccordionContent className='pt-2 pb-0 px-0'>
+              <VStack space='sm' className='w-full'>
+                <ChartContainer config={chartConfig} className='min-h-[200px] w-full'>
+                  <LineChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey='time'
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      scale='time'
+                      type='number'
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Line
+                      dataKey='fuel'
+                      type='monotone'
+                      stroke={fuelColor}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
+                <VStack space='xs' className='w-full'>
+                  <View
+                    style={{
+                      height: 10,
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}
+                    className='bg-background-200 w-full'
+                  >
+                    {timelineSegments.map((seg, idx) => (
+                      <View
+                        key={idx}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          bottom: 0,
+                          left: `${seg.startPct}%` as any,
+                          width: `${seg.widthPct}%` as any,
+                          backgroundColor: seg.color,
+                        }}
+                      />
+                    ))}
 
-            {tickMarks.map((pct, idx) => (
-              <View
-                key={`tick-${idx}`}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: `${pct}%` as any,
-                  width: 2,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  zIndex: 2,
-                }}
-              />
-            ))}
-          </View>
+                    {tickMarks.map((pct, idx) => (
+                      <View
+                        key={`tick-${idx}`}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          bottom: 0,
+                          left: `${pct}%` as any,
+                          width: 2,
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          zIndex: 2,
+                        }}
+                      />
+                    ))}
+                  </View>
 
-          <View style={{ position: 'relative', height: 14, marginTop: 0.25 }}>
-            {periodLabels.map((p, idx) => (
-              <View
-                key={`label-${idx}`}
-                style={{
-                  position: 'absolute',
-                  left: `${p.startPct}%` as any,
-                  width: `${p.widthPct}%` as any,
-                  height: '100%',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text className='text-[10px] text-typography-500 font-medium'>
-                  {p.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </VStack>
+                  <View style={{ position: 'relative', height: 14, marginTop: 0.25 }} className='w-full'>
+                    {periodLabels.map((p, idx) => (
+                      <View
+                        key={`label-${idx}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${p.startPct}%` as any,
+                          width: `${p.widthPct}%` as any,
+                          height: '100%',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text className='text-[10px] text-typography-500 font-medium'>
+                          {p.label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </VStack>
+              </VStack>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </VStack>
     </Card>
   );

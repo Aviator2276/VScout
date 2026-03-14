@@ -40,10 +40,12 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
   }, [team.team_number]);
 
   const isHighlighted = (): boolean => {
-    if (!searchQuery.trim()) {
-      return false;
-    }
-    return team.team_number.toString().includes(searchQuery.trim());
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return false;
+    return (
+      team.team_number.toString().includes(query) ||
+      (teamName || '').toLowerCase().includes(query)
+    );
   };
 
   const handleCardPress = () => {
