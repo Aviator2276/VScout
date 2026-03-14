@@ -289,7 +289,10 @@ export default function TeamDetailScreen() {
                         Consistency:{' '}
                         {team.local_consistency !== undefined
                           ? Math.round(team.local_consistency * 100)
-                          : Math.round(parseFloat(team.consistency_rating) * 100)}%
+                          : Math.round(
+                              parseFloat(team.consistency_rating) * 100,
+                            )}
+                        %
                       </BadgeText>
                     </Badge>
                   </HStack>
@@ -415,7 +418,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Forklift}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          {team.prescout_intake_type || 'Unknown'}
+                          team.prescout_intake_type
                         </BadgeText>
                       </Badge>
                     </HStack>
@@ -431,7 +434,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Contact}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          {team.prescout_driver_years || 'Unknown'}
+                          team.prescout_driver_years
                         </BadgeText>
                       </Badge>
                     </HStack>
@@ -445,7 +448,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Truck}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          {team.prescout_hopper_size || 'Unknown'}
+                          team.prescout_hopper_size
                         </BadgeText>
                       </Badge>
                     </HStack>
