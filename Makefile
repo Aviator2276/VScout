@@ -59,6 +59,13 @@ comp-setup-2026week0:
 	@echo "Adding blank matches..."
 	cd vibescout_backend && uv run python manage.py add_blank_matches 2026week0
 
+comp-setup:
+	@echo "Initializing $(COMP) competition (Real Event, Blank Matches)..."
+	cd vibescout_backend && uv run python manage.py init_competition $(COMP)
+	@echo "Adding blank matches..."
+	cd vibescout_backend && uv run python manage.py add_blank_matches $(COMP)
+	@echo "Done! Add stream links and first match video position in the Django admin."
+
 comp-setup-2026gadal:
 	@echo "Initializing 2026gadal competition (Real Event, Blank Matches)..."
 	cd vibescout_backend && uv run python manage.py init_competition 2026gadal

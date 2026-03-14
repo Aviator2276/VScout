@@ -328,10 +328,12 @@ def attribute_fuel_to_robots_task(match_id: int) -> dict:
         return {"success": False, "error": "No fuel timeline available"}
 
     def parse_score(s):
-        try:
-            return int(s)
-        except (ValueError, TypeError):
+        import re
+        if not isinstance(s, str):
             return None
+        # Extract the first integer — handles "108", "108 / 360", "96 / 100", etc.
+        match = re.search(r'\d+', s)
+        return int(match.group()) if match else None
 
     alliance_configs = {
         "blue": {

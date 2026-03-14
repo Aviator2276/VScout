@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 from dotenv import load_dotenv
@@ -41,7 +42,8 @@ def _query_image(args: tuple[int, str]) -> tuple[int, str]:
         ],
     )
     result = response.choices[0].message.content
-    print(i, result)
+    first_num = re.search(r'\d+', result)
+    print(i, first_num.group() if first_num else result)
     return i, result
 
 
