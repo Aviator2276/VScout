@@ -259,10 +259,10 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
         blue_dir.mkdir()
 
         # Crop coords (W:H:X:Y) at 640x360 — calibrated from 2026gadal (Dalton) scoreboard
-        # Blue score is on the LEFT side (bottom strip), red is mirrored on the RIGHT
+        # Red score is on the LEFT side (bottom strip), blue is mirrored on the RIGHT
         crops = [
-            ("blue", "83:25:45:333",  str(blue_dir / "%03d.jpg")),
-            ("red",  "83:25:512:333", str(red_dir / "%03d.jpg")),
+            ("red",  "83:25:45:333",  str(red_dir / "%03d.jpg")),
+            ("blue", "83:25:512:333", str(blue_dir / "%03d.jpg")),
         ]
         for alliance, crop, out_pattern in crops:
             w, h, x, y = crop.split(":")
