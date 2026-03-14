@@ -56,6 +56,7 @@ import {
   extractYear,
 } from '@/utils/competitionCode';
 import Constants from 'expo-constants';
+import { APP_VERSION } from '@/utils/version';
 import {
   Table,
   TableBody,
@@ -238,7 +239,7 @@ export default function SettingsScreen() {
                   <TableRow className='m-0'>
                     <TableData>App version:</TableData>
                     <TableData>
-                      {Constants.expoConfig.version || 'Unknown'}
+                      {APP_VERSION}
                     </TableData>
                   </TableRow>
                   <TableRow>
