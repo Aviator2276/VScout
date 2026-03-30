@@ -168,6 +168,8 @@ class Command(BaseCommand):
 
         # Configure yt-dlp options using Python API
         ydl_opts = {
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['android'],

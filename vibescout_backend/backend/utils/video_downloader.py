@@ -1,6 +1,7 @@
 """Utility functions for downloading match videos"""
 
 import logging
+import os
 import platform
 import subprocess
 from pathlib import Path
@@ -10,9 +11,33 @@ import yt_dlp
 logger = logging.getLogger(__name__)
 
 
+def _clip_from_local_recording(recording_path, video_start_time, clip_duration, final_file, output_filename):
+    """Clip a segment from a local recording file using ffmpeg."""
+    cmd = [
+        "ffmpeg",
+        "-ss", str(video_start_time),
+        "-i", str(recording_path),
+        "-t", str(clip_duration),
+        "-c:v", "libx264",
+        "-c:a", "aac",
+        "-y",
+        str(final_file),
+    ]
+    logger.info(f"Clipping from local recording: {recording_path} [{video_start_time}s + {clip_duration}s]")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        logger.error(f"ffmpeg error: {result.stderr}")
+        return False
+    return True
+
+
 def download_match_video(match, buffer=30, output_dir="match_videos"):
     """
-    Download a single match video clip from YouTube stream.
+    Download a single match video clip from YouTube stream or local OBS recording.
+
+    If OBS_RECORDING_PATH env var is set, clips from the local file instead of
+    downloading from YouTube. The recording is assumed to start at the same time
+    as the first match (start_match_time of the earliest match = recording position 0).
 
     Args:
         match: Match instance to download video for
@@ -29,20 +54,6 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
 
     competition = match.competition
 
-    # Check if stream links are configured
-    if not any(
-        [
-            competition.stream_link_day_1,
-            competition.stream_link_day_2,
-            competition.stream_link_day_3,
-        ]
-    ):
-        logger.warning(
-            f"No stream links configured for competition {competition.code}, "
-            f"skipping video download for match {match.match_number}"
-        )
-        return False
-
     # Check if match has start time
     if match.start_match_time <= 0:
         logger.warning(
@@ -57,7 +68,7 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
     output_path.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output directory: {output_path}")
 
-    # Get first match to calculate day boundaries
+    # Get first match to calculate offsets
     from backend.models import Match
 
     first_match = (
@@ -72,11 +83,62 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         )
         return False
 
+    # --- Local OBS recording mode ---
+    obs_recording = os.environ.get("OBS_RECORDING_PATH", "").strip()
+    if obs_recording:
+        recording_path = Path(obs_recording)
+        if not recording_path.exists():
+            logger.error(f"OBS_RECORDING_PATH does not exist: {recording_path}")
+            return False
+
+        # OBS start = first match start, so position in file = match_time - first_match_time
+        video_start_time = max(0, match.start_match_time - first_match.start_match_time - buffer)
+        clip_duration = 150 + (2 * buffer)
+        output_filename = f"match_{match.match_type}_{match.match_number}_obs"
+        final_file = output_path / f"{output_filename}.mp4"
+
+        logger.info(
+            f"OBS mode: clipping match {match.match_number} at {video_start_time:.1f}s "
+            f"into recording (buffer: {buffer}s)"
+        )
+
+        try:
+            if not _clip_from_local_recording(recording_path, video_start_time, clip_duration, final_file, output_filename):
+                return False
+
+            if not final_file.exists():
+                logger.error(f"Expected output file not found after clip: {final_file}")
+                return False
+
+            logger.info(f"Successfully clipped match {match.match_number} -> {output_filename}.mp4")
+            match.video_available = True
+            match.save(update_fields=["video_available"])
+            return True
+        except Exception as e:
+            logger.error(
+                f"Failed to clip match {match.match_number} from local recording: {str(e)}",
+                exc_info=True,
+            )
+            return False
+
+    # --- YouTube stream mode ---
+    if not any(
+        [
+            competition.stream_link_day_1,
+            competition.stream_link_day_2,
+            competition.stream_link_day_3,
+        ]
+    ):
+        logger.warning(
+            f"No stream links configured for competition {competition.code}, "
+            f"skipping video download for match {match.match_number}"
+        )
+        return False
+
     first_match_time = first_match.start_match_time
     day_1_end = first_match_time + (12 * 3600)  # 12 hours after first match
     day_2_end = day_1_end + (24 * 3600)  # 24 hours after day 1 end
 
-    # Determine which day's stream to use
     match_time = match.start_match_time
 
     if match_time < day_1_end:
@@ -101,7 +163,6 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         )
         return False
 
-    # Check if offset is configured
     if offset == 0:
         logger.error(
             f"Offset for day {day} is not configured "
@@ -109,16 +170,13 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         )
         return False
 
-    # Calculate video timestamps (seconds into the stream)
     video_start_time = match.start_match_time - offset - buffer
-    clip_duration = 150 + (2 * buffer)  # 2:30 + buffers
+    clip_duration = 150 + (2 * buffer)
 
-    # Ensure times are positive
     if video_start_time < 0:
         video_start_time = 0
 
     def _format_timestamp(seconds):
-        """Convert seconds to HH:MM:SS format"""
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
@@ -130,7 +188,6 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
         f"(buffer: {buffer}s)"
     )
 
-    # Determine output path
     output_filename = f"match_{match.match_type}_{match.match_number}_day{day}"
     final_file = output_path / f"{output_filename}.mp4"
 
@@ -154,7 +211,8 @@ def download_match_video(match, buffer=30, output_dir="match_videos"):
             logger.error(f"  Download error for {output_filename}")
 
     ydl_opts = {
-        "format": "best",
+        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best",
+        "merge_output_format": "mp4",
         "extractor_args": {"youtube": {"player_client": ["android"]}},
         "download_ranges": yt_dlp.utils.download_range_func(
             None, [(video_start_time, video_start_time + clip_duration)]

@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel docker-build docker-run offsite-run
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel docker-build docker-run offsite-run record-screen
 
 init:
 	@echo "Installing backend dependencies..."
@@ -111,6 +111,17 @@ offsite-run:
 		$(if $(COMP),--competition $(COMP),) \
 		$(if $(MATCH),--match-number $(MATCH),) \
 		$(if $(KEEP_TEMP),--keep-temp,)
+
+record-screen:
+	cd vibescout_backend && uv run python manage.py record_screen \
+		$(if $(NAME),$(NAME),) \
+		$(if $(DIR),--output-dir $(DIR),) \
+		$(if $(DISPLAY),--display $(DISPLAY),) \
+		$(if $(FPS),--framerate $(FPS),) \
+		$(if $(RES),--resolution $(RES),) \
+		$(if $(NO_AUDIO),--no-audio,) \
+		$(if $(CRF),--crf $(CRF),) \
+		$(if $(CARD),--card $(CARD),)
 
 docker-build:
 	docker build -t vibescout-backend ./vibescout_backend
