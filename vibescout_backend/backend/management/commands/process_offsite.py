@@ -33,6 +33,8 @@ class Command(BaseCommand):
         parser.add_argument("--competition", help="Only process matches for this competition code")
         parser.add_argument("--match-number", type=int, help="Only process a specific match number")
         parser.add_argument("--keep-temp", action="store_true", help="Keep temp work dir after processing (for debugging)")
+        parser.add_argument("--obs-recording", help="Path to local OBS recording file (overrides OBS_RECORDING_PATH env var)")
+        parser.add_argument("--first-match-video-pos", type=int, default=0, help="Seconds into the OBS recording where match 1 starts (e.g. 290 for 4:50)")
 
     def handle(self, *args, **options):
         server = options["server"].rstrip("/")
@@ -55,35 +57,57 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Found {len(matches)} match(es) to process")
 
+        import os
+        obs_recording = options.get("obs_recording") or os.environ.get("OBS_RECORDING_PATH", "").strip()
+        if obs_recording:
+            self.stdout.write(f"OBS mode: using local recording {obs_recording}")
+
+        first_match_video_pos = options.get("first_match_video_pos", 0)
+
         keep_temp = options.get("keep_temp", False)
         for match in matches:
-            self._process_match(match, server, headers, keep_temp=keep_temp)
+            self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, first_match_video_pos=first_match_video_pos)
 
-    def _process_match(self, match, server, headers, keep_temp=False):
+    def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, first_match_video_pos=0):
         match_id = match["match_id"]
         comp = match["competition_code"]
         num = match["match_number"]
         self.stdout.write(f"\nProcessing match {num} ({comp})...")
-
-        # Determine stream URL and compute video start time
-        stream_url, video_start = self._get_stream_info(match)
-        if not stream_url:
-            self.stdout.write(f"  No stream link available — skipping")
-            return
-        if video_start <= 0:
-            self.stdout.write(f"  No start_match_time or offset — skipping")
-            return
 
         work_dir = Path(tempfile.mkdtemp(prefix=f"offsite_{comp}_{num}_"))
         raw_path = work_dir / f"match_{num}_raw.mp4"
         self.stdout.write(f"  Work dir: {work_dir}")
 
         try:
-            # 1. Download
-            self.stdout.write(f"  Downloading from {stream_url} at {video_start:.0f}s...")
-            if not self._download(stream_url, video_start, raw_path):
-                self.stderr.write(f"  Download failed")
-                return
+            if obs_recording:
+                # OBS mode: clip directly from local recording
+                first_match_time = match.get("first_match_start_time", 0)
+                match_time = match.get("start_match_time", 0)
+                if not match_time or not first_match_time:
+                    match_time, first_match_time = self._fetch_times_from_tba(match)
+                if not match_time or not first_match_time:
+                    self.stdout.write(f"  Missing start_match_time or first_match_start_time — skipping")
+                    return
+                buffer = 30
+                video_start = max(0, (match_time - first_match_time) + first_match_video_pos - buffer)
+                clip_duration = 150 + (2 * buffer)
+                self.stdout.write(f"  Clipping from OBS recording at {video_start:.1f}s...")
+                if not self._clip_from_obs(obs_recording, video_start, clip_duration, raw_path):
+                    self.stderr.write(f"  OBS clip failed")
+                    return
+            else:
+                # YouTube stream mode
+                stream_url, video_start = self._get_stream_info(match)
+                if not stream_url:
+                    self.stdout.write(f"  No stream link or OBS recording available — skipping")
+                    return
+                if video_start <= 0:
+                    self.stdout.write(f"  No start_match_time or offset — skipping")
+                    return
+                self.stdout.write(f"  Downloading from {stream_url} at {video_start:.0f}s...")
+                if not self._download(stream_url, video_start, raw_path):
+                    self.stderr.write(f"  Download failed")
+                    return
 
             # 2. Clip to match start
             self.stdout.write(f"  Clipping to match start...")
@@ -106,10 +130,23 @@ class Command(BaseCommand):
                 headers=headers,
                 timeout=60,
             )
-            if resp.status_code == 200:
+            if resp.status_code != 200:
+                self.stderr.write(f"  Submit failed: {resp.status_code} {resp.text}")
+                return
+
+            # 5. Upload clipped video
+            self.stdout.write(f"  Uploading video to server...")
+            with open(raw_path, "rb") as f:
+                upload_resp = requests.post(
+                    f"{server}/api/offsite/upload-video/{match_id}",
+                    files={"video": (raw_path.name, f, "video/mp4")},
+                    headers=headers,
+                    timeout=300,
+                )
+            if upload_resp.status_code == 200:
                 self.stdout.write(self.style.SUCCESS(f"  Done — match {num} ({comp})"))
             else:
-                self.stderr.write(f"  Submit failed: {resp.status_code} {resp.text}")
+                self.stderr.write(f"  Video upload failed: {upload_resp.status_code} {upload_resp.text}")
 
         finally:
             if keep_temp:
@@ -131,6 +168,50 @@ class Command(BaseCommand):
                 if video_start >= 0:
                     return stream_url, video_start
         return None, 0
+
+    def _fetch_times_from_tba(self, match):
+        """Fetch actual_time for this match and first match of competition directly from TBA."""
+        import os
+        tba_key = os.getenv("TBA_API_KEY", "")
+        if not tba_key:
+            return 0, 0
+        comp = match["competition_code"]
+        num = match["match_number"]
+        match_type = match.get("match_type", "qualification")
+        type_code = {"qualification": "qm", "quarterfinal": "qf", "semifinal": "sf", "final": "f"}.get(match_type, "qm")
+        headers = {"X-TBA-Auth-Key": tba_key}
+        try:
+            # Fetch this match's actual_time
+            resp = requests.get(f"https://www.thebluealliance.com/api/v3/match/{comp}_{type_code}{num}", headers=headers, timeout=10)
+            match_time = (resp.json().get("actual_time") or 0) if resp.status_code == 200 else 0
+
+            # Fetch match 1's actual_time as the first match reference
+            resp1 = requests.get(f"https://www.thebluealliance.com/api/v3/match/{comp}_qm1", headers=headers, timeout=10)
+            first_match_time = (resp1.json().get("actual_time") or 0) if resp1.status_code == 200 else 0
+
+            if match_time and first_match_time:
+                self.stdout.write(f"  Fetched times from TBA: match={match_time}, first={first_match_time}")
+            return match_time, first_match_time
+        except Exception as e:
+            logger.error(f"TBA time fetch failed: {e}")
+            return 0, 0
+
+    def _clip_from_obs(self, recording_path, video_start, clip_duration, output_path):
+        """Clip a segment from a local OBS recording using ffmpeg."""
+        cmd = [
+            "ffmpeg",
+            "-ss", str(video_start),
+            "-i", str(recording_path),
+            "-t", str(clip_duration),
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-y",
+            str(output_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            logger.error(f"ffmpeg OBS clip failed: {result.stderr}")
+        return result.returncode == 0 and output_path.exists()
 
     def _download(self, stream_url, video_start, output_path):
         """Download ~240s of stream starting at video_start seconds."""
@@ -197,7 +278,7 @@ class Command(BaseCommand):
                 w, h, x, y = crop.split(":")
                 cmd = [
                     "ffmpeg", "-i", str(video_path),
-                    "-vf", f"crop={w}:{h}:{x}:{y},scale={int(w)*32}:{int(h)*32},fps=1",
+                    "-vf", f"scale=640:360,crop={w}:{h}:{x}:{y},scale={int(w)*32}:{int(h)*32},fps=1",
                     "-f", "image2", "-q:v", "2",
                     out_pattern, "-y", "-loglevel", "error",
                 ]

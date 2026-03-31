@@ -699,9 +699,20 @@ def offsite_pending(request):
         fuel_timeline__isnull=True,
     ).select_related("competition").order_by("competition__code", "match_number")
 
+    # Cache first match start time per competition to avoid repeated queries
+    first_match_times = {}
+
     result = []
     for match in matches:
         comp = match.competition
+        if comp.code not in first_match_times:
+            first = (
+                Match.objects.filter(competition=comp, start_match_time__gt=0)
+                .order_by("start_match_time")
+                .values_list("start_match_time", flat=True)
+                .first()
+            )
+            first_match_times[comp.code] = first or 0
         result.append({
             "match_id": match.pk,
             "competition_code": comp.code,
@@ -709,6 +720,7 @@ def offsite_pending(request):
             "match_type": match.match_type,
             "set_number": match.set_number,
             "start_match_time": match.start_match_time,
+            "first_match_start_time": first_match_times[comp.code],
             "stream_link_day_1": comp.stream_link_day_1,
             "stream_link_day_2": comp.stream_link_day_2,
             "stream_link_day_3": comp.stream_link_day_3,
@@ -756,3 +768,41 @@ def offsite_submit(request, match_id: int, payload: _OffsiteSubmitBody):
     )
 
     return {"success": True, "match_id": match_id, "match_number": match.match_number}
+
+
+@api.post("/offsite/upload-video/{match_id}")
+def offsite_upload_video(request, match_id: int):
+    """
+    Upload a clipped match video from the offsite machine.
+    Saves to match_videos/{competition_code}/match_{type}_{number}_day1.mp4
+    Requires X-Offsite-Key header.
+    """
+    from ninja.errors import HttpError
+    if not _check_offsite_key(request):
+        raise HttpError(403, "Invalid or missing offsite API key")
+
+    match = get_object_or_404(Match, pk=match_id)
+
+    if "video" not in request.FILES:
+        raise HttpError(400, "No video file provided")
+
+    video_file = request.FILES["video"]
+
+    video_dir = (
+        Path(__file__).resolve().parent.parent
+        / "match_videos"
+        / match.competition.code
+    )
+    video_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"match_{match.match_type}_{match.match_number}_day1.mp4"
+    video_path = video_dir / filename
+
+    with open(video_path, "wb") as f:
+        for chunk in video_file.chunks():
+            f.write(chunk)
+
+    match.video_available = True
+    match.save(update_fields=["video_available"])
+
+    return {"success": True, "match_id": match_id, "filename": filename}

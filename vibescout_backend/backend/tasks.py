@@ -268,7 +268,7 @@ def compute_fuel_timeline_task(match_id: int) -> dict:
             w, h, x, y = crop.split(":")
             cmd = [
                 "ffmpeg", "-i", str(video_path),
-                "-vf", f"crop={w}:{h}:{x}:{y},scale={int(w)*32}:{int(h)*32},fps=1",
+                "-vf", f"scale=640:360,crop={w}:{h}:{x}:{y},scale={int(w)*32}:{int(h)*32},fps=1",
                 "-f", "image2", "-q:v", "2",
                 out_pattern, "-y", "-loglevel", "error",
             ]

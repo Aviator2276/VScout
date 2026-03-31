@@ -243,3 +243,6 @@ data.json
 .mypy_cache
 cookies.txt
 vibescout_backend/match_videos/*.mp4.part
+day1-albany.mkv
+*.mkv
+.claude/settings.local.json

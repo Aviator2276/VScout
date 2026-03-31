@@ -305,7 +305,7 @@ def find_match_start_timestamp(video_path: Path) -> float | None:
     # Pipe timer-region frames from ffmpeg as raw RGB
     cmd = [
         "ffmpeg", "-i", str(video_path),
-        "-vf", f"fps={_SCAN_FPS},crop={_TIMER_CROP_W}:{_TIMER_CROP_H}:{_TIMER_CROP_X}:{_TIMER_CROP_Y}",
+        "-vf", f"fps={_SCAN_FPS},scale=640:360,crop={_TIMER_CROP_W}:{_TIMER_CROP_H}:{_TIMER_CROP_X}:{_TIMER_CROP_Y}",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1",
         "-loglevel", "error",
     ]
