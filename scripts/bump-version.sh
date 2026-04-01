@@ -57,3 +57,5 @@ EOF
 git add "$APP_JSON" "$PKG_JSON" "$VERSION_TS"
 
 echo "Version bumped to $NEW_VERSION"
+
+make export
