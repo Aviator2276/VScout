@@ -418,13 +418,13 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Forklift}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          team.prescout_intake_type
+                          {team.prescout_intake_type || 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Primary Driver Years:
+                        Primary Driver Experience:
                       </Text>
                       <Badge
                         size='lg'
@@ -434,7 +434,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Contact}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          team.prescout_driver_years
+                          {team.prescout_driver_years} years
                         </BadgeText>
                       </Badge>
                     </HStack>
@@ -448,7 +448,7 @@ export default function TeamDetailScreen() {
                       >
                         <BadgeIcon as={Truck}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
-                          team.prescout_hopper_size
+                          {team.prescout_hopper_size}
                         </BadgeText>
                       </Badge>
                     </HStack>
