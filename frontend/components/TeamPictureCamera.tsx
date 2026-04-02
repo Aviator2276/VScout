@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -36,6 +37,7 @@ export function TeamPictureCamera({
 }: TeamPictureCameraProps) {
   const cameraRef = useRef<CameraView>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   const handleClose = () => {
@@ -73,22 +75,37 @@ export function TeamPictureCamera({
   };
 
   const renderCameraContent = () => {
-    if (!permission) {
-      // Permissions still loading
-      return (
-        <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-          <Spinner size='large' />
-        </Center>
-      );
+    // On native, gate on the permission hook; on web, the browser prompts automatically
+    if (Platform.OS !== 'web') {
+      if (!permission) {
+        return (
+          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+            <Spinner size='large' />
+          </Center>
+        );
+      }
+
+      if (!permission.granted) {
+        return (
+          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+            <VStack space='md'>
+              <Text className='text-center'>Camera permission is required to take team pictures.</Text>
+              <Button onPress={requestPermission}>
+                <ButtonText>Grant Permission</ButtonText>
+              </Button>
+            </VStack>
+          </Center>
+        );
+      }
     }
 
-    if (!permission.granted) {
+    if (cameraError) {
       return (
         <Center className='flex-1 max-w-2xl self-center w-full p-4'>
           <VStack space='md'>
-            <Text className='text-center'>Camera permission is required to take team pictures.</Text>
-            <Button onPress={requestPermission}>
-              <ButtonText>Grant Permission</ButtonText>
+            <Text className='text-error-500 text-center'>{cameraError}</Text>
+            <Button onPress={() => { setCameraError(null); }}>
+              <ButtonText>Try Again</ButtonText>
             </Button>
           </VStack>
         </Center>
@@ -114,7 +131,10 @@ export function TeamPictureCamera({
             opacity: cameraReady ? 1 : 0,
           }}
           onCameraReady={() => setCameraReady(true)}
-          onMountError={(e) => console.error('Camera mount error:', e.message)}
+          onMountError={(e) => {
+            console.error('Camera mount error:', e.message);
+            setCameraError(e.message || 'Failed to access camera');
+          }}
         />
       </>
     );

@@ -131,6 +131,10 @@ function extractTeamData(match: Match, teamNumber: number): TeamMatchData | null
     const team = match[teamKey];
     if (team.number !== teamNumber) continue;
 
+    // Skip unscouted positions — their fields default to 0 and would skew stats
+    const scouted = (match as any)[`${prefix}_scouted`] as boolean | undefined;
+    if (!scouted) return null;
+
     const autoFuel = (match as any)[`${prefix}_auto_fuel`] as number ?? 0;
     const teleFuel = (match as any)[`${prefix}_teleop_fuel`] as number ?? 0;
     const climbStr = (match as any)[`${prefix}_climb`] as string ?? 'None';
