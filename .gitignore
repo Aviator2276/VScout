@@ -92,7 +92,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-#dist
+dist
 
 # Gatsby files
 .cache/
@@ -246,3 +246,6 @@ vibescout_backend/match_videos/*.mp4.part
 day1-albany.mkv
 *.mkv
 .claude/settings.local.json
+
+# Allow frontend/dist to be tracked
+!frontend/dist/
