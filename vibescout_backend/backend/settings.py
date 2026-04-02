@@ -45,6 +45,8 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://8000--main--django-playground--aviator2277.chargingcourses.com",
+    "https://vscout.net",
+    "https://www.vscout.net",
 ]
 
 
