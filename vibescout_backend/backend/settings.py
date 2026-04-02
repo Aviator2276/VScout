@@ -166,8 +166,8 @@ else:
     CORS_ALLOWED_ORIGINS = [
         "http://8000--main--django-playground--aviator2277.chargingcourses.com",
         "https://8000--main--django-playground--aviator2277.chargingcourses.com",
-        "https://www.yourdomain.com",
-        # Add your production frontend URLs here
+        "https://vscout.net",
+        "https://www.vscout.net",
     ]
 
 CORS_ALLOW_CREDENTIALS = True
