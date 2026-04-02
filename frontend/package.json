@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "main": "expo-router/entry",
-  "version": "beta-1.0.8",
+  "version": "beta-1.0.9",
   "scripts": {
     "start": "expo start -c",
     "web": "expo start --web -c",

@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
@@ -33,87 +34,22 @@ export function TeamPictureCamera({
   teamName,
   competitionCode,
 }: TeamPictureCameraProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const cameraRef = useRef<CameraView>(null);
   const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-
-  // Start camera when actionsheet opens
-  useEffect(() => {
-    if (isOpen) {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-
-    return () => {
-      stopCamera();
-    };
-  }, [isOpen]);
-
-  const startCamera = async () => {
-    try {
-      setCameraError(null);
-      setPermissionDenied(false);
-      setCameraReady(false);
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setCameraReady(true);
-        };
-      }
-    } catch (error: any) {
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        setPermissionDenied(true);
-      } else {
-        setCameraError(error.message || 'Failed to access camera');
-      }
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setCameraReady(false);
-  };
+  const [permission, requestPermission] = useCameraPermissions();
 
   const handleClose = () => {
-    stopCamera();
-    setCameraError(null);
-    setPermissionDenied(false);
+    setCameraReady(false);
     onClose();
   };
 
   const takePicture = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!cameraRef.current) return;
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+    const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
+    if (!photo) return;
 
-    // Set canvas size to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Draw video frame to canvas
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-
-    // Convert to data URL
-    const photoUri = canvas.toDataURL('image/jpeg', 0.9);
+    const photoUri = photo.uri;
 
     const now = Date.now();
     const pictureRecord: PictureRecord = {
@@ -136,6 +72,54 @@ export function TeamPictureCamera({
     handleClose();
   };
 
+  const renderCameraContent = () => {
+    if (!permission) {
+      // Permissions still loading
+      return (
+        <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+          <Spinner size='large' />
+        </Center>
+      );
+    }
+
+    if (!permission.granted) {
+      return (
+        <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+          <VStack space='md'>
+            <Text className='text-center'>Camera permission is required to take team pictures.</Text>
+            <Button onPress={requestPermission}>
+              <ButtonText>Grant Permission</ButtonText>
+            </Button>
+          </VStack>
+        </Center>
+      );
+    }
+
+    return (
+      <>
+        {!cameraReady && (
+          <Center className='absolute inset-0 z-10'>
+            <Spinner size='large' />
+          </Center>
+        )}
+        <CameraView
+          ref={cameraRef}
+          facing='back'
+          style={{
+            width: '100%',
+            height: 500,
+            marginTop: 8,
+            borderRadius: 10,
+            overflow: 'hidden',
+            opacity: cameraReady ? 1 : 0,
+          }}
+          onCameraReady={() => setCameraReady(true)}
+          onMountError={(e) => console.error('Camera mount error:', e.message)}
+        />
+      </>
+    );
+  };
+
   return (
     <Actionsheet isOpen={isOpen} onClose={handleClose}>
       <ActionsheetBackdrop />
@@ -143,53 +127,13 @@ export function TeamPictureCamera({
         <ActionsheetDragIndicatorWrapper>
           <ActionsheetDragIndicator />
         </ActionsheetDragIndicatorWrapper>
-        {permissionDenied ? (
-          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-            <VStack space='md'>
-              <Text className='text-center'>Camera permission was denied. Please allow camera access in your browser settings.</Text>
-              <Button onPress={startCamera}>
-                <ButtonText>Try Again</ButtonText>
-              </Button>
-            </VStack>
-          </Center>
-        ) : cameraError ? (
-          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-            <VStack space='md'>
-              <Text className='text-error-500 text-center'>{cameraError}</Text>
-              <Button onPress={handleClose}>
-                <ButtonText>Close</ButtonText>
-              </Button>
-            </VStack>
-          </Center>
-        ) : (
-          <>
-            {!cameraReady && (
-              <Center className='absolute inset-0 z-10'>
-                <Spinner size='large' />
-              </Center>
-            )}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                width: '100%',
-                maxHeight: 500,
-                marginTop: 8,
-                borderRadius: 10,
-                opacity: cameraReady ? 1 : 0,
-                objectFit: 'cover',
-              }}
-            />
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-          </>
-        )}
+        {renderCameraContent()}
         <Button
           size='lg'
           action='primary'
           onPress={takePicture}
           className='w-full mb-4 mt-4'
+          isDisabled={!cameraReady}
         >
           <Icon as={Camera} className='color-slate-100 dark:color-slate-900' />
         </Button>
