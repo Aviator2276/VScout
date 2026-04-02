@@ -1,3 +1,1 @@
 bash scripts/bump-version.sh
-make export
-git add -f frontend/dist
