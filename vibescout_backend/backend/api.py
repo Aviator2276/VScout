@@ -105,6 +105,9 @@ def update_prescouting(
         "prescout_range",
         "prescout_driver_years",
         "prescout_additional_comments",
+        "prescout_shooter_type",
+        "prescout_trench_travel",
+        "prescout_trench_travel_preference",
     ]
 
     for attr, value in payload.dict(exclude_unset=True).items():

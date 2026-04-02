@@ -34,7 +34,8 @@ class Command(BaseCommand):
         parser.add_argument("--match-number", type=int, help="Only process a specific match number")
         parser.add_argument("--keep-temp", action="store_true", help="Keep temp work dir after processing (for debugging)")
         parser.add_argument("--obs-recording", help="Path to local OBS recording file (overrides OBS_RECORDING_PATH env var)")
-        parser.add_argument("--first-match-video-pos", type=int, default=0, help="Seconds into the OBS recording where match 1 starts (e.g. 290 for 4:50)")
+        parser.add_argument("--obs-recording-dir", help="Path to folder of OBS segment files (e.g. obs_recording_albany/)")
+        parser.add_argument("--first-match-video-pos", type=int, default=0, help="Seconds into the first segment where match 1 starts (e.g. 294 for 4:54)")
 
     def handle(self, *args, **options):
         server = options["server"].rstrip("/")
@@ -58,17 +59,21 @@ class Command(BaseCommand):
         self.stdout.write(f"Found {len(matches)} match(es) to process")
 
         import os
+        obs_recording_dir = options.get("obs_recording_dir") or os.environ.get("OBS_RECORDING_DIR", "").strip()
         obs_recording = options.get("obs_recording") or os.environ.get("OBS_RECORDING_PATH", "").strip()
-        if obs_recording:
+
+        if obs_recording_dir:
+            self.stdout.write(f"OBS segment mode: using folder {obs_recording_dir}")
+        elif obs_recording:
             self.stdout.write(f"OBS mode: using local recording {obs_recording}")
 
         first_match_video_pos = options.get("first_match_video_pos", 0)
 
         keep_temp = options.get("keep_temp", False)
         for match in matches:
-            self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, first_match_video_pos=first_match_video_pos)
+            self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, obs_recording_dir=obs_recording_dir, first_match_video_pos=first_match_video_pos)
 
-    def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, first_match_video_pos=0):
+    def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, obs_recording_dir=None, first_match_video_pos=0):
         match_id = match["match_id"]
         comp = match["competition_code"]
         num = match["match_number"]
@@ -79,8 +84,30 @@ class Command(BaseCommand):
         self.stdout.write(f"  Work dir: {work_dir}")
 
         try:
-            if obs_recording:
-                # OBS mode: clip directly from local recording
+            if obs_recording_dir:
+                # OBS segment dir mode: find the right segment file
+                match_time = match.get("start_match_time", 0)
+                first_match_time = match.get("first_match_start_time", 0)
+                if not match_time or not first_match_time:
+                    match_time, first_match_time = self._fetch_times_from_tba(match)
+                if not match_time or not first_match_time:
+                    self.stdout.write(f"  Missing match times — skipping")
+                    return
+                buffer = 30
+                seg_path, offset_in_seg = self._find_segment_for_match(
+                    obs_recording_dir, match_time, first_match_time, first_match_video_pos
+                )
+                if not seg_path:
+                    self.stdout.write(f"  Could not find segment for match {num} — skipping")
+                    return
+                video_start = max(0, offset_in_seg - buffer)
+                clip_duration = 150 + (2 * buffer)
+                self.stdout.write(f"  Clipping from segment {seg_path.name} at {video_start:.1f}s...")
+                if not self._clip_from_obs(str(seg_path), video_start, clip_duration, raw_path):
+                    self.stderr.write(f"  OBS segment clip failed")
+                    return
+            elif obs_recording:
+                # OBS mode: clip directly from single local recording
                 first_match_time = match.get("first_match_start_time", 0)
                 match_time = match.get("start_match_time", 0)
                 if not match_time or not first_match_time:
@@ -115,14 +142,28 @@ class Command(BaseCommand):
                 self.stderr.write(f"  Clip failed — could not find 0:19 timer")
                 return
 
-            # 3. LLM OCR
+            # 3. Upload clipped video
+            size_mb = raw_path.stat().st_size / (1024 * 1024)
+            self.stdout.write(f"  Uploading video to server ({size_mb:.1f} MB)...")
+            with open(raw_path, "rb") as f:
+                upload_resp = requests.post(
+                    f"{server}/api/offsite/upload-video/{match_id}",
+                    files={"video": (raw_path.name, f, "video/mp4")},
+                    headers=headers,
+                    timeout=300,
+                )
+            if upload_resp.status_code != 200:
+                self.stderr.write(f"  Video upload failed: {upload_resp.status_code} {upload_resp.text}")
+                return
+
+            # 4. LLM OCR
             self.stdout.write(f"  Running LLM OCR...")
             fuel_timeline = self._ocr(raw_path)
             if not fuel_timeline:
                 self.stderr.write(f"  OCR failed")
                 return
 
-            # 4. Submit to main server
+            # 5. Submit to main server
             self.stdout.write(f"  Submitting fuel_timeline to server...")
             resp = requests.post(
                 f"{server}/api/offsite/submit/{match_id}",
@@ -134,25 +175,58 @@ class Command(BaseCommand):
                 self.stderr.write(f"  Submit failed: {resp.status_code} {resp.text}")
                 return
 
-            # 5. Upload clipped video
-            self.stdout.write(f"  Uploading video to server...")
-            with open(raw_path, "rb") as f:
-                upload_resp = requests.post(
-                    f"{server}/api/offsite/upload-video/{match_id}",
-                    files={"video": (raw_path.name, f, "video/mp4")},
-                    headers=headers,
-                    timeout=300,
-                )
-            if upload_resp.status_code == 200:
-                self.stdout.write(self.style.SUCCESS(f"  Done — match {num} ({comp})"))
-            else:
-                self.stderr.write(f"  Video upload failed: {upload_resp.status_code} {upload_resp.text}")
+            self.stdout.write(self.style.SUCCESS(f"  Done — match {num} ({comp})"))
 
         finally:
             if keep_temp:
                 self.stdout.write(f"  Kept temp dir: {work_dir}")
             else:
                 shutil.rmtree(work_dir, ignore_errors=True)
+
+    def _find_segment_for_match(self, obs_dir, match_time, first_match_time, first_match_video_pos):
+        """
+        Find which segment file contains a match and the offset within it.
+
+        Returns (segment_path, offset_seconds) or (None, 0) if not found.
+
+        Segments are named like '2026-04-01 14-58-43.mp4'. The first segment's
+        first_match_video_pos tells us where match 1 sits in the timeline.
+        All other matches are located by their TBA actual_time difference from match 1.
+        """
+        from datetime import datetime
+
+        segments = []
+        for f in sorted(Path(obs_dir).glob("*.mp4")):
+            try:
+                dt = datetime.strptime(f.stem, "%Y-%m-%d %H-%M-%S")
+                segments.append((dt, f))
+            except ValueError:
+                continue
+
+        if not segments:
+            self.stderr.write(f"  No segment files found in {obs_dir}")
+            return None, 0
+
+        first_seg_dt = segments[0][0]
+
+        # seconds into the full recording where this match starts
+        match_seconds = (match_time - first_match_time) + first_match_video_pos
+
+        # find the segment that contains match_seconds
+        for i, (seg_dt, seg_path) in enumerate(segments):
+            seg_start = (seg_dt - first_seg_dt).total_seconds()
+            if i + 1 < len(segments):
+                seg_end = (segments[i + 1][0] - first_seg_dt).total_seconds()
+            else:
+                seg_end = float("inf")
+
+            if seg_start <= match_seconds < seg_end:
+                offset = match_seconds - seg_start
+                self.stdout.write(f"  Match at {match_seconds:.1f}s -> {seg_path.name} offset {offset:.1f}s")
+                return seg_path, offset
+
+        self.stderr.write(f"  No segment covers {match_seconds:.1f}s into recording")
+        return None, 0
 
     def _get_stream_info(self, match):
         """Return (stream_url, video_start_seconds) for the match."""
@@ -203,14 +277,16 @@ class Command(BaseCommand):
             "-ss", str(video_start),
             "-i", str(recording_path),
             "-t", str(clip_duration),
+            "-vf", "scale=1280:720",
             "-c:v", "libx264",
             "-c:a", "aac",
             "-y",
+            "-stats",
             str(output_path),
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, stderr=None)  # let ffmpeg stats print to terminal
         if result.returncode != 0:
-            logger.error(f"ffmpeg OBS clip failed: {result.stderr}")
+            logger.error(f"ffmpeg OBS clip failed")
         return result.returncode == 0 and output_path.exists()
 
     def _download(self, stream_url, video_start, output_path):

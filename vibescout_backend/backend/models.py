@@ -70,6 +70,19 @@ class TeamInfo(models.Model):
         ("none", "None"),
     ]
 
+    SHOOTER_TYPE_CHOICES = [
+        ("single", "Single"),
+        ("double", "Double"),
+        ("triple", "Triple"),
+        ("quad", "Quad"),
+    ]
+
+    TRENCH_TRAVEL_PREFERENCE_CHOICES = [
+        ("trench", "Trench"),
+        ("bump", "Bump"),
+        ("both", "Both"),
+    ]
+
     # Official rank from TBA (cached) - TBA handles all sorting
     rank = models.IntegerField(default=0, blank=True, null=True)
 
@@ -100,6 +113,13 @@ class TeamInfo(models.Model):
     )
     prescout_driver_years = models.IntegerField(default=0, blank=True, null=True)
     prescout_additional_comments = models.TextField(blank=True, null=True)
+    prescout_shooter_type = models.CharField(
+        max_length=20, choices=SHOOTER_TYPE_CHOICES, blank=True, null=True
+    )
+    prescout_trench_travel = models.BooleanField(default=False)
+    prescout_trench_travel_preference = models.CharField(
+        max_length=20, choices=TRENCH_TRAVEL_PREFERENCE_CHOICES, blank=True, null=True
+    )
 
     # Basic stats
     accuracy = models.DecimalField(

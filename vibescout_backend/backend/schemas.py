@@ -47,6 +47,9 @@ class TeamInfoSchema(Schema):
     prescout_range: Optional[str] = None
     prescout_driver_years: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
+    prescout_shooter_type: Optional[str] = None
+    prescout_trench_travel: bool = False
+    prescout_trench_travel_preference: Optional[str] = None
 
     # Stats fields
     accuracy: Optional[Decimal] = None
@@ -81,6 +84,9 @@ class TeamInfoSchema(Schema):
             prescout_range=obj.prescout_range,
             prescout_driver_years=obj.prescout_driver_years,
             prescout_additional_comments=obj.prescout_additional_comments,
+            prescout_shooter_type=obj.prescout_shooter_type,
+            prescout_trench_travel=obj.prescout_trench_travel,
+            prescout_trench_travel_preference=obj.prescout_trench_travel_preference,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
             avg_shuttle=obj.avg_shuttle,
@@ -114,6 +120,9 @@ class TeamInfoWithoutPictureSchema(Schema):
     prescout_range: Optional[str] = None
     prescout_driver_years: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
+    prescout_shooter_type: Optional[str] = None
+    prescout_trench_travel: bool = False
+    prescout_trench_travel_preference: Optional[str] = None
 
     # Stats fields
     accuracy: Optional[Decimal] = None
@@ -147,6 +156,9 @@ class TeamInfoWithoutPictureSchema(Schema):
             prescout_range=obj.prescout_range,
             prescout_driver_years=obj.prescout_driver_years,
             prescout_additional_comments=obj.prescout_additional_comments,
+            prescout_shooter_type=obj.prescout_shooter_type,
+            prescout_trench_travel=obj.prescout_trench_travel,
+            prescout_trench_travel_preference=obj.prescout_trench_travel_preference,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
             avg_shuttle=obj.avg_shuttle,
@@ -169,6 +181,9 @@ class PrescouttingUpdateSchema(Schema):
     prescout_range: Optional[str] = None
     prescout_driver_years: Optional[int] = None
     prescout_additional_comments: Optional[str] = None
+    prescout_shooter_type: Optional[str] = None
+    prescout_trench_travel: Optional[bool] = None
+    prescout_trench_travel_preference: Optional[str] = None
 
 
 class MatchSchema(Schema):
