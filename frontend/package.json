@@ -1,11 +1,11 @@
 {
   "name": "frontend",
   "main": "expo-router/entry",
-  "version": "beta-1.0.19",
+  "version": "beta-1.0.20",
   "scripts": {
     "start": "expo start -c",
     "web": "expo start --web -c",
-    "build:web": "expo export -p web && npx workbox-cli generateSW workbox-config.js",
+    "build:web": "expo export -p web --clear && npx workbox-cli generateSW workbox-config.js",
     "serve": "npx expo serve",
     "lint": "expo lint"
   },

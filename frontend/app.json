@@ -2,7 +2,7 @@
   "expo": {
     "name": "frontend",
     "slug": "vscout",
-    "version": "beta-1.0.19",
+    "version": "beta-1.0.20",
     "orientation": "default",
     "icon": "./assets/images/favicon.png",
     "scheme": "frontend",
