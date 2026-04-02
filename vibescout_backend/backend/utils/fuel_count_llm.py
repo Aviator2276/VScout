@@ -44,7 +44,7 @@ def _query_image(args: tuple[int, str]) -> tuple[int, str]:
     result = response.choices[0].message.content
     first_num = re.search(r'\d+', result)
     print(i, first_num.group() if first_num else result)
-    return i, result
+    return i, first_num.group() if first_num else "0"
 
 
 def _scores_from_folder(folder_path: str) -> list[str]:

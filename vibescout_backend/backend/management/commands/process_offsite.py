@@ -102,8 +102,7 @@ class Command(BaseCommand):
                     return
                 video_start = max(0, offset_in_seg - buffer)
                 clip_duration = 150 + (2 * buffer)
-                self.stdout.write(f"  Clipping from segment {seg_path.name} at {video_start:.1f}s...")
-                if not self._clip_from_obs(str(seg_path), video_start, clip_duration, raw_path):
+                if not self._clip_from_segments(obs_recording_dir, seg_path, video_start, clip_duration, raw_path):
                     self.stderr.write(f"  OBS segment clip failed")
                     return
             elif obs_recording:
@@ -270,6 +269,76 @@ class Command(BaseCommand):
             logger.error(f"TBA time fetch failed: {e}")
             return 0, 0
 
+    def _clip_from_segments(self, obs_dir, seg_path, video_start, clip_duration, output_path):
+        """Clip from one or two consecutive segment files, concatenating if the clip spans a boundary."""
+        import subprocess
+        from datetime import datetime
+
+        seg_dur = float(subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", str(seg_path)],
+            capture_output=True, text=True
+        ).stdout.strip() or 0)
+
+        remaining_in_seg = seg_dur - video_start
+
+        if remaining_in_seg >= clip_duration:
+            # Entire clip fits in one segment
+            self.stdout.write(f"  Clipping from {seg_path.name} at {video_start:.1f}s...")
+            return self._clip_from_obs(str(seg_path), video_start, clip_duration, output_path)
+
+        # Need to span into next segment — find it
+        segments = sorted(
+            [(datetime.strptime(f.stem, "%Y-%m-%d %H-%M-%S"), f)
+             for f in Path(obs_dir).glob("*.mp4")
+             if self._parse_seg_dt(f.stem) is not None],
+            key=lambda x: x[0]
+        )
+        seg_names = [str(f) for _, f in segments]
+        try:
+            idx = seg_names.index(str(seg_path))
+        except ValueError:
+            self.stdout.write(f"  Clipping from {seg_path.name} at {video_start:.1f}s (no next segment)...")
+            return self._clip_from_obs(str(seg_path), video_start, clip_duration, output_path)
+
+        if idx + 1 >= len(segments):
+            self.stdout.write(f"  Clipping from {seg_path.name} at {video_start:.1f}s (last segment)...")
+            return self._clip_from_obs(str(seg_path), video_start, clip_duration, output_path)
+
+        next_seg_path = segments[idx + 1][1]
+        need_from_next = clip_duration - remaining_in_seg
+        self.stdout.write(f"  Clipping across {seg_path.name} + {next_seg_path.name}...")
+
+        part1 = output_path.with_suffix(".part1.mp4")
+        part2 = output_path.with_suffix(".part2.mp4")
+        concat_list = output_path.with_suffix(".concat.txt")
+        try:
+            if not self._clip_from_obs(str(seg_path), video_start, remaining_in_seg, part1):
+                return False
+            if not self._clip_from_obs(str(next_seg_path), 0, need_from_next, part2):
+                return False
+            concat_list.write_text(f"file '{part1}'\nfile '{part2}'\n")
+            cmd = [
+                "ffmpeg", "-f", "concat", "-safe", "0",
+                "-i", str(concat_list),
+                "-c", "copy", "-y", str(output_path),
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                logger.error(f"ffmpeg concat failed: {result.stderr}")
+                return False
+            return output_path.exists()
+        finally:
+            part1.unlink(missing_ok=True)
+            part2.unlink(missing_ok=True)
+            concat_list.unlink(missing_ok=True)
+
+    def _parse_seg_dt(self, stem):
+        from datetime import datetime
+        try:
+            return datetime.strptime(stem, "%Y-%m-%d %H-%M-%S")
+        except ValueError:
+            return None
+
     def _clip_from_obs(self, recording_path, video_start, clip_duration, output_path):
         """Clip a segment from a local OBS recording using ffmpeg."""
         cmd = [
@@ -347,8 +416,8 @@ class Command(BaseCommand):
             blue_dir.mkdir()
 
             crops = [
-                ("blue", "83:25:45:333",  str(blue_dir / "%03d.jpg")),
-                ("red",  "83:25:512:333", str(red_dir / "%03d.jpg")),
+                ("red",  "83:25:45:333",  str(red_dir / "%03d.jpg")),
+                ("blue", "83:25:512:333", str(blue_dir / "%03d.jpg")),
             ]
             for alliance, crop, out_pattern in crops:
                 w, h, x, y = crop.split(":")
