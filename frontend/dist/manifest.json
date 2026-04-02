@@ -1,0 +1,40 @@
+{
+    "short_name": "VScout",
+    "name": "VScout FRC",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "favicon.png",
+            "sizes": "1024x1024",
+            "type": "image/png"
+        },
+        {
+            "src": "VScout-128@2x.png",
+            "type": "image/png",
+            "sizes": "128x128"
+        },
+        {
+            "src": "VScout-256@2x.png",
+            "type": "image/png",
+            "sizes": "256x256"
+        },
+        {
+            "src": "VScout-512@1x.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        },
+        {
+            "src": "VScout-1024@1x.png",
+            "type": "image/png",
+            "sizes": "1024x1024"
+        }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
+}
