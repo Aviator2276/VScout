@@ -1,4 +1,4 @@
-.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel docker-build docker-run offsite-run record-screen
+.PHONY: init run migrate makemigrations check shell frontend backend qcluster import-tba update-rankings generate-competition comp-setup comp-reset download-match-videos ocr-scores comp-day1 comp-day2 comp-select-1 comp-select-2 comp-select-3 comp-quarters comp-semis comp-finals createsuperuser init_gacmp comp-setup-gacmp comp-setup-2026week0 comp-setup-2026gadal dev-reset-2026week0 export-cookies redownload-videos reclip-videos attribute-fuel docker-build docker-run offsite-run offsite-run-2026gagai record-screen
 
 init:
 	@echo "Installing backend dependencies..."
@@ -104,13 +104,25 @@ reclip-videos:
 attribute-fuel:
 	cd vibescout_backend && uv run python manage.py attribute_fuel $(if $(COMP),$(COMP),)
 
+offsite-run-2026gagai:
+	cd vibescout_backend && uv run python manage.py process_offsite \
+		--server $(or $(SERVER),$(shell grep OFFSITE_SERVER_URL .env | cut -d= -f2)) \
+		--key $(or $(KEY),$(shell grep OFFSITE_API_KEY .env | cut -d= -f2)) \
+		--competition 2026gagai \
+		--obs-recording-dir "/home/bryanp/Documents/Github/VibeScout/2026gagai/" \
+		--first-match-video-pos 0
+
 offsite-run:
 	cd vibescout_backend && uv run python manage.py process_offsite \
 		--server $(or $(SERVER),$(shell grep OFFSITE_SERVER_URL .env | cut -d= -f2)) \
 		--key $(or $(KEY),$(shell grep OFFSITE_API_KEY .env | cut -d= -f2)) \
 		$(if $(COMP),--competition $(COMP),) \
 		$(if $(MATCH),--match-number $(MATCH),) \
-		$(if $(KEEP_TEMP),--keep-temp,)
+		$(if $(KEEP_TEMP),--keep-temp,) \
+		$(if $(OBS),--obs-recording $(OBS),) \
+		$(if $(OBS_DIR),--obs-recording-dir $(OBS_DIR),) \
+		$(if $(INTERVAL),--interval $(INTERVAL),) \
+		$(if $(FIRST_MATCH_POS),--first-match-video-pos $(FIRST_MATCH_POS),)
 
 record-screen:
 	cd vibescout_backend && uv run python manage.py record_screen \

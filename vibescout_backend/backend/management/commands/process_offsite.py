@@ -16,6 +16,7 @@ import logging
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import requests
@@ -36,42 +37,60 @@ class Command(BaseCommand):
         parser.add_argument("--obs-recording", help="Path to local OBS recording file (overrides OBS_RECORDING_PATH env var)")
         parser.add_argument("--obs-recording-dir", help="Path to folder of OBS segment files (e.g. obs_recording_albany/)")
         parser.add_argument("--first-match-video-pos", type=int, default=0, help="Seconds into the first segment where match 1 starts (e.g. 294 for 4:54)")
+        parser.add_argument("--interval", type=int, default=300, help="Polling interval in seconds (default: 300 = 5 minutes). Set to 0 to run once.")
 
     def handle(self, *args, **options):
         server = options["server"].rstrip("/")
         key = options["key"]
         headers = {"X-Offsite-Key": key}
-
-        # Fetch pending matches
-        self.stdout.write(f"Fetching pending matches from {server}...")
-        resp = requests.get(f"{server}/api/offsite/pending", headers=headers, timeout=30)
-        if resp.status_code != 200:
-            self.stderr.write(f"Failed to fetch pending matches: {resp.status_code} {resp.text}")
-            return
-
-        matches = resp.json()
-
-        if options.get("competition"):
-            matches = [m for m in matches if m["competition_code"] == options["competition"]]
-        if options.get("match_number"):
-            matches = [m for m in matches if m["match_number"] == options["match_number"]]
-
-        self.stdout.write(f"Found {len(matches)} match(es) to process")
+        interval = options["interval"]
+        keep_temp = options.get("keep_temp", False)
 
         import os
         obs_recording_dir = options.get("obs_recording_dir") or os.environ.get("OBS_RECORDING_DIR", "").strip()
         obs_recording = options.get("obs_recording") or os.environ.get("OBS_RECORDING_PATH", "").strip()
+        first_match_video_pos = options.get("first_match_video_pos", 0)
 
         if obs_recording_dir:
             self.stdout.write(f"OBS segment mode: using folder {obs_recording_dir}")
         elif obs_recording:
             self.stdout.write(f"OBS mode: using local recording {obs_recording}")
 
-        first_match_video_pos = options.get("first_match_video_pos", 0)
+        # Verify recording exists before doing anything
+        if obs_recording and not Path(obs_recording).exists():
+            self.stderr.write(f"OBS recording not found: {obs_recording}")
+            return
+        if obs_recording_dir and not Path(obs_recording_dir).exists():
+            self.stderr.write(f"OBS recording directory not found: {obs_recording_dir}")
+            return
 
-        keep_temp = options.get("keep_temp", False)
-        for match in matches:
-            self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, obs_recording_dir=obs_recording_dir, first_match_video_pos=first_match_video_pos)
+        while True:
+            self.stdout.write(f"\nFetching pending matches from {server}...")
+            try:
+                resp = requests.get(f"{server}/api/offsite/pending", headers=headers, timeout=30)
+                if resp.status_code != 200:
+                    self.stderr.write(f"Failed to fetch pending matches: {resp.status_code} {resp.text}")
+                else:
+                    matches = resp.json()
+
+                    if options.get("competition"):
+                        matches = [m for m in matches if m["competition_code"] == options["competition"]]
+                    if options.get("match_number"):
+                        matches = [m for m in matches if m["match_number"] == options["match_number"]]
+
+                    self.stdout.write(f"Found {len(matches)} match(es) to process")
+
+                    for match in matches:
+                        self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, obs_recording_dir=obs_recording_dir, first_match_video_pos=first_match_video_pos)
+
+            except Exception as e:
+                self.stderr.write(f"Error during poll: {e}")
+
+            if interval == 0:
+                break
+
+            self.stdout.write(f"Waiting {interval}s before next poll...")
+            time.sleep(interval)
 
     def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, obs_recording_dir=None, first_match_video_pos=0):
         match_id = match["match_id"]
