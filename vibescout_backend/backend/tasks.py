@@ -809,3 +809,60 @@ def download_match_video_task(match_id: int, buffer: int = 30) -> dict:
         }
 
 
+def update_team_stats_task(match_id: int) -> dict:
+    """
+    Recompute win/lose/tie and ranking_points for all 6 teams in a match
+    by aggregating across all their played qualification matches.
+    """
+    from .models import Match, TeamInfo
+
+    try:
+        match = Match.objects.get(pk=match_id)
+    except Match.DoesNotExist:
+        return {"success": False, "error": f"Match {match_id} not found"}
+
+    competition = match.competition
+    teams = [
+        match.blue_team_1, match.blue_team_2, match.blue_team_3,
+        match.red_team_1, match.red_team_2, match.red_team_3,
+    ]
+
+    played_matches = Match.objects.filter(
+        competition=competition,
+        has_played=True,
+        match_type="qualification",
+    )
+
+    for team in teams:
+        if team is None:
+            continue
+
+        wins = losses = ties = 0
+        rp = 0
+
+        for m in played_matches:
+            if team in (m.blue_team_1, m.blue_team_2, m.blue_team_3):
+                rp += m.blue_ranking_points
+                if m.winning_alliance == "blue":
+                    wins += 1
+                elif m.winning_alliance == "red":
+                    losses += 1
+                else:
+                    ties += 1
+            elif team in (m.red_team_1, m.red_team_2, m.red_team_3):
+                rp += m.red_ranking_points
+                if m.winning_alliance == "red":
+                    wins += 1
+                elif m.winning_alliance == "blue":
+                    losses += 1
+                else:
+                    ties += 1
+
+        TeamInfo.objects.filter(competition=competition, team=team).update(
+            win=wins, lose=losses, tie=ties, ranking_points=rp
+        )
+
+    logger.info(f"Updated team stats for match {match.match_number} ({competition.code})")
+    return {"success": True, "match_id": match_id}
+
+
