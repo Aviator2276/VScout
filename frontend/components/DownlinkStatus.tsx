@@ -82,12 +82,15 @@ export function DownlinkStatus({ size = 'lg' }: DataStatusProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const {
+    competitionCode,
     lastDataUpdate,
     dataFreshnessStatus,
     forceDataRefresh,
     isRefreshingData,
     dataRefreshInterval,
   } = useApp();
+
+  const noCompCode = !competitionCode;
 
   const config = STATUS_CONFIG[dataFreshnessStatus];
 
@@ -119,13 +122,15 @@ export function DownlinkStatus({ size = 'lg' }: DataStatusProps) {
           <Badge
             size={size}
             variant='solid'
-            action={isRefreshingData ? 'muted' : config.action}
+            action={noCompCode ? 'muted' : isRefreshingData ? 'muted' : config.action}
           >
             {isRefreshingData ? (
               <BadgeIcon
                 as={CloudDownload}
                 className='my-[0.1rem] animate-pulse'
               />
+            ) : noCompCode ? (
+              <BadgeIcon as={CloudAlert} className='my-[0.1rem]' />
             ) : (
               <BadgeIcon as={config.icon} className='my-[0.1rem]' />
             )}
@@ -138,36 +143,42 @@ export function DownlinkStatus({ size = 'lg' }: DataStatusProps) {
         <PopoverArrow />
         <PopoverHeader className='mb-2'>
           <Text size='sm' className='text-typography-600'>
-            {config.description}
+            {noCompCode
+              ? 'No competition code set. Set one in Settings to sync data.'
+              : config.description}
           </Text>
         </PopoverHeader>
-        <PopoverBody className='mb-2'>
-          <Text size='sm' className='text-typography-500'>
-            <Text size='sm' className='font-semibold'>
-              Last Update:
-            </Text>{' '}
-            {formatTimeSince(lastDataUpdate, currentTime)}
-          </Text>
-          <Text size='sm' className='text-typography-500'>
-            <Text size='sm' className='font-semibold'>
-              Refresh Interval:
-            </Text>{' '}
-            {dataRefreshInterval} minute{dataRefreshInterval !== 1 ? 's' : ''}
-          </Text>
-        </PopoverBody>
-        <PopoverFooter>
-          <Button
-            size='sm'
-            action='primary'
-            onPress={handleRefresh}
-            isDisabled={isRefreshingData}
-            className='w-full'
-          >
-            <ButtonText>
-              {isRefreshingData ? 'Refreshing...' : 'Refresh Now'}
-            </ButtonText>
-          </Button>
-        </PopoverFooter>
+        {noCompCode ? null : (
+          <>
+            <PopoverBody className='mb-2'>
+              <Text size='sm' className='text-typography-500'>
+                <Text size='sm' className='font-semibold'>
+                  Last Update:
+                </Text>{' '}
+                {formatTimeSince(lastDataUpdate, currentTime)}
+              </Text>
+              <Text size='sm' className='text-typography-500'>
+                <Text size='sm' className='font-semibold'>
+                  Refresh Interval:
+                </Text>{' '}
+                {dataRefreshInterval} minute{dataRefreshInterval !== 1 ? 's' : ''}
+              </Text>
+            </PopoverBody>
+            <PopoverFooter>
+              <Button
+                size='sm'
+                action='primary'
+                onPress={handleRefresh}
+                isDisabled={isRefreshingData}
+                className='w-full'
+              >
+                <ButtonText>
+                  {isRefreshingData ? 'Refreshing...' : 'Refresh Now'}
+                </ButtonText>
+              </Button>
+            </PopoverFooter>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );

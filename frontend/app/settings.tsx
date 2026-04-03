@@ -211,9 +211,11 @@ export default function SettingsScreen() {
       setIsResetting(true);
       // Delete all stored video files
       await deleteAllAppFiles();
-      await db.delete().then(async () => {
-        await db.open();
-      });
+      // Delete the entire database
+      await db.delete();
+      // Reopen the database (creates fresh empty tables)
+      await db.open();
+      // Reload the page to restart the app and trigger onboarding check
       window.location.reload();
     } catch (error) {
       console.error('Failed to reset database:', error);

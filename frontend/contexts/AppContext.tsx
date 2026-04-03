@@ -45,6 +45,9 @@ interface AppContextType {
   dataFreshnessStatus: DataFreshnessStatus;
   forceDataRefresh: () => Promise<void>;
   isRefreshingData: boolean;
+  // Onboarding
+  onboardingComplete: boolean | null; // null = still loading
+  completeOnboarding: () => Promise<void>;
   // Upload trigger
   triggerUpload: () => void;
   registerUploadHandler: (handler: () => void) => void;
@@ -84,8 +87,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     'active' | 'installing' | 'unsupported' | 'none'
   >('none');
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
+    null,
+  );
 
   useEffect(() => {
+    loadOnboardingState();
     loadCompetitionCode();
     loadTheme();
     loadDataRefreshInterval();
@@ -208,6 +215,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsOnline(false);
     setServerStatus('disconnected');
     setPing(null);
+  }
+
+  async function loadOnboardingState() {
+    if (Platform.OS !== 'web') {
+      setOnboardingComplete(true);
+      return;
+    }
+
+    try {
+      const result = await db.config.get({ key: 'onboarding_complete' });
+      setOnboardingComplete(result?.value === 'true');
+    } catch (error) {
+      console.error('Failed to load onboarding state:', error);
+      setOnboardingComplete(false);
+    }
+  }
+
+  async function completeOnboarding() {
+    try {
+      await db.config.put({ key: 'onboarding_complete', value: 'true' });
+      setOnboardingComplete(true);
+    } catch (error) {
+      console.error('Failed to save onboarding state:', error);
+      throw error;
+    }
   }
 
   async function loadCompetitionCode() {
@@ -556,6 +588,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dataFreshnessStatus,
         forceDataRefresh,
         isRefreshingData,
+        onboardingComplete,
+        completeOnboarding,
         triggerUpload,
         registerUploadHandler,
         swStatus,
