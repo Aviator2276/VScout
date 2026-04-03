@@ -69,20 +69,9 @@ export function VideoStatusHeader({
           <BadgeText className='ml-1'>{qualityConfig.label}</BadgeText>
         </Badge>
       </HStack>
-      <Card variant='outline' size='sm' className='p-1 m-0 border-warning-500'>
-        <HStack className='items-center justify-between gap-2'>
-          <Icon
-            as={TriangleAlert}
-            size='lg'
-            className='w-12 text-warning-500'
-          />
-          <Text className='text-warning-500 text-sm'>
-            Each video is ~100MB.
-          </Text>
-        </HStack>
-      </Card>
 
       <HStack space='sm' className='items-center'>
+        <Text className='text-warning-500/80 text-xs'>1 Video{'\n'}~100MB</Text>
         <Button
           size='sm'
           variant='solid'

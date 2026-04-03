@@ -460,11 +460,11 @@ export default function SettingsScreen() {
                       size='sm'
                       className='m-2 border-warning-500'
                     >
-                      <HStack className='items-center justify-between gap-2'>
+                      <HStack className='items-center justify-between gap-3'>
                         <Icon
                           as={TriangleAlert}
                           size='lg'
-                          className='w-12 text-warning-500'
+                          className='w-24 h-24 text-warning-500'
                         />
                         <Text className='text-warning-500'>
                           Each match video is about 100MB. Please check your
