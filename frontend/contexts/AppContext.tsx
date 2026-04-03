@@ -358,15 +358,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const lastUpdate = (await db.config.get({ key: 'lastDataUpdate' }))?.value;
 
       if (serverHash && storedHash && serverHash === storedHash && lastUpdate) {
-        const lastUpdateTime = new Date(lastUpdate).getTime();
-        const now = Date.now();
-        const intervalMs = dataRefreshInterval * 60 * 1000;
-
-        // Skip refresh if hash matches and we're within the interval
-        if (now - lastUpdateTime < intervalMs) {
-          console.log('Data unchanged (hash match), skipping refresh');
-          return;
-        }
+        console.log('Data unchanged (hash match), skipping refresh');
+        // Reset freshness to current since server confirmed no new data
+        const now = new Date();
+        await db.config.put({ key: 'lastDataUpdate', value: now.toISOString() });
+        setLastDataUpdate(now);
+        setDataFreshnessStatus('current');
+        return;
       }
     }
 

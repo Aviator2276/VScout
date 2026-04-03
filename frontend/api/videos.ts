@@ -63,11 +63,16 @@ export async function fetchAndStoreVideo(
 
         if (total > 0) {
           // Exact progress when content-length is known
-          onProgress(Math.min(Math.round((loaded / total) * 100), 99));
+          // Cap at 95% during download, reserve 95-100% for OPFS write
+          onProgress(Math.min(Math.round((loaded / total) * 95), 95));
         } else {
-          // Estimate progress without content-length (assume ~20MB typical video)
-          const estimated = Math.min(Math.round((loaded / (20 * 1024 * 1024)) * 100), 95);
-          onProgress(estimated);
+          // Without content-length, show MB downloaded as progress indicator
+          // Use logarithmic scale to handle varying file sizes better
+          // This gives reasonable progress for files from 10MB to 200MB+
+          const mbLoaded = loaded / (1024 * 1024);
+          // Logarithmic progress: reaches ~50% at 25MB, ~75% at 75MB, ~90% at 150MB
+          const logProgress = Math.min(Math.log10(mbLoaded + 1) / Math.log10(200) * 95, 95);
+          onProgress(Math.round(logProgress));
         }
       }
 
@@ -82,8 +87,17 @@ export async function fetchAndStoreVideo(
       return null;
     }
 
+    // Download complete, now saving to storage (95-100%)
+    if (onProgress) {
+      onProgress(96);
+    }
+
     // Store to OPFS
     const fileSize = await writeVideo(compCode, matchNumber, blob);
+
+    if (onProgress) {
+      onProgress(98);
+    }
 
     // Update DB record
     const existing = await db.matchVideos.get([compCode, matchNumber]);

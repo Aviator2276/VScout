@@ -49,6 +49,7 @@ import {
   MonitorCog,
   Video,
   Film,
+  TriangleAlert,
 } from 'lucide-react-native';
 import { VideoSelectionMode } from '@/types/video';
 import {
@@ -237,9 +238,7 @@ export default function SettingsScreen() {
                 <TableBody>
                   <TableRow className='m-0'>
                     <TableData>App version:</TableData>
-                    <TableData>
-                      {APP_VERSION}
-                    </TableData>
+                    <TableData>{APP_VERSION}</TableData>
                   </TableRow>
                   <TableRow>
                     <TableData>Comp code:</TableData>
@@ -431,6 +430,7 @@ export default function SettingsScreen() {
                       Control which videos are downloaded. Auto will download
                       match videos once as they become available.
                     </Text>
+
                     <HStack space='sm' className='grid grid-cols-2 gap-1'>
                       <Button
                         size='md'
@@ -455,6 +455,24 @@ export default function SettingsScreen() {
                         <ButtonText size='sm'>Auto</ButtonText>
                       </Button>
                     </HStack>
+                    <Card
+                      variant='outline'
+                      size='sm'
+                      className='m-2 border-warning-500'
+                    >
+                      <HStack className='items-center justify-between gap-2'>
+                        <Icon
+                          as={TriangleAlert}
+                          size='lg'
+                          className='w-12 text-warning-500'
+                        />
+                        <Text className='text-warning-500'>
+                          Each match video is about 100MB. Please check your
+                          storage before downloading automatically. 50 videos =
+                          5GB
+                        </Text>
+                      </HStack>
+                    </Card>
                   </VStack>
                 </VStack>
               </View>

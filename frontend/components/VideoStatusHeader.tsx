@@ -10,10 +10,14 @@ import {
   Bolt,
   CircleX,
   Check,
+  TriangleAlert,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { NetworkQuality } from '@/hooks/useNetworkQuality';
 import { Checkbox, CheckboxIcon, CheckboxIndicator } from './ui/checkbox';
+import { Card } from './ui/card';
+import { Text } from '@/components/ui/text';
+import { VStack } from './ui/vstack';
 
 interface VideoStatusHeaderProps {
   networkQuality: NetworkQuality;
@@ -47,6 +51,7 @@ export function VideoStatusHeader({
   return (
     <HStack className='items-center justify-between px-4 py-3 border-l border-r border-b rounded-b border-outline-100'>
       {/* Network Quality Badge */}
+
       <HStack space='sm' className='items-center'>
         <Checkbox
           value='mute'
@@ -64,6 +69,18 @@ export function VideoStatusHeader({
           <BadgeText className='ml-1'>{qualityConfig.label}</BadgeText>
         </Badge>
       </HStack>
+      <Card variant='outline' size='sm' className='p-1 m-0 border-warning-500'>
+        <HStack className='items-center justify-between gap-2'>
+          <Icon
+            as={TriangleAlert}
+            size='lg'
+            className='w-12 text-warning-500'
+          />
+          <Text className='text-warning-500 text-sm'>
+            Each video is ~100MB.
+          </Text>
+        </HStack>
+      </Card>
 
       <HStack space='sm' className='items-center'>
         <Button

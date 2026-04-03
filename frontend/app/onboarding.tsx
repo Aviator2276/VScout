@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Pressable, View } from 'react-native';
+import { ScrollView, Pressable, View, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
 import { Text } from '@/components/ui/text';
@@ -38,7 +38,18 @@ import {
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionHeader,
+  AccordionTrigger,
+  AccordionTitleText,
+  AccordionIcon,
+  AccordionContent,
+} from '@/components/ui/accordion';
+import { ChevronDown } from 'lucide-react-native';
 import { APP_VERSION } from '@/utils/version';
+import { Asset } from 'expo-asset';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { DownlinkStatus } from '@/components/DownlinkStatus';
 import { UplinkStatus } from '@/components/UplinkStatus';
@@ -49,6 +60,180 @@ interface OnboardingPage {
   useLogoInsteadOfIcon?: boolean;
   content?: React.ReactNode;
   ContentComponent?: React.FC;
+}
+
+const iosVideoAsset = Asset.fromModule(
+  require('@/assets/videos/install-ios3.mp4'),
+);
+const androidVideoAsset = Asset.fromModule(
+  require('@/assets/videos/install-android3.mp4'),
+);
+
+function InstallAppContent() {
+  const isIOS = Platform.OS === 'ios';
+  const isAndroid = Platform.OS === 'android';
+
+  // Default open value based on platform
+  const defaultValue = isIOS ? ['ios'] : isAndroid ? ['android'] : ['ios'];
+
+  return (
+    <VStack space='md'>
+      <Text className='text-typography-600 text-center'>
+        VScout works best when installed as an app on your device.
+      </Text>
+      <Accordion
+        type='single'
+        variant='filled'
+        size='md'
+        className='w-full'
+        defaultValue={defaultValue}
+      >
+        {isIOS || !isAndroid ? (
+          <>
+            <AccordionItem value='ios'>
+              <AccordionHeader>
+                <AccordionTrigger>
+                  {({ isExpanded }: { isExpanded: boolean }) => (
+                    <>
+                      <AccordionTitleText>iOS (Safari)</AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} className='ml-3' />
+                    </>
+                  )}
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionContent>
+                <VStack space='sm'>
+                  <Text className='text-typography-500'>
+                    1. Tap the Share button at the bottom of Safari{'\n'}
+                    2. Scroll down and tap &quot;Add to Home Screen&quot;{'\n'}
+                    3. Tap &quot;Add&quot; to confirm{'\n'}
+                    4. Open the application on your Home Screen
+                  </Text>
+                  <video
+                    src={iosVideoAsset.uri}
+                    controls
+                    playsInline
+                    muted
+                    preload='metadata'
+                    style={{
+                      width: '100%',
+                      borderRadius: 8,
+                      maxHeight: 400,
+                    }}
+                  />
+                </VStack>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value='android'>
+              <AccordionHeader>
+                <AccordionTrigger>
+                  {({ isExpanded }: { isExpanded: boolean }) => (
+                    <>
+                      <AccordionTitleText>Android (Chrome)</AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} className='ml-3' />
+                    </>
+                  )}
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionContent>
+                <VStack space='sm'>
+                  <Text className='text-typography-500'>
+                    1. Tap the three-dot menu in the top right{'\n'}
+                    2. Tap &quot;Add to Home screen&quot;{'\n'}
+                    3. Tap &quot;Add&quot; to confirm{'\n'}
+                    4. Open the application on your Home Screen
+                  </Text>
+                  <video
+                    src={androidVideoAsset.uri}
+                    controls
+                    playsInline
+                    muted
+                    preload='metadata'
+                    style={{
+                      width: '100%',
+                      borderRadius: 8,
+                      maxHeight: 400,
+                    }}
+                  />
+                </VStack>
+              </AccordionContent>
+            </AccordionItem>
+          </>
+        ) : (
+          <>
+            <AccordionItem value='android'>
+              <AccordionHeader>
+                <AccordionTrigger>
+                  {({ isExpanded }: { isExpanded: boolean }) => (
+                    <>
+                      <AccordionTitleText>Android (Chrome)</AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} className='ml-3' />
+                    </>
+                  )}
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionContent>
+                <VStack space='sm'>
+                  <Text className='text-typography-500'>
+                    1. Tap the three-dot menu in the top right{'\n'}
+                    2. Tap &quot;Add to Home screen&quot;{'\n'}
+                    3. Tap &quot;Add&quot; to confirm{'\n'}
+                    4. Open the application on your Home Screen
+                  </Text>
+                  <video
+                    src={androidVideoAsset.uri}
+                    controls
+                    playsInline
+                    muted
+                    preload='metadata'
+                    style={{
+                      width: '100%',
+                      borderRadius: 8,
+                      maxHeight: 400,
+                    }}
+                  />
+                </VStack>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value='ios'>
+              <AccordionHeader>
+                <AccordionTrigger>
+                  {({ isExpanded }: { isExpanded: boolean }) => (
+                    <>
+                      <AccordionTitleText>iOS (Safari)</AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} className='ml-3' />
+                    </>
+                  )}
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionContent>
+                <VStack space='sm'>
+                  <Text className='text-typography-500'>
+                    1. Tap the Share button at the bottom of Safari{'\n'}
+                    2. Scroll down and tap &quot;Add to Home Screen&quot;{'\n'}
+                    3. Tap &quot;Add&quot; to confirm{'\n'}
+                    4. Open the application on your Home Screen
+                  </Text>
+                  <video
+                    src={iosVideoAsset.uri}
+                    controls
+                    playsInline
+                    muted
+                    preload='metadata'
+                    style={{
+                      width: '100%',
+                      borderRadius: 8,
+                      maxHeight: 400,
+                    }}
+                  />
+                </VStack>
+              </AccordionContent>
+            </AccordionItem>
+          </>
+        )}
+      </Accordion>
+    </VStack>
+  );
 }
 
 function OfflineSupportContent() {
@@ -129,35 +314,7 @@ const ONBOARDING_PAGES: OnboardingPage[] = [
   {
     title: 'Install the App',
     icon: Download,
-    content: (
-      <VStack space='md'>
-        <Text className='text-typography-600 text-center'>
-          VScout works best when installed as an app on your device.
-        </Text>
-        <Card variant='outline' size='md'>
-          <VStack space='sm'>
-            <Heading size='sm'>iOS (Safari)</Heading>
-            <Text className='text-typography-500'>
-              1. Tap the Share button at the bottom of Safari{'\n'}
-              2. Scroll down and tap &quot;Add to Home Screen&quot;{'\n'}
-              3. Tap &quot;Add&quot; to confirm {'\n'}
-              4. Open the application on your Home Screen
-            </Text>
-          </VStack>
-        </Card>
-        <Card variant='outline' size='md'>
-          <VStack space='sm'>
-            <Heading size='sm'>Android (Chrome)</Heading>
-            <Text className='text-typography-500'>
-              1. Tap the three-dot menu in the top right{'\n'}
-              2. Tap &quot;Add to Home screen&quot;{'\n'}
-              3. Tap &quot;Add&quot; to confirm{'\n'}
-              4. Open the application on your Home Screen
-            </Text>
-          </VStack>
-        </Card>
-      </VStack>
-    ),
+    ContentComponent: InstallAppContent,
   },
   {
     title: 'Offline Support',
@@ -181,8 +338,8 @@ const ONBOARDING_PAGES: OnboardingPage[] = [
               {'\n'}• The most important robot action is shooting. Make sure
               their action is in sync with the time of the match.{'\n'}• If you
               recorded that the robot had shot but it missed, use the missed
-              button to delete the recent action.{'\n'}• Learn more in the
-              tutorials on the home screen.
+              button to delete the recent action.{'\n'}
+              {/* • Learn more in thetutorials on the home screen. */}
             </Text>
           </VStack>
         </Card>
