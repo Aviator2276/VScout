@@ -172,6 +172,9 @@ export default function TeamsScreen() {
         case 'rank':
           cmp = a.rank - b.rank;
           break;
+        case 'ranking_points':
+          cmp = parseFloat(b.ranking_points || '0') - parseFloat(a.ranking_points || '0');
+          break;
         case 'median_fuel_scored':
           cmp =
             (b.median_tele_fuel ?? 0) +

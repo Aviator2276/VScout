@@ -42,7 +42,7 @@ import {
 import { Icon } from '@/components/ui/icon';
 
 export interface TeamFilters {
-  sortBy: 'rank' | 'median_fuel_scored' | 'median_auto_fuel' | 'median_climb_level' | 'prescout_hopper_size' | 'prescout_driver_years';
+  sortBy: 'rank' | 'ranking_points' | 'median_fuel_scored' | 'median_auto_fuel' | 'median_climb_level' | 'prescout_hopper_size' | 'prescout_driver_years';
   sortOrder: 'asc' | 'desc';
   drivetrain: string | null;
   rangeFilter: string | null;
@@ -63,6 +63,7 @@ interface TeamFilterModalProps {
 
 const SORT_OPTIONS: { value: TeamFilters['sortBy']; label: string }[] = [
   { value: 'rank', label: 'Rank' },
+  { value: 'ranking_points', label: 'Ranking Points' },
   { value: 'median_fuel_scored', label: 'Median Fuel Scored' },
   { value: 'median_auto_fuel', label: 'Median Auto Fuel' },
   { value: 'median_climb_level', label: 'Median Climb Level' },

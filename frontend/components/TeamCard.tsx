@@ -25,6 +25,8 @@ import {
   Binoculars,
   EyeOff,
   Bot,
+  ImageOff,
+  Image as ImageIcon,
 } from 'lucide-react-native';
 
 interface TeamCardProps {
@@ -61,21 +63,20 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
         className={`mb-2 p-2 ${isHighlighted() ? 'border-amber-400 border-2' : ''}`}
       >
         <HStack className='items-center justify-between'>
-          <VStack className='w-full'>
+          <VStack className='w-full gap-1'>
             <HStack space='sm' className='items-center justify-between'>
               <HStack space='sm' className='items-center'>
                 <Text className='text-lg font-bold text-typography-900'>
                   {team.team_number}
                 </Text>
-                <Text className='text-md text-typography-600 overflow-hidden max-w-48'>
+                <Text className='text-sm text-typography-600 overflow-hidden text-ellipsis line-clamp-1 max-w-32 flex-shrink'>
                   {teamName}
                 </Text>
               </HStack>
-              <HStack space='sm' className='items-center'>
-                <Text className='text-md text-typography-600'>
+              <HStack space='sm' className='flex-1 w-full justify-end gap-1'>
+                <Text className='text-md text-typography-600 flex-shrink-0'>
                   RP {team.ranking_points}
                 </Text>
-
                 <Popover
                   placement='top'
                   size='xs'
@@ -102,6 +103,34 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                         {team.prescout_drivetrain
                           ? 'Prescouted'
                           : 'Not Prescouted'}
+                      </Text>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+                <Popover
+                  placement='bottom'
+                  size='xs'
+                  trigger={(triggerProps) => (
+                    <Pressable {...triggerProps}>
+                      <Badge
+                        size='lg'
+                        variant='solid'
+                        action={team.picture ? 'success' : 'error'}
+                        className='justify-center items-center'
+                      >
+                        <BadgeIcon
+                          as={team.picture ? ImageIcon : ImageOff}
+                        ></BadgeIcon>
+                      </Badge>
+                    </Pressable>
+                  )}
+                >
+                  <PopoverBackdrop />
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Text className='text-typography-900'>
+                        {team.picture ? 'Picture Captured' : 'No Picture'}
                       </Text>
                     </PopoverBody>
                   </PopoverContent>
