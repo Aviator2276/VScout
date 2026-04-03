@@ -321,12 +321,8 @@ class Match(models.Model):
 
         # Update team stats whenever a match is marked as played
         if should_download_video:
-            from django_q.tasks import async_task as _async_task
-            _async_task(
-                "backend.tasks.update_team_stats_task",
-                self.pk,
-                task_name=f"team_stats_match_{self.match_number}_{self.competition.code}",
-            )
+            from backend.tasks import update_team_stats_task
+            update_team_stats_task(self.pk)
 
         # Queue video download task if conditions are met
         import os
