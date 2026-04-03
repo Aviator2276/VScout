@@ -15,13 +15,27 @@ import {
   ModalFooter,
 } from '@/components/ui/modal';
 import {
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
+  SelectItem,
+} from '@/components/ui/select';
+import {
+  Checkbox,
+  CheckboxIndicator,
+  CheckboxIcon,
+  CheckboxLabel,
+} from '@/components/ui/checkbox';
+import {
   ArrowUp,
   ArrowDown,
   RotateCcw,
-  Video,
-  Clock,
-  CheckCircle,
-  CircleDotDashed,
+  CheckIcon,
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 
@@ -39,16 +53,6 @@ interface MatchFilterModalProps {
   onApply: (filters: MatchFilters) => void;
   onReset: () => void;
 }
-
-const TIME_OPTIONS: {
-  value: MatchFilters['timeFilter'];
-  label: string;
-  icon: typeof Clock;
-}[] = [
-  { value: 'all', label: 'All Matches', icon: Clock },
-  { value: 'upcoming', label: 'Upcoming', icon: Clock },
-  { value: 'played', label: 'Played', icon: CheckCircle },
-];
 
 const SORT_OPTIONS: { value: MatchFilters['sortBy']; label: string }[] = [
   { value: 'match_number', label: 'Match #' },
@@ -99,57 +103,55 @@ export function MatchFilterModal({
         <ModalBody>
           <ScrollView showsVerticalScrollIndicator={false}>
             <VStack space='lg'>
-              {/* Time Filter */}
+              {/* Match Status */}
               <VStack space='sm'>
                 <Text className='font-semibold text-typography-700'>
                   Match Status
                 </Text>
-                <HStack space='xs' className='flex-wrap'>
-                  {TIME_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      onPress={() =>
-                        setLocal((prev) => ({ ...prev, timeFilter: opt.value }))
-                      }
-                    >
-                      <Badge
-                        size='lg'
-                        variant='solid'
-                        action={
-                          local.timeFilter === opt.value ? 'info' : 'muted'
-                        }
-                        className='mb-1 items-center'
-                      >
-                        <BadgeText>{opt.label}</BadgeText>
-                      </Badge>
-                    </Pressable>
-                  ))}
-                </HStack>
+                <Select
+                  selectedValue={local.timeFilter}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({
+                      ...prev,
+                      timeFilter: value as MatchFilters['timeFilter'],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput placeholder='All Matches' />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectItem label='All Matches' value='all' />
+                      <SelectItem label='Upcoming' value='upcoming' />
+                      <SelectItem label='Played' value='played' />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
               </VStack>
 
               {/* Video Filter */}
               <VStack space='sm'>
                 <Text className='font-semibold text-typography-700'>Video</Text>
-                <HStack space='xs' className='flex-wrap'>
-                  <Pressable
-                    onPress={() =>
-                      setLocal((prev) => ({
-                        ...prev,
-                        hasVideo: prev.hasVideo === true ? null : true,
-                      }))
-                    }
-                  >
-                    <Badge
-                      size='lg'
-                      variant='solid'
-                      action={local.hasVideo === true ? 'info' : 'muted'}
-                      className='mb-1 items-center'
-                    >
-                      <BadgeIcon as={Video} />
-                      <BadgeText className='ml-1'>Has Video</BadgeText>
-                    </Badge>
-                  </Pressable>
-                </HStack>
+                <Checkbox
+                  value='hasVideo'
+                  isChecked={local.hasVideo === true}
+                  onChange={(checked) =>
+                    setLocal((prev) => ({
+                      ...prev,
+                      hasVideo: checked ? true : null,
+                    }))
+                  }
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Has Video</CheckboxLabel>
+                </Checkbox>
               </VStack>
 
               {/* Sort By */}
@@ -174,25 +176,33 @@ export function MatchFilterModal({
                     </Badge>
                   </Pressable>
                 </HStack>
-                <HStack space='xs' className='flex-wrap'>
-                  {SORT_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      onPress={() =>
-                        setLocal((prev) => ({ ...prev, sortBy: opt.value }))
-                      }
-                    >
-                      <Badge
-                        size='lg'
-                        variant='solid'
-                        action={local.sortBy === opt.value ? 'info' : 'muted'}
-                        className='mb-1'
-                      >
-                        <BadgeText>{opt.label}</BadgeText>
-                      </Badge>
-                    </Pressable>
-                  ))}
-                </HStack>
+                <Select
+                  selectedValue={local.sortBy}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({
+                      ...prev,
+                      sortBy: value as MatchFilters['sortBy'],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput
+                      placeholder='Select sort'
+                      value={SORT_OPTIONS.find((o) => o.value === local.sortBy)?.label}
+                    />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      {SORT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} label={opt.label} value={opt.value} />
+                      ))}
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
               </VStack>
             </VStack>
           </ScrollView>

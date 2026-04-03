@@ -80,8 +80,6 @@ export default function SettingsScreen() {
     theme,
     setTheme,
     swStatus,
-    forceAppUpdate,
-    isUpdatingApp,
   } = useApp();
   const router = useRouter();
   const { scrollTo } = useLocalSearchParams();
@@ -89,7 +87,6 @@ export default function SettingsScreen() {
   const videoConfigRef = useRef<View>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showCompCodeDialog, setShowCompCodeDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [localCompetitionCode, setLocalCompetitionCode] = useState('');
@@ -538,21 +535,6 @@ export default function SettingsScreen() {
                 >
                   <ButtonText>Reset App</ButtonText>
                 </Button>
-                <Heading size='md'>Force Update</Heading>
-                <Text className='text-primary-500 mb-2'>
-                  Update app to the most recent release.
-                </Text>
-                <Button
-                  size='md'
-                  action='primary'
-                  variant='outline'
-                  onPress={() => setShowUpdateDialog(true)}
-                  isDisabled={isUpdatingApp}
-                >
-                  <ButtonText>
-                    {isUpdatingApp ? 'Updating...' : 'Force Update App'}
-                  </ButtonText>
-                </Button>
               </VStack>
             </Card>
           </VStack>
@@ -631,47 +613,6 @@ export default function SettingsScreen() {
               >
                 <ButtonText>
                   {isResetting ? 'Resetting...' : 'Reset'}
-                </ButtonText>
-              </Button>
-            </HStack>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        isOpen={showUpdateDialog}
-        onClose={() => setShowUpdateDialog(false)}
-      >
-        <AlertDialogBackdrop />
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <Heading>Force Update App</Heading>
-          </AlertDialogHeader>
-          <AlertDialogBody>
-            <Text>
-              This will check for and install the latest version of the app.
-              The page will reload after the update is applied.
-            </Text>
-          </AlertDialogBody>
-          <AlertDialogFooter>
-            <HStack space='md' className='mt-2 w-full justify-end'>
-              <Button
-                action='secondary'
-                onPress={() => setShowUpdateDialog(false)}
-                isDisabled={isUpdatingApp}
-              >
-                <ButtonText>Cancel</ButtonText>
-              </Button>
-              <Button
-                action='primary'
-                onPress={() => {
-                  setShowUpdateDialog(false);
-                  forceAppUpdate();
-                }}
-                isDisabled={isUpdatingApp}
-              >
-                <ButtonText>
-                  {isUpdatingApp ? 'Updating...' : 'Update'}
                 </ButtonText>
               </Button>
             </HStack>

@@ -24,6 +24,7 @@ import {
   CircleQuestionMark,
   Binoculars,
   EyeOff,
+  Bot,
 } from 'lucide-react-native';
 
 interface TeamCardProps {
@@ -128,7 +129,10 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                       >
                         <BadgeIcon as={Volleyball}></BadgeIcon>
                         <BadgeText className='ml-1'>
-                          {team.avg_fuel_scored}
+                          {(
+                            (team.median_auto_fuel ?? 0) +
+                            (team.median_tele_fuel ?? 0)
+                          ).toFixed(1)}
                         </BadgeText>
                       </Badge>
                     </Pressable>
@@ -139,7 +143,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     <PopoverArrow />
                     <PopoverBody>
                       <Text className='text-typography-900'>
-                        Average Fuel Scored
+                        Median Fuel Scored
                       </Text>
                     </PopoverBody>
                   </PopoverContent>
@@ -155,10 +159,9 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                         action='muted'
                         className='justify-center items-center bg-emerald-500/40'
                       >
-                        <BadgeText>
-                          L
-                          {Math.round(parseFloat(team.avg_climb_points) * 10) /
-                            10}
+                        <BadgeIcon as={Bot}></BadgeIcon>
+                        <BadgeText className='ml-1'>
+                          {team.median_auto_fuel ?? 0}
                         </BadgeText>
                       </Badge>
                     </Pressable>
@@ -169,7 +172,7 @@ export function TeamCard({ team, searchQuery = '' }: TeamCardProps) {
                     <PopoverArrow />
                     <PopoverBody>
                       <Text className='text-typography-900'>
-                        Average Climb Points
+                        Median Auto Fuel
                       </Text>
                     </PopoverBody>
                   </PopoverContent>

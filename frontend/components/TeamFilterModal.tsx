@@ -16,24 +16,41 @@ import {
   ModalFooter,
 } from '@/components/ui/modal';
 import {
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
+  SelectItem,
+} from '@/components/ui/select';
+import {
+  Checkbox,
+  CheckboxIndicator,
+  CheckboxIcon,
+  CheckboxLabel,
+} from '@/components/ui/checkbox';
+import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Dice4,
-  Move,
-  MoveVertical,
-  CircleQuestionMark,
   RotateCcw,
+  CheckIcon,
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 
 export interface TeamFilters {
-  sortBy: 'rank' | 'avg_fuel_scored' | 'avg_climb_points' | 'prescout_hopper_size' | 'prescout_driver_years';
+  sortBy: 'rank' | 'median_fuel_scored' | 'median_auto_fuel' | 'median_climb_level' | 'prescout_hopper_size' | 'prescout_driver_years';
   sortOrder: 'asc' | 'desc';
   drivetrain: string | null;
   rangeFilter: string | null;
   turret: boolean | null;
   hood: boolean | null;
+  shooterType: string | null;
+  trenchTravel: boolean | null;
+  trenchPreference: string | null;
 }
 
 interface TeamFilterModalProps {
@@ -46,22 +63,11 @@ interface TeamFilterModalProps {
 
 const SORT_OPTIONS: { value: TeamFilters['sortBy']; label: string }[] = [
   { value: 'rank', label: 'Rank' },
-  { value: 'avg_fuel_scored', label: 'Avg Fuel Scored' },
-  { value: 'avg_climb_points', label: 'Avg Climb Level' },
+  { value: 'median_fuel_scored', label: 'Median Fuel Scored' },
+  { value: 'median_auto_fuel', label: 'Median Auto Fuel' },
+  { value: 'median_climb_level', label: 'Median Climb Level' },
   { value: 'prescout_hopper_size', label: 'Hopper Size' },
   { value: 'prescout_driver_years', label: 'Driver Years' },
-];
-
-const DRIVETRAIN_OPTIONS = [
-  { value: 'swerve', label: 'Swerve', icon: Dice4 },
-  { value: 'mecanum', label: 'Mecanum', icon: Move },
-  { value: 'tank', label: 'Tank', icon: MoveVertical },
-];
-
-const RANGE_OPTIONS = [
-  { value: 'alliance zone', label: 'Alliance Zone' },
-  { value: 'neutral zone', label: 'Neutral Zone' },
-  { value: 'opponent zone', label: 'Opponent Zone' },
 ];
 
 export function TeamFilterModal({
@@ -121,117 +127,179 @@ export function TeamFilterModal({
                     </Badge>
                   </Pressable>
                 </HStack>
-                <HStack space='xs' className='flex-wrap'>
-                  {SORT_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      onPress={() => setLocal((prev) => ({ ...prev, sortBy: opt.value }))}
-                    >
-                      <Badge
-                        size='lg'
-                        variant='solid'
-                        action={local.sortBy === opt.value ? 'info' : 'muted'}
-                        className='mb-1'
-                      >
-                        <BadgeText>{opt.label}</BadgeText>
-                      </Badge>
-                    </Pressable>
-                  ))}
-                </HStack>
+                <Select
+                  selectedValue={local.sortBy}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({ ...prev, sortBy: value as TeamFilters['sortBy'] }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput
+                      placeholder='Select sort'
+                      value={SORT_OPTIONS.find((o) => o.value === local.sortBy)?.label}
+                    />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      {SORT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} label={opt.label} value={opt.value} />
+                      ))}
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
               </VStack>
 
               {/* Drivetrain */}
               <VStack space='sm'>
                 <Text className='font-semibold text-typography-700'>Drivetrain</Text>
-                <HStack space='xs' className='flex-wrap'>
-                  {DRIVETRAIN_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      onPress={() =>
-                        setLocal((prev) => ({
-                          ...prev,
-                          drivetrain: prev.drivetrain === opt.value ? null : opt.value,
-                        }))
-                      }
-                    >
-                      <Badge
-                        size='lg'
-                        variant='solid'
-                        action={local.drivetrain === opt.value ? 'info' : 'muted'}
-                        className='mb-1 items-center'
-                      >
-                        <BadgeIcon as={opt.icon} />
-                        <BadgeText className='ml-1'>{opt.label}</BadgeText>
-                      </Badge>
-                    </Pressable>
-                  ))}
-                </HStack>
+                <Select
+                  selectedValue={local.drivetrain ?? ''}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({ ...prev, drivetrain: value || null }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput placeholder='Any' />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectItem label='Any' value='' />
+                      <SelectItem label='Swerve' value='swerve' />
+                      <SelectItem label='Tank' value='tank' />
+                      <SelectItem label='Mecanum' value='mecanum' />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
               </VStack>
 
               {/* Range */}
               <VStack space='sm'>
-                <Text className='font-semibold text-typography-700'>Range</Text>
-                <HStack space='xs' className='flex-wrap'>
-                  {RANGE_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      onPress={() =>
-                        setLocal((prev) => ({
-                          ...prev,
-                          rangeFilter: prev.rangeFilter === opt.value ? null : opt.value,
-                        }))
-                      }
-                    >
-                      <Badge
-                        size='lg'
-                        variant='solid'
-                        action={local.rangeFilter === opt.value ? 'info' : 'muted'}
-                        className='mb-1'
-                      >
-                        <BadgeText>{opt.label}</BadgeText>
-                      </Badge>
-                    </Pressable>
-                  ))}
+                <Text className='font-semibold text-typography-700'>Shooter Range</Text>
+                <Select
+                  selectedValue={local.rangeFilter ?? ''}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({ ...prev, rangeFilter: value || null }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput placeholder='Any' />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectItem label='Any' value='' />
+                      <SelectItem label='Alliance Zone Only' value='alliance' />
+                      <SelectItem label='Neutral to Alliance Zone' value='neutral' />
+                      <SelectItem label='Opponent to Alliance Zone' value='opponent' />
+                      <SelectItem label='N/A' value='none' />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+              </VStack>
+
+              {/* Shooter Info */}
+              <VStack space='sm'>
+                <Text className='font-semibold text-typography-700'>Shooter Info</Text>
+                <Select
+                  selectedValue={local.shooterType ?? ''}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({ ...prev, shooterType: value || null }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput placeholder='Any type' />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectItem label='Any' value='' />
+                      <SelectItem label='Single' value='single' />
+                      <SelectItem label='Double' value='double' />
+                      <SelectItem label='Triple' value='triple' />
+                      <SelectItem label='Quad' value='quad' />
+                      <SelectItem label='None' value='none' />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+                <HStack space='md'>
+                  <Checkbox
+                    value='turret'
+                    isChecked={local.turret === true}
+                    onChange={(checked) =>
+                      setLocal((prev) => ({ ...prev, turret: checked ? true : null }))
+                    }
+                  >
+                    <CheckboxIndicator>
+                      <CheckboxIcon as={CheckIcon} />
+                    </CheckboxIndicator>
+                    <CheckboxLabel>Turret (Yaw)</CheckboxLabel>
+                  </Checkbox>
+                  <Checkbox
+                    value='hood'
+                    isChecked={local.hood === true}
+                    onChange={(checked) =>
+                      setLocal((prev) => ({ ...prev, hood: checked ? true : null }))
+                    }
+                  >
+                    <CheckboxIndicator>
+                      <CheckboxIcon as={CheckIcon} />
+                    </CheckboxIndicator>
+                    <CheckboxLabel>Hood (Pitch)</CheckboxLabel>
+                  </Checkbox>
                 </HStack>
               </VStack>
 
-              {/* Shooter Rotation */}
+              {/* Trench Travel */}
               <VStack space='sm'>
-                <Text className='font-semibold text-typography-700'>Shooter Rotation</Text>
-                <HStack space='sm'>
-                  <Pressable
-                    onPress={() =>
-                      setLocal((prev) => ({
-                        ...prev,
-                        turret: prev.turret === true ? null : true,
-                      }))
-                    }
-                  >
-                    <Badge
-                      size='lg'
-                      variant='solid'
-                      action={local.turret === true ? 'info' : 'muted'}
-                    >
-                      <BadgeText>Turret (Yaw)</BadgeText>
-                    </Badge>
-                  </Pressable>
-                  <Pressable
-                    onPress={() =>
-                      setLocal((prev) => ({
-                        ...prev,
-                        hood: prev.hood === true ? null : true,
-                      }))
-                    }
-                  >
-                    <Badge
-                      size='lg'
-                      variant='solid'
-                      action={local.hood === true ? 'info' : 'muted'}
-                    >
-                      <BadgeText>Hood (Pitch)</BadgeText>
-                    </Badge>
-                  </Pressable>
-                </HStack>
+                <Text className='font-semibold text-typography-700'>Trench Travel</Text>
+                <Checkbox
+                  value='trenchTravel'
+                  isChecked={local.trenchTravel === true}
+                  onChange={(checked) =>
+                    setLocal((prev) => ({ ...prev, trenchTravel: checked ? true : null }))
+                  }
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Can Travel Through Trench</CheckboxLabel>
+                </Checkbox>
+                <Select
+                  selectedValue={local.trenchPreference ?? ''}
+                  onValueChange={(value) =>
+                    setLocal((prev) => ({ ...prev, trenchPreference: value || null }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectInput placeholder='Any preference' />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectItem label='Any' value='' />
+                      <SelectItem label='Trench Only' value='trench' />
+                      <SelectItem label='Bump Only' value='bump' />
+                      <SelectItem label='Both' value='both' />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
               </VStack>
             </VStack>
           </ScrollView>

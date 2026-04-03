@@ -32,6 +32,9 @@ const DEFAULT_FILTERS: TeamFilters = {
   rangeFilter: null,
   turret: null,
   hood: null,
+  shooterType: null,
+  trenchTravel: null,
+  trenchPreference: null,
 };
 
 export default function TeamsScreen() {
@@ -83,20 +86,34 @@ export default function TeamsScreen() {
     if (filters.rangeFilter) count++;
     if (filters.turret !== null) count++;
     if (filters.hood !== null) count++;
+    if (filters.shooterType) count++;
+    if (filters.trenchTravel !== null) count++;
+    if (filters.trenchPreference) count++;
     return count;
   }, [filters]);
 
   const filteredTeams = useMemo(() => {
     let result = teams;
 
-    // Text search
+    // Text search (supports #tag filtering)
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (team) =>
-          team.team_number.toString().includes(query) ||
-          (teamNames[team.team_number] || '').toLowerCase().includes(query),
-      );
+      if (query.startsWith('#')) {
+        const tagQuery = query.slice(1);
+        if (tagQuery) {
+          result = result.filter(
+            (team) =>
+              team.tags &&
+              team.tags.some((tag) => tag.toLowerCase().includes(tagQuery)),
+          );
+        }
+      } else {
+        result = result.filter(
+          (team) =>
+            team.team_number.toString().includes(query) ||
+            (teamNames[team.team_number] || '').toLowerCase().includes(query),
+        );
+      }
     }
 
     // Drivetrain filter
@@ -127,6 +144,27 @@ export default function TeamsScreen() {
       );
     }
 
+    // Shooter type filter
+    if (filters.shooterType) {
+      result = result.filter(
+        (team) => team.prescout_shooter_type === filters.shooterType,
+      );
+    }
+
+    // Trench travel filter
+    if (filters.trenchTravel !== null) {
+      result = result.filter(
+        (team) => team.prescout_trench_travel === filters.trenchTravel,
+      );
+    }
+
+    // Trench preference filter
+    if (filters.trenchPreference) {
+      result = result.filter(
+        (team) => team.prescout_trench_travel_preference === filters.trenchPreference,
+      );
+    }
+
     // Sort
     result = [...result].sort((a, b) => {
       let cmp = 0;
@@ -134,15 +172,17 @@ export default function TeamsScreen() {
         case 'rank':
           cmp = a.rank - b.rank;
           break;
-        case 'avg_fuel_scored':
+        case 'median_fuel_scored':
           cmp =
-            parseFloat(b.avg_fuel_scored || '0') -
-            parseFloat(a.avg_fuel_scored || '0');
+            (b.median_tele_fuel ?? 0) +
+            (b.median_auto_fuel ?? 0) -
+            ((a.median_tele_fuel ?? 0) + (a.median_auto_fuel ?? 0));
           break;
-        case 'avg_climb_points':
-          cmp =
-            parseFloat(b.avg_climb_points || '0') -
-            parseFloat(a.avg_climb_points || '0');
+        case 'median_auto_fuel':
+          cmp = (b.median_auto_fuel ?? 0) - (a.median_auto_fuel ?? 0);
+          break;
+        case 'median_climb_level':
+          cmp = (b.median_climb_level ?? 0) - (a.median_climb_level ?? 0);
           break;
         case 'prescout_hopper_size':
           cmp = (b.prescout_hopper_size || 0) - (a.prescout_hopper_size || 0);
@@ -171,7 +211,7 @@ export default function TeamsScreen() {
                 <InputIcon as={SearchIcon} />
               </InputSlot>
               <InputField
-                placeholder='Search team # or name'
+                placeholder='Search team #, name, or #tag'
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
