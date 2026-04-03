@@ -2,6 +2,17 @@ import { Team, TeamInfo } from '@/types/team';
 import { apiRequest } from '@/utils/api';
 import { db } from '@/utils/db';
 
+/**
+ * Parse hashtags from a comment string into an array of tag strings.
+ * e.g. "Great robot #Defense #Shuttler" => ["Defense", "Shuttler"]
+ */
+export function parseTags(comments: string): string[] {
+  if (!comments) return [];
+  const matches = comments.match(/#(\w+)/g);
+  if (!matches) return [];
+  return [...new Set(matches.map((tag) => tag.slice(1)))];
+}
+
 export class NoCompetitionCodeError extends Error {
   constructor() {
     super('No competition code set');
@@ -145,6 +156,10 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           prescout_range: info.prescout_range,
           prescout_driver_years: info.prescout_driver_years,
           prescout_additional_comments: info.prescout_additional_comments,
+          prescout_shooter_type: info.prescout_shooter_type,
+          prescout_trench_travel: info.prescout_trench_travel,
+          prescout_trench_travel_preference: info.prescout_trench_travel_preference,
+          tags: info.tags,
           picture: info.picture,
           pictureHash: info.pictureHash,
         },
@@ -184,6 +199,27 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           info.prescout_additional_comments ||
           existingLocal?.prescout_additional_comments ||
           '',
+        prescout_shooter_type:
+          info.prescout_shooter_type ||
+          existingLocal?.prescout_shooter_type ||
+          '',
+        prescout_trench_travel:
+          info.prescout_trench_travel ??
+          existingLocal?.prescout_trench_travel ??
+          false,
+        prescout_trench_travel_preference:
+          info.prescout_trench_travel_preference ||
+          existingLocal?.prescout_trench_travel_preference ||
+          '',
+        tags:
+          (info.tags && info.tags.length > 0
+            ? info.tags
+            : existingLocal?.tags) ||
+          parseTags(
+            info.prescout_additional_comments ||
+              existingLocal?.prescout_additional_comments ||
+              '',
+          ),
         picture: info.picture || existingLocal?.picture || '',
         pictureHash: existingLocal?.pictureHash || undefined,
       };
@@ -251,6 +287,9 @@ export async function updateTeamPrescout(
     prescout_rotate_pitch: boolean;
     prescout_range: string;
     prescout_additional_comments: string;
+    prescout_shooter_type: string;
+    prescout_trench_travel: boolean;
+    prescout_trench_travel_preference: string;
     picture: string;
   },
 ): Promise<TeamInfo | undefined> {
@@ -275,9 +314,12 @@ export async function updateTeamPrescout(
       return undefined;
     }
 
+    const tags = parseTags(prescoutData.prescout_additional_comments);
+
     const updatedTeamInfo = {
       ...existingTeamInfo,
       ...prescoutData,
+      tags,
     };
 
     await db.teamInfo.put(updatedTeamInfo);
@@ -337,6 +379,9 @@ export interface PrescoutData {
   prescout_range: string;
   prescout_driver_years: number;
   prescout_additional_comments: string;
+  prescout_shooter_type: string;
+  prescout_trench_travel: boolean;
+  prescout_trench_travel_preference: string;
 }
 
 interface PictureSyncResponse {

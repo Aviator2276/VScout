@@ -31,6 +31,10 @@ export interface TeamInfo {
   prescout_range: string;
   prescout_driver_years: number;
   prescout_additional_comments: string;
+  prescout_shooter_type: string;
+  prescout_trench_travel: boolean;
+  prescout_trench_travel_preference: string;
+  tags: string[];
   accuracy: string;
   avg_fuel_scored: string;
   avg_shuttle: string;

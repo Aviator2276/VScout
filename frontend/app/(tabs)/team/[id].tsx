@@ -119,6 +119,10 @@ export default function TeamDetailScreen() {
         prescout_rotate_pitch: team.prescout_rotate_pitch ?? false,
         prescout_range: team.prescout_range || '',
         prescout_additional_comments: team.prescout_additional_comments || '',
+        prescout_shooter_type: team.prescout_shooter_type || '',
+        prescout_trench_travel: team.prescout_trench_travel ?? false,
+        prescout_trench_travel_preference:
+          team.prescout_trench_travel_preference || '',
         picture: capturedUri,
       });
       setTeam({ ...team, picture: capturedUri });
@@ -239,6 +243,20 @@ export default function TeamDetailScreen() {
                   <Text className='font-semibold'>{team.ranking_points}</Text>
                 </HStack>
               </VStack>
+              {team.tags && team.tags.length > 0 && (
+                <HStack className='flex-wrap gap-1'>
+                  {team.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      size='lg'
+                      variant='solid'
+                      action='info'
+                    >
+                      <BadgeText>#{tag}</BadgeText>
+                    </Badge>
+                  ))}
+                </HStack>
+              )}
             </VStack>
           </Card>
           {/* Tab Navigation */}
@@ -424,7 +442,7 @@ export default function TeamDetailScreen() {
                     </HStack>
                     <HStack className='justify-between'>
                       <Text className='text-typography-700'>
-                        Primary Driver Experience:
+                        Driver Experience:
                       </Text>
                       <Badge
                         size='lg'
@@ -454,12 +472,55 @@ export default function TeamDetailScreen() {
                       </Badge>
                     </HStack>
                     <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
+                        Trench Travel:
+                      </Text>
+                      <Badge
+                        variant='solid'
+                        action={
+                          team.prescout_trench_travel ? 'success' : 'muted'
+                        }
+                      >
+                        <BadgeText>
+                          {team.prescout_trench_travel ? 'Yes' : 'No'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Preference:</Text>
+                      <Badge variant='solid' action='muted'>
+                        <BadgeText className='capitalize'>
+                          {team.prescout_trench_travel_preference === 'trench'
+                            ? 'Trench Only'
+                            : team.prescout_trench_travel_preference === 'bump'
+                              ? 'Bump Only'
+                              : team.prescout_trench_travel_preference ===
+                                  'both'
+                                ? 'Both'
+                                : 'N/A'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                  </VStack>
+                  <VStack space='xs'>
+                    <HStack className='justify-between'>
+                      <Heading size='lg'>Shooter Info</Heading>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>Type:</Text>
+                      <Badge size='lg' variant='solid' action='muted'>
+                        <BadgeText className='capitalize'>
+                          {team.prescout_shooter_type || 'Unknown'}
+                        </BadgeText>
+                      </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
                       <Text className='text-typography-700'>Range:</Text>
                       <Badge
                         size='lg'
                         variant='solid'
                         action='muted'
-                        className='justify-center items-center bg-rose-500/40'
+                        className='justify-center items-center'
                       >
                         <BadgeIcon as={Goal}></BadgeIcon>
                         <BadgeText className='capitalize ml-1'>
@@ -469,15 +530,14 @@ export default function TeamDetailScreen() {
                               ? 'Neutral to Alliance Zone'
                               : team.prescout_range === 'opponent'
                                 ? 'Opponent to Alliance Zone'
-                                : 'Unknown'}
+                                : team.prescout_range === 'none'
+                                  ? 'N/A'
+                                  : 'Unknown'}
                         </BadgeText>
                       </Badge>
                     </HStack>
-                  </VStack>
-                  <Heading size='lg'>Shooter Rotation</Heading>
-                  <VStack space='xs'>
-                    <HStack className='justify-evenly'>
-                      <HStack className='gap-1'>
+                    <HStack className='grid grid-cols-2'>
+                      <HStack className='gap-1 justify-center'>
                         <Text className='text-typography-700'>Turret:</Text>
                         <Badge
                           variant='solid'
@@ -490,7 +550,7 @@ export default function TeamDetailScreen() {
                           </BadgeText>
                         </Badge>
                       </HStack>
-                      <HStack className='gap-1'>
+                      <HStack className='gap-1 justify-center'>
                         <Text className='text-typography-700'>Hood:</Text>
                         <Badge
                           variant='solid'

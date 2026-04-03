@@ -59,7 +59,11 @@ import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 type TabType = 'overview' | 'scores';
 
 export default function MatchDetailScreen() {
-  const { id, from, teamId } = useLocalSearchParams<{ id: string; from?: string; teamId?: string }>();
+  const { id, from, teamId } = useLocalSearchParams<{
+    id: string;
+    from?: string;
+    teamId?: string;
+  }>();
 
   const getBackRoute = () => {
     if (from === 'team' && teamId) {
@@ -104,7 +108,7 @@ export default function MatchDetailScreen() {
     React.useCallback(() => {
       // Reload match data when screen comes into focus (e.g., after scouting)
       loadMatchDetails();
-      
+
       return () => {
         videoPlayerRef.current?.pause();
       };
@@ -250,22 +254,27 @@ export default function MatchDetailScreen() {
             </VStack>
             <HStack space='xs' className='w-full'>
               <VStack space='xs' className='w-full'>
-                <Text className='font-semibold text-center text-blue-500'>
-                  Blue Alliance
+                <Text className='font-semibold text-center text-red-500'>
+                  Red Alliance
                 </Text>
                 <VStack className='gap-1'>
-                  {blueTeams.map((team, index) => {
-                    const isScouted = scoutedStatus[`blue_team_${index + 1}` as keyof typeof scoutedStatus];
+                  {redTeams.map((team, index) => {
+                    const isScouted =
+                      scoutedStatus[
+                        `red_team_${index + 1}` as keyof typeof scoutedStatus
+                      ];
                     return (
                       <Pressable
-                        key={`blue-${index}`}
+                        key={`red-${index}`}
                         onPress={() =>
                           router.push(
                             `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
                           )
                         }
                       >
-                        <HStack className={`grid grid-cols-4 items-center p-1 rounded bg-blue-500/20 ${isScouted ? 'opacity-40' : ''}`}>
+                        <HStack
+                          className={`grid grid-cols-4 items-center p-1 rounded bg-red-500/20 ${isScouted ? 'opacity-40' : ''}`}
+                        >
                           <Text className='col-span-1 font-medium'>
                             {team.number}
                           </Text>
@@ -279,22 +288,27 @@ export default function MatchDetailScreen() {
                 </VStack>
               </VStack>
               <VStack space='xs' className='w-full'>
-                <Text className='font-semibold text-center text-red-500'>
-                  Red Alliance
+                <Text className='font-semibold text-center text-blue-500'>
+                  Blue Alliance
                 </Text>
                 <VStack className='gap-1'>
-                  {redTeams.map((team, index) => {
-                    const isScouted = scoutedStatus[`red_team_${index + 1}` as keyof typeof scoutedStatus];
+                  {blueTeams.map((team, index) => {
+                    const isScouted =
+                      scoutedStatus[
+                        `blue_team_${index + 1}` as keyof typeof scoutedStatus
+                      ];
                     return (
                       <Pressable
-                        key={`red-${index}`}
+                        key={`blue-${index}`}
                         onPress={() =>
                           router.push(
                             `/(tabs)/team/${team.number}?from=match&matchId=${match.match_number}`,
                           )
                         }
                       >
-                        <HStack className={`grid grid-cols-4 items-center p-1 rounded bg-red-500/20 ${isScouted ? 'opacity-40' : ''}`}>
+                        <HStack
+                          className={`grid grid-cols-4 items-center p-1 rounded bg-blue-500/20 ${isScouted ? 'opacity-40' : ''}`}
+                        >
                           <Text className='col-span-1 font-medium'>
                             {team.number}
                           </Text>
@@ -363,12 +377,12 @@ export default function MatchDetailScreen() {
                       </Text>
                       <HStack space='xs'>
                         {[
-                          { key: 'blue_team_1', alliance: 'blue' },
-                          { key: 'blue_team_2', alliance: 'blue' },
-                          { key: 'blue_team_3', alliance: 'blue' },
                           { key: 'red_team_1', alliance: 'red' },
                           { key: 'red_team_2', alliance: 'red' },
                           { key: 'red_team_3', alliance: 'red' },
+                          { key: 'blue_team_1', alliance: 'blue' },
+                          { key: 'blue_team_2', alliance: 'blue' },
+                          { key: 'blue_team_3', alliance: 'blue' },
                         ].map(({ key, alliance }) => {
                           const team = match[key as keyof Match] as {
                             number: number;
@@ -402,13 +416,9 @@ export default function MatchDetailScreen() {
                                       isSelected &&
                                       !isScouted &&
                                       '!border-amber-400 border-[0.15rem] py-[0.1rem]'
-                                    } ${
-                                      isScouted ? 'opacity-40' : ''
-                                    }`}
+                                    } ${isScouted ? 'opacity-40' : ''}`}
                                   >
-                                    <BadgeText>
-                                      {team.number}
-                                    </BadgeText>
+                                    <BadgeText>{team.number}</BadgeText>
                                   </Badge>
                                 </Pressable>
                               )}
@@ -651,74 +661,55 @@ export default function MatchDetailScreen() {
                   <Table className='w-full !text-center text-xs'>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className='text-center'>Blue</TableHead>
-                        <TableHead className='text-center'>Score</TableHead>
                         <TableHead className='text-center'>Red</TableHead>
+                        <TableHead className='text-center'>Score</TableHead>
+                        <TableHead className='text-center'>Blue</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       <TableRow>
-                        <TableData className='text-center bg-blue-500/20'>
-                          {match.blue_1_auto_fuel +
-                            match.blue_2_auto_fuel +
-                            match.blue_3_auto_fuel}
-                        </TableData>
-                        <TableData className='text-center text-sm'>
-                          Auto Fuel
-                        </TableData>
                         <TableData className='text-center bg-red-500/20'>
                           {match.red_1_auto_fuel +
                             match.red_2_auto_fuel +
                             match.red_3_auto_fuel}
                         </TableData>
+                        <TableData className='text-center text-sm'>
+                          Auto Fuel
+                        </TableData>
+                        <TableData className='text-center bg-blue-500/20'>
+                          {match.blue_1_auto_fuel +
+                            match.blue_2_auto_fuel +
+                            match.blue_3_auto_fuel}
+                        </TableData>
                       </TableRow>
                       <TableRow>
-                        <TableData className='text-center bg-blue-500/20'>
-                          {match.blue_1_teleop_fuel +
-                            match.blue_2_teleop_fuel +
-                            match.blue_3_teleop_fuel}
-                        </TableData>
-                        <TableData className='text-center text-sm'>
-                          Teleop Fuel
-                        </TableData>
                         <TableData className='text-center bg-red-500/20'>
                           {match.red_1_teleop_fuel +
                             match.red_2_teleop_fuel +
                             match.red_3_teleop_fuel}
                         </TableData>
+                        <TableData className='text-center text-sm'>
+                          Teleop Fuel
+                        </TableData>
+                        <TableData className='text-center bg-blue-500/20'>
+                          {match.blue_1_teleop_fuel +
+                            match.blue_2_teleop_fuel +
+                            match.blue_3_teleop_fuel}
+                        </TableData>
                       </TableRow>
                       <TableRow>
-                        <TableData className='text-center bg-blue-500/20'>
-                          {match.total_blue_fuels}
+                        <TableData className='text-center bg-red-500/20'>
+                          {match.total_red_fuels}
                         </TableData>
                         <TableData className='text-center text-sm'>
                           Total Fuel
                         </TableData>
-                        <TableData className='text-center bg-red-500/20'>
-                          {match.total_red_fuels}
+                        <TableData className='text-center bg-blue-500/20'>
+                          {match.total_blue_fuels}
                         </TableData>
                       </TableRow>
 
                       <TableRow>
-                        <TableData className='text-center bg-blue-500/20'>
-                          {calculateAllianceClimbPoints([
-                            {
-                              level: 0,
-                              isAutonomous: match.blue_1_auto_climb,
-                            },
-                            {
-                              level: 0,
-                              isAutonomous: match.blue_2_auto_climb,
-                            },
-                            {
-                              level: 0,
-                              isAutonomous: match.blue_3_auto_climb,
-                            },
-                          ])}
-                        </TableData>
-                        <TableData className='text-center text-sm'>
-                          Auto Climb
-                        </TableData>
                         <TableData className='text-center bg-red-500/20'>
                           {calculateAllianceClimbPoints([
                             {
@@ -735,27 +726,27 @@ export default function MatchDetailScreen() {
                             },
                           ])}
                         </TableData>
-                      </TableRow>
-                      <TableRow>
+                        <TableData className='text-center text-sm'>
+                          Auto Climb
+                        </TableData>
                         <TableData className='text-center bg-blue-500/20'>
                           {calculateAllianceClimbPoints([
                             {
-                              level: match.blue_1_climb,
-                              isAutonomous: false,
+                              level: 0,
+                              isAutonomous: match.blue_1_auto_climb,
                             },
                             {
-                              level: match.blue_2_climb,
-                              isAutonomous: false,
+                              level: 0,
+                              isAutonomous: match.blue_2_auto_climb,
                             },
                             {
-                              level: match.blue_3_climb,
-                              isAutonomous: false,
+                              level: 0,
+                              isAutonomous: match.blue_3_auto_climb,
                             },
                           ])}
                         </TableData>
-                        <TableData className='text-center text-sm'>
-                          Endgame Climb
-                        </TableData>
+                      </TableRow>
+                      <TableRow>
                         <TableData className='text-center bg-red-500/20'>
                           {calculateAllianceClimbPoints([
                             {
@@ -772,40 +763,59 @@ export default function MatchDetailScreen() {
                             },
                           ])}
                         </TableData>
+                        <TableData className='text-center text-sm'>
+                          Endgame Climb
+                        </TableData>
+                        <TableData className='text-center bg-blue-500/20'>
+                          {calculateAllianceClimbPoints([
+                            {
+                              level: match.blue_1_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.blue_2_climb,
+                              isAutonomous: false,
+                            },
+                            {
+                              level: match.blue_3_climb,
+                              isAutonomous: false,
+                            },
+                          ])}
+                        </TableData>
                       </TableRow>
                       <TableRow>
-                        <TableData className='text-center text-sm bg-blue-500/20'>
-                          {match.blue_penalties}
+                        <TableData className='text-center text-sm bg-red-500/20'>
+                          {match.red_penalties}
                         </TableData>
                         <TableData className='text-center text-sm'>
                           Penalties
                         </TableData>
-                        <TableData className='text-center text-sm bg-red-500/20'>
-                          {match.red_penalties}
+                        <TableData className='text-center text-sm bg-blue-500/20'>
+                          {match.blue_penalties}
                         </TableData>
                       </TableRow>
                       <TableRow>
-                        <TableData className='text-center text-sm bg-blue-500/20'>
-                          {match.blue_total_score}
+                        <TableData className='text-center text-sm bg-red-500/20'>
+                          {match.red_total_score}
                         </TableData>
                         <TableData className='text-center text-sm'>
                           Total Score
                         </TableData>
-                        <TableData className='text-center text-sm bg-red-500/20'>
-                          {match.red_total_score}
+                        <TableData className='text-center text-sm bg-blue-500/20'>
+                          {match.blue_total_score}
                         </TableData>
                       </TableRow>
                     </TableBody>
                     <TableFooter>
                       <TableRow>
-                        <TableHead className='text-center text-sm bg-blue-500/20'>
-                          {match.blue_ranking_points}
+                        <TableHead className='text-center text-sm bg-red-500/20'>
+                          {match.red_ranking_points}
                         </TableHead>
                         <TableHead className='text-center text-sm'>
                           Ranking Points
                         </TableHead>
-                        <TableHead className='text-center text-sm bg-red-500/20'>
-                          {match.red_ranking_points}
+                        <TableHead className='text-center text-sm bg-blue-500/20'>
+                          {match.blue_ranking_points}
                         </TableHead>
                       </TableRow>
                     </TableFooter>
@@ -816,6 +826,57 @@ export default function MatchDetailScreen() {
           )}
           {activeTab === 'scores' && (
             <>
+              <MatchTeamCard
+                stats={{
+                  team: match.red_team_1,
+                  alliance: 'red',
+                  position: 1,
+                  autoFuel: match.red_1_auto_fuel,
+                  teleopFuel: match.red_1_teleop_fuel,
+                  totalFuelScored: match.red_1_fuel_scored,
+                  autoClimb: match.red_1_auto_climb,
+                  climbLevel: match.red_1_climb,
+                  totalAllianceScore: match.red_total_score,
+                }}
+                matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
+              />
+              <MatchTeamCard
+                stats={{
+                  team: match.red_team_2,
+                  alliance: 'red',
+                  position: 2,
+                  autoFuel: match.red_2_auto_fuel,
+                  teleopFuel: match.red_2_teleop_fuel,
+                  totalFuelScored: match.red_2_fuel_scored,
+                  autoClimb: match.red_2_auto_climb,
+                  climbLevel: match.red_2_climb,
+                  totalAllianceScore: match.red_total_score,
+                }}
+                matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
+              />
+              <MatchTeamCard
+                stats={{
+                  team: match.red_team_3,
+                  alliance: 'red',
+                  position: 3,
+                  autoFuel: match.red_3_auto_fuel,
+                  teleopFuel: match.red_3_teleop_fuel,
+                  totalFuelScored: match.red_3_fuel_scored,
+                  autoClimb: match.red_3_auto_climb,
+                  climbLevel: match.red_3_climb,
+                  totalAllianceScore: match.red_total_score,
+                }}
+                matchNumber={match.match_number}
+                matchType={match.match_type}
+                setNumber={match.set_number}
+                competitionCode={match.competition.code}
+              />
               <MatchTeamCard
                 stats={{
                   team: match.blue_team_1,
@@ -860,57 +921,6 @@ export default function MatchDetailScreen() {
                   totalFuelScored: match.blue_3_fuel_scored,
                   autoClimb: match.blue_3_auto_climb,
                   climbLevel: match.blue_3_climb,
-                  totalAllianceScore: match.blue_total_score,
-                }}
-                matchNumber={match.match_number}
-                matchType={match.match_type}
-                setNumber={match.set_number}
-                competitionCode={match.competition.code}
-              />
-              <MatchTeamCard
-                stats={{
-                  team: match.red_team_1,
-                  alliance: 'red',
-                  position: 1,
-                  autoFuel: match.red_1_auto_fuel,
-                  teleopFuel: match.red_1_teleop_fuel,
-                  totalFuelScored: match.red_1_fuel_scored,
-                  autoClimb: match.red_1_auto_climb,
-                  climbLevel: match.red_1_climb,
-                  totalAllianceScore: match.blue_total_score,
-                }}
-                matchNumber={match.match_number}
-                matchType={match.match_type}
-                setNumber={match.set_number}
-                competitionCode={match.competition.code}
-              />
-              <MatchTeamCard
-                stats={{
-                  team: match.red_team_2,
-                  alliance: 'red',
-                  position: 2,
-                  autoFuel: match.red_2_auto_fuel,
-                  teleopFuel: match.red_2_teleop_fuel,
-                  totalFuelScored: match.red_2_fuel_scored,
-                  autoClimb: match.red_2_auto_climb,
-                  climbLevel: match.red_2_climb,
-                  totalAllianceScore: match.blue_total_score,
-                }}
-                matchNumber={match.match_number}
-                matchType={match.match_type}
-                setNumber={match.set_number}
-                competitionCode={match.competition.code}
-              />
-              <MatchTeamCard
-                stats={{
-                  team: match.red_team_3,
-                  alliance: 'red',
-                  position: 3,
-                  autoFuel: match.red_3_auto_fuel,
-                  teleopFuel: match.red_3_teleop_fuel,
-                  totalFuelScored: match.red_3_fuel_scored,
-                  autoClimb: match.red_3_auto_climb,
-                  climbLevel: match.red_3_climb,
                   totalAllianceScore: match.blue_total_score,
                 }}
                 matchNumber={match.match_number}

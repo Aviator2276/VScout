@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -35,70 +35,115 @@ export function TeamPictureCamera({
   teamName,
   competitionCode,
 }: TeamPictureCameraProps) {
-  const cameraRef = useRef<CameraView>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Native refs
+  const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
-  const handleClose = () => {
-    setCameraReady(false);
-    onClose();
-  };
+  // Web refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const takePicture = async () => {
-    if (!cameraRef.current) return;
+  // Start the web camera stream when the sheet opens
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !isOpen) return;
 
-    const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
-    if (!photo) return;
+    let cancelled = false;
 
-    const photoUri = photo.uri;
-
-    const now = Date.now();
-    const pictureRecord: PictureRecord = {
-      info: {
-        status: 'pending',
-        competitionCode,
-        created_at: now,
-        last_retry: now,
-      },
-      team: {
-        number: teamNumber,
-        name: teamName,
-        competitionCode,
-      },
-      picture: photoUri,
-    };
-
-    await db.pictureRecords.put(pictureRecord);
-    onCapture(photoUri);
-    handleClose();
-  };
-
-  const renderCameraContent = () => {
-    // On native, gate on the permission hook; on web, the browser prompts automatically
-    if (Platform.OS !== 'web') {
-      if (!permission) {
-        return (
-          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-            <Spinner size='large' />
-          </Center>
-        );
-      }
-
-      if (!permission.granted) {
-        return (
-          <Center className='flex-1 max-w-2xl self-center w-full p-4'>
-            <VStack space='md'>
-              <Text className='text-center'>Camera permission is required to take team pictures.</Text>
-              <Button onPress={requestPermission}>
-                <ButtonText>Grant Permission</ButtonText>
-              </Button>
-            </VStack>
-          </Center>
-        );
+    async function startStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        setCameraReady(true);
+      } catch (err: any) {
+        if (!cancelled) {
+          console.error('Camera error:', err);
+          setCameraError(err.message || 'Failed to access camera');
+        }
       }
     }
 
+    startStream();
+
+    return () => {
+      cancelled = true;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    };
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    setCameraReady(false);
+    setCameraError(null);
+    if (Platform.OS === 'web' && streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    onClose();
+  }, [onClose]);
+
+  const savePicture = useCallback(
+    async (photoUri: string) => {
+      const now = Date.now();
+      const pictureRecord: PictureRecord = {
+        info: {
+          status: 'pending',
+          competitionCode,
+          created_at: now,
+          last_retry: now,
+        },
+        team: {
+          number: teamNumber,
+          name: teamName,
+          competitionCode,
+        },
+        picture: photoUri,
+      };
+      await db.pictureRecords.put(pictureRecord);
+      onCapture(photoUri);
+      handleClose();
+    },
+    [competitionCode, teamNumber, teamName, onCapture, handleClose],
+  );
+
+  const takePictureWeb = useCallback(async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    const dataUri = canvas.toDataURL('image/jpeg', 0.9);
+    await savePicture(dataUri);
+  }, [savePicture]);
+
+  const takePictureNative = useCallback(async () => {
+    if (!cameraRef.current) return;
+    const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
+    if (!photo) return;
+    await savePicture(photo.uri);
+  }, [savePicture]);
+
+  const renderCameraContent = () => {
     if (cameraError) {
       return (
         <Center className='flex-1 max-w-2xl self-center w-full p-4'>
@@ -106,6 +151,54 @@ export function TeamPictureCamera({
             <Text className='text-error-500 text-center'>{cameraError}</Text>
             <Button onPress={() => { setCameraError(null); }}>
               <ButtonText>Try Again</ButtonText>
+            </Button>
+          </VStack>
+        </Center>
+      );
+    }
+
+    if (Platform.OS === 'web') {
+      return (
+        <>
+          {!cameraReady && (
+            <Center style={{ height: 500 }}>
+              <Spinner size='large' />
+            </Center>
+          )}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: cameraReady ? 500 : 0,
+              marginTop: 8,
+              borderRadius: 10,
+              objectFit: 'cover',
+            }}
+          />
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+        </>
+      );
+    }
+
+    // Native path
+    if (!permission) {
+      return (
+        <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+          <Spinner size='large' />
+        </Center>
+      );
+    }
+
+    if (!permission.granted) {
+      return (
+        <Center className='flex-1 max-w-2xl self-center w-full p-4'>
+          <VStack space='md'>
+            <Text className='text-center'>Camera permission is required to take team pictures.</Text>
+            <Button onPress={requestPermission}>
+              <ButtonText>Grant Permission</ButtonText>
             </Button>
           </VStack>
         </Center>
@@ -151,7 +244,7 @@ export function TeamPictureCamera({
         <Button
           size='lg'
           action='primary'
-          onPress={takePicture}
+          onPress={Platform.OS === 'web' ? takePictureWeb : takePictureNative}
           className='w-full mb-4 mt-4'
           isDisabled={!cameraReady}
         >

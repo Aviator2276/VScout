@@ -14,7 +14,13 @@ import {
   PopoverBody,
   PopoverContent,
 } from './ui/popover';
-import { CircleDashed, CircleDot, CircleDotDashed, Video, VideoOff } from 'lucide-react-native';
+import {
+  CircleDashed,
+  CircleDot,
+  CircleDotDashed,
+  Video,
+  VideoOff,
+} from 'lucide-react-native';
 import { Icon } from './ui/icon';
 import { db } from '@/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -86,7 +92,10 @@ export function MatchCard({
   };
 
   // Check if a team matches the search query (by number or name)
-  const isTeamHighlighted = (team: { number: number; name: string }): boolean => {
+  const isTeamHighlighted = (team: {
+    number: number;
+    name: string;
+  }): boolean => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return false;
     // Less than 3 characters = match number search only, don't highlight teams
@@ -190,7 +199,9 @@ export function MatchCard({
                 <PopoverContent>
                   <PopoverArrow />
                   <PopoverBody>
-                    <Text className='text-typography-900'>{getScoutedText()}</Text>
+                    <Text className='text-typography-900'>
+                      {getScoutedText()}
+                    </Text>
                   </PopoverBody>
                 </PopoverContent>
               </Popover>
@@ -199,22 +210,6 @@ export function MatchCard({
 
           <VStack space='xs'>
             <HStack space='xs' className='flex-1 w-[calc(100%-1.25rem)] h-3'>
-              {blueTeams.map((team, index) => {
-                const isHighlighted = isTeamHighlighted(team);
-                return (
-                  <Badge
-                    size='lg'
-                    variant='solid'
-                    key={`blue-${index}`}
-                    className={`bg-blue-500/75 rounded font-medium w-1/6 justify-center py-1 ${
-                      isHighlighted &&
-                      '!border-amber-400 border-[0.15rem] py-[0.1rem]'
-                    }`}
-                  >
-                    <BadgeText>{team.number}</BadgeText>
-                  </Badge>
-                );
-              })}
               {redTeams.map((team, index) => {
                 const isHighlighted = isTeamHighlighted(team);
                 return (
@@ -223,6 +218,22 @@ export function MatchCard({
                     variant='solid'
                     key={`red-${index}`}
                     className={`bg-red-500/75 rounded font-medium w-1/6 justify-center py-1 ${
+                      isHighlighted &&
+                      '!border-amber-400 border-[0.15rem] py-[0.1rem]'
+                    }`}
+                  >
+                    <BadgeText>{team.number}</BadgeText>
+                  </Badge>
+                );
+              })}
+              {blueTeams.map((team, index) => {
+                const isHighlighted = isTeamHighlighted(team);
+                return (
+                  <Badge
+                    size='lg'
+                    variant='solid'
+                    key={`blue-${index}`}
+                    className={`bg-blue-500/75 rounded font-medium w-1/6 justify-center py-1 ${
                       isHighlighted &&
                       '!border-amber-400 border-[0.15rem] py-[0.1rem]'
                     }`}

@@ -124,6 +124,9 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
             prescout_range: record.prescout_range,
             prescout_driver_years: record.prescout_driver_years,
             prescout_additional_comments: record.prescout_additional_comments,
+            prescout_shooter_type: record.prescout_shooter_type,
+            prescout_trench_travel: record.prescout_trench_travel,
+            prescout_trench_travel_preference: record.prescout_trench_travel_preference,
           });
 
           // Update status to synced

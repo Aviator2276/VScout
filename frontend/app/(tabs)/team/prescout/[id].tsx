@@ -69,6 +69,10 @@ export default function PrescoutFormScreen() {
   const [turret, setTurret] = useState(false);
   const [hood, setHood] = useState(false);
   const [notes, setNotes] = useState<string>('');
+  const [shooterType, setShooterType] = useState<string>('');
+  const [trenchTravel, setTrenchTravel] = useState(false);
+  const [trenchTravelPreference, setTrenchTravelPreference] =
+    useState<string>('');
   const [showCameraView, setShowCameraView] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
@@ -84,6 +88,9 @@ export default function PrescoutFormScreen() {
     setTurret(false);
     setHood(false);
     setNotes('');
+    setShooterType('');
+    setTrenchTravel(false);
+    setTrenchTravelPreference('');
     setUri(null);
     loadTeamName();
   }, [id]);
@@ -109,6 +116,8 @@ export default function PrescoutFormScreen() {
     if (!hopper.trim()) return 'Hopper size is required';
     if (!driverExperience.trim()) return 'Driver experience is required';
     if (!range.trim()) return 'Range is required';
+    if (!shooterType.trim()) return 'Shooter type is required';
+    if (!trenchTravelPreference.trim()) return 'Trench travel preference is required';
     return null;
   }
 
@@ -131,6 +140,9 @@ export default function PrescoutFormScreen() {
         prescout_rotate_pitch: hood,
         prescout_range: range,
         prescout_additional_comments: notes,
+        prescout_shooter_type: shooterType,
+        prescout_trench_travel: trenchTravel,
+        prescout_trench_travel_preference: trenchTravelPreference,
         picture: uri || '',
       };
 
@@ -159,6 +171,9 @@ export default function PrescoutFormScreen() {
         prescout_driver_years: parseInt(driverExperience),
         prescout_range: range,
         prescout_additional_comments: notes,
+        prescout_shooter_type: shooterType,
+        prescout_trench_travel: trenchTravel,
+        prescout_trench_travel_preference: trenchTravelPreference,
       };
       await db.prescoutRecords.put(prescoutRecord);
 
@@ -268,6 +283,7 @@ export default function PrescoutFormScreen() {
                         </SelectDragIndicatorWrapper>
                         <SelectItem label='Inbumper' value='inbumper' />
                         <SelectItem label='Overbumper' value='overbumper' />
+                        <SelectItem label='None' value='none' />
                       </SelectContent>
                     </SelectPortal>
                   </Select>
@@ -305,6 +321,32 @@ export default function PrescoutFormScreen() {
             <Card variant='outline' size='md'>
               <VStack space='md'>
                 <Heading size='md'>Shooter Specifications</Heading>
+                <HStack space='md' className='w-full'>
+                  <VStack space='xs' className='flex-1'>
+                    <Text className='font-medium'>Shooter Type</Text>
+                    <Select
+                      selectedValue={shooterType}
+                      onValueChange={setShooterType}
+                    >
+                      <SelectTrigger>
+                        <SelectInput placeholder='Select shooter type' />
+                      </SelectTrigger>
+                      <SelectPortal>
+                        <SelectBackdrop />
+                        <SelectContent>
+                          <SelectDragIndicatorWrapper>
+                            <SelectDragIndicator />
+                          </SelectDragIndicatorWrapper>
+                          <SelectItem label='Single' value='single' />
+                          <SelectItem label='Double' value='double' />
+                          <SelectItem label='Triple' value='triple' />
+                          <SelectItem label='Quad' value='quad' />
+                          <SelectItem label='None' value='none' />
+                        </SelectContent>
+                      </SelectPortal>
+                    </Select>
+                  </VStack>
+                </HStack>
                 <VStack space='xs'>
                   <Text className='font-medium'>Shooter Range</Text>
                   <Select selectedValue={range} onValueChange={setRange}>
@@ -329,6 +371,7 @@ export default function PrescoutFormScreen() {
                           label='Opponent to Alliance Zone'
                           value='opponent'
                         />
+                        <SelectItem label='N/A' value='none' />
                       </SelectContent>
                     </SelectPortal>
                   </Select>
@@ -357,6 +400,46 @@ export default function PrescoutFormScreen() {
                 </HStack>
               </VStack>
             </Card>
+
+            {/* Trench Travel */}
+            <Card variant='outline' size='md'>
+              <VStack space='md'>
+                <Heading size='md'>Trench Travel</Heading>
+                <Checkbox
+                  value='trenchTravel'
+                  isChecked={trenchTravel}
+                  onChange={setTrenchTravel}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Can Travel Through Trench</CheckboxLabel>
+                </Checkbox>
+                <VStack space='xs'>
+                  <Text className='font-medium'>Trench Travel Preference</Text>
+                  <Select
+                    selectedValue={trenchTravelPreference}
+                    onValueChange={setTrenchTravelPreference}
+                  >
+                    <SelectTrigger>
+                      <SelectInput placeholder='Select preference' />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent>
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        <SelectItem label='Trench Only' value='trench' />
+                        <SelectItem label='Bump Only' value='bump' />
+                        <SelectItem label='Both' value='both' />
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                </VStack>
+              </VStack>
+            </Card>
+
             {/* Notes */}
             <Card variant='outline' size='md'>
               <VStack space='md'>
@@ -368,6 +451,9 @@ export default function PrescoutFormScreen() {
                     onChangeText={setNotes}
                   />
                 </Textarea>
+                <Text className='text-xs text-typography-400'>
+                  Enter tags for this robot: #Defense, #Shuttler, etc.
+                </Text>
               </VStack>
             </Card>
 

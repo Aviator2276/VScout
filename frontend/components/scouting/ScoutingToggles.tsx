@@ -99,7 +99,7 @@ export function ScoutingToggles({
           Toggle ⇕
         </Text>
         <Text className='text-2xs text-typography-400 text-center mb-0'>
-          Tap ↑ Hold ↓
+          Tap ↑ Toggle ↓
         </Text>
       </HStack>
 

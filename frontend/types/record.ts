@@ -25,6 +25,9 @@ export interface PrescoutRecord {
   prescout_range: string;
   prescout_driver_years: number;
   prescout_additional_comments: string;
+  prescout_shooter_type: string;
+  prescout_trench_travel: boolean;
+  prescout_trench_travel_preference: string;
 }
 export interface PictureRecord {
   info: RecordInfo;
