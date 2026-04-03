@@ -55,12 +55,14 @@ class TeamInfo(models.Model):
         ("inbumper", "In Bumper"),
         ("overbumper", "Over Bumper"),
         ("dropin", "Drop In"),
+        ("none", "None"),
     ]
 
     RANGE_CHOICES = [
         ("alliance", "Alliance"),
         ("neutral", "Neutral"),
         ("opponent", "Opponent"),
+        ("none", "None"),
     ]
 
     CLIMBER_CHOICES = [
@@ -75,6 +77,7 @@ class TeamInfo(models.Model):
         ("double", "Double"),
         ("triple", "Triple"),
         ("quad", "Quad"),
+        ("none", "None"),
     ]
 
     TRENCH_TRAVEL_PREFERENCE_CHOICES = [
