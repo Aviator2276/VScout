@@ -54,4 +54,20 @@ export interface TeamInfo {
   median_points_contributed?: number;
   sd_points_contributed?: number;
   local_consistency?: number;
+  // Percentiles (0-100, compared to all teams in competition)
+  percentile_median_fuel?: number;
+  percentile_median_auto_fuel?: number;
+  percentile_avg_shooting_time?: number;
+  percentile_avg_shooting_interval?: number;
+  percentile_avg_intake_herding_interval?: number;
+  percentile_avg_disabled_time?: number;
+  percentile_avg_defense_time?: number;
+  // Average time stats (seconds per match)
+  avg_shooting_time?: number;
+  avg_shooting_interval?: number;
+  avg_intake_herding_interval?: number;
+  avg_disabled_time?: number;
+  avg_defense_time?: number;
+  // Local-only personal notes
+  personal_notes?: string;
 }

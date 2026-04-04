@@ -19,6 +19,7 @@ import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
 import {
   Binoculars,
+  ChevronDown,
   CircleGauge,
   CircleQuestionMark,
   Contact,
@@ -30,6 +31,15 @@ import {
   MoveVertical,
   Truck,
 } from 'lucide-react-native';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionHeader,
+  AccordionTrigger,
+  AccordionTitleText,
+  AccordionIcon,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import { Image } from '@/components/ui/image';
 import {
   AlertDialog,
@@ -40,6 +50,7 @@ import {
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
 import { TeamPictureCamera } from '@/components/TeamPictureCamera';
+import { TeamFuelChart } from '@/components/TeamFuelChart';
 import { useApp } from '@/contexts/AppContext';
 
 type TabType = 'overview' | 'prescout' | 'matches';
@@ -66,6 +77,9 @@ export default function TeamDetailScreen() {
   const getBackRoute = () => {
     if (from === 'match' && matchId) {
       return `/(tabs)/match/${matchId}`;
+    }
+    if (from === 'alliance-selection') {
+      return '/alliance-selection';
     }
     return '/(tabs)/teams';
   };
@@ -357,6 +371,142 @@ export default function TeamDetailScreen() {
                   </VStack>
                 </VStack>
               </Card>
+
+              {/* Time Stats & Percentiles Accordions */}
+              <Card variant='outline' className='p-4 mb-2'>
+                <Accordion type='multiple' defaultValue={[]}>
+                  {/* Time Stats */}
+                  <AccordionItem value='timestats'>
+                  <AccordionHeader>
+                    <AccordionTrigger>
+                      <AccordionTitleText>
+                        Time Stats (Avg per Match)
+                      </AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} />
+                    </AccordionTrigger>
+                  </AccordionHeader>
+                  <AccordionContent>
+                    <VStack space='xs'>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Shooting Time</Text>
+                        <Text className='font-semibold'>
+                          {team.avg_shooting_time != null
+                            ? `${team.avg_shooting_time}s`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Shooting Interval</Text>
+                        <Text className='font-semibold'>
+                          {team.avg_shooting_interval != null
+                            ? `${team.avg_shooting_interval}s`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Intake/Herding Interval</Text>
+                        <Text className='font-semibold'>
+                          {team.avg_intake_herding_interval != null
+                            ? `${team.avg_intake_herding_interval}s`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Disabled Time</Text>
+                        <Text className='font-semibold'>
+                          {team.avg_disabled_time != null
+                            ? `${team.avg_disabled_time}s`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Defense Time</Text>
+                        <Text className='font-semibold'>
+                          {team.avg_defense_time != null
+                            ? `${team.avg_defense_time}s`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Percentiles */}
+                <AccordionItem value='percentiles'>
+                  <AccordionHeader>
+                    <AccordionTrigger>
+                      <AccordionTitleText>Percentiles</AccordionTitleText>
+                      <AccordionIcon as={ChevronDown} />
+                    </AccordionTrigger>
+                  </AccordionHeader>
+                  <AccordionContent>
+                    <VStack space='xs'>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Median Fuel</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_median_fuel != null
+                            ? `${team.percentile_median_fuel}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Median Auto Fuel</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_median_auto_fuel != null
+                            ? `${team.percentile_median_auto_fuel}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Shooting Time</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_avg_shooting_time != null
+                            ? `${team.percentile_avg_shooting_time}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Shooting Interval</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_avg_shooting_interval != null
+                            ? `${team.percentile_avg_shooting_interval}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Intake/Herding</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_avg_intake_herding_interval != null
+                            ? `${team.percentile_avg_intake_herding_interval}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Disabled Time</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_avg_disabled_time != null
+                            ? `${team.percentile_avg_disabled_time}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                      <HStack className='justify-between'>
+                        <Text className='text-typography-700'>Defense Time</Text>
+                        <Text className='font-semibold'>
+                          {team.percentile_avg_defense_time != null
+                            ? `${team.percentile_avg_defense_time}%`
+                            : '-'}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </AccordionContent>
+                </AccordionItem>
+                </Accordion>
+              </Card>
+
+              <TeamFuelChart
+                matches={teamMatches}
+                teamNumber={parseInt(id || '0', 10)}
+              />
             </>
           )}
           {activeTab === 'matches' && (
