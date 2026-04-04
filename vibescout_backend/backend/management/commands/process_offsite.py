@@ -16,7 +16,6 @@ import logging
 import shutil
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 import requests
@@ -34,65 +33,54 @@ class Command(BaseCommand):
         parser.add_argument("--competition", help="Only process matches for this competition code")
         parser.add_argument("--match-number", type=int, help="Only process a specific match number")
         parser.add_argument("--keep-temp", action="store_true", help="Keep temp work dir after processing (for debugging)")
+        parser.add_argument("--force", action="store_true", help="Process matches even if they already have fuel_timeline data")
         parser.add_argument("--obs-recording", help="Path to local OBS recording file (overrides OBS_RECORDING_PATH env var)")
         parser.add_argument("--obs-recording-dir", help="Path to folder of OBS segment files (e.g. obs_recording_albany/)")
+        parser.add_argument("--manual-video-dir", help="Path to folder of pre-clipped match videos — skips all clipping steps")
         parser.add_argument("--first-match-video-pos", type=int, default=0, help="Seconds into the first segment where match 1 starts (e.g. 294 for 4:54)")
-        parser.add_argument("--interval", type=int, default=300, help="Polling interval in seconds (default: 300 = 5 minutes). Set to 0 to run once.")
 
     def handle(self, *args, **options):
         server = options["server"].rstrip("/")
         key = options["key"]
         headers = {"X-Offsite-Key": key}
-        interval = options["interval"]
-        keep_temp = options.get("keep_temp", False)
+
+        # Fetch pending matches (or all matches if --force)
+        force = options.get("force", False)
+        endpoint = f"{server}/api/offsite/all-matches" if force else f"{server}/api/offsite/pending"
+        self.stdout.write(f"Fetching {'all' if force else 'pending'} matches from {server}...")
+        resp = requests.get(endpoint, headers=headers, timeout=30)
+        if resp.status_code != 200:
+            self.stderr.write(f"Failed to fetch matches: {resp.status_code} {resp.text}")
+            return
+
+        matches = resp.json()
+
+        if options.get("competition"):
+            matches = [m for m in matches if m["competition_code"] == options["competition"]]
+        if options.get("match_number"):
+            matches = [m for m in matches if m["match_number"] == options["match_number"]]
+
+        self.stdout.write(f"Found {len(matches)} match(es) to process")
 
         import os
         obs_recording_dir = options.get("obs_recording_dir") or os.environ.get("OBS_RECORDING_DIR", "").strip()
         obs_recording = options.get("obs_recording") or os.environ.get("OBS_RECORDING_PATH", "").strip()
-        first_match_video_pos = options.get("first_match_video_pos", 0)
+        manual_video_dir = options.get("manual_video_dir") or os.environ.get("MANUAL_VIDEO_DIR", "").strip()
 
-        if obs_recording_dir:
+        if manual_video_dir:
+            self.stdout.write(f"Manual video mode: using folder {manual_video_dir}")
+        elif obs_recording_dir:
             self.stdout.write(f"OBS segment mode: using folder {obs_recording_dir}")
         elif obs_recording:
             self.stdout.write(f"OBS mode: using local recording {obs_recording}")
 
-        # Verify recording exists before doing anything
-        if obs_recording and not Path(obs_recording).exists():
-            self.stderr.write(f"OBS recording not found: {obs_recording}")
-            return
-        if obs_recording_dir and not Path(obs_recording_dir).exists():
-            self.stderr.write(f"OBS recording directory not found: {obs_recording_dir}")
-            return
+        first_match_video_pos = options.get("first_match_video_pos", 0)
 
-        while True:
-            self.stdout.write(f"\nFetching pending matches from {server}...")
-            try:
-                resp = requests.get(f"{server}/api/offsite/pending", headers=headers, timeout=30)
-                if resp.status_code != 200:
-                    self.stderr.write(f"Failed to fetch pending matches: {resp.status_code} {resp.text}")
-                else:
-                    matches = resp.json()
+        keep_temp = options.get("keep_temp", False)
+        for match in matches:
+            self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, obs_recording_dir=obs_recording_dir, manual_video_dir=manual_video_dir, first_match_video_pos=first_match_video_pos)
 
-                    if options.get("competition"):
-                        matches = [m for m in matches if m["competition_code"] == options["competition"]]
-                    if options.get("match_number"):
-                        matches = [m for m in matches if m["match_number"] == options["match_number"]]
-
-                    self.stdout.write(f"Found {len(matches)} match(es) to process")
-
-                    for match in matches:
-                        self._process_match(match, server, headers, keep_temp=keep_temp, obs_recording=obs_recording, obs_recording_dir=obs_recording_dir, first_match_video_pos=first_match_video_pos)
-
-            except Exception as e:
-                self.stderr.write(f"Error during poll: {e}")
-
-            if interval == 0:
-                break
-
-            self.stdout.write(f"Waiting {interval}s before next poll...")
-            time.sleep(interval)
-
-    def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, obs_recording_dir=None, first_match_video_pos=0):
+    def _process_match(self, match, server, headers, keep_temp=False, obs_recording=None, obs_recording_dir=None, manual_video_dir=None, first_match_video_pos=0):
         match_id = match["match_id"]
         comp = match["competition_code"]
         num = match["match_number"]
@@ -103,7 +91,25 @@ class Command(BaseCommand):
         self.stdout.write(f"  Work dir: {work_dir}")
 
         try:
-            if obs_recording_dir:
+            if manual_video_dir:
+                # Manual mode: find pre-clipped video by match number in filename
+                import re as _re
+                manual_path = None
+                for f in Path(manual_video_dir).iterdir():
+                    if not f.suffix.lower() in (".mp4", ".mkv", ".mov"):
+                        continue
+                    m = _re.search(r'[Mm]atch\s+(\d+)', f.name)
+                    if m and int(m.group(1)) == num:
+                        manual_path = f
+                        break
+                if not manual_path:
+                    self.stderr.write(f"  No video file found for match {num} in {manual_video_dir}")
+                    return
+                self.stdout.write(f"  Using pre-clipped video: {manual_path.name}")
+                import shutil as _shutil
+                _shutil.copy2(manual_path, raw_path)
+
+            elif obs_recording_dir:
                 # OBS segment dir mode: find the right segment file
                 match_time = match.get("start_match_time", 0)
                 first_match_time = match.get("first_match_start_time", 0)
@@ -154,11 +160,12 @@ class Command(BaseCommand):
                     self.stderr.write(f"  Download failed")
                     return
 
-            # 2. Clip to match start
-            self.stdout.write(f"  Clipping to match start...")
-            if not self._clip(raw_path):
-                self.stderr.write(f"  Clip failed — could not find 0:19 timer")
-                return
+            # 2. Clip to match start (skip if video is already pre-clipped)
+            if not manual_video_dir:
+                self.stdout.write(f"  Clipping to match start...")
+                if not self._clip(raw_path):
+                    self.stderr.write(f"  Clip failed — could not find 0:19 timer")
+                    return
 
             # 3. Upload clipped video
             size_mb = raw_path.stat().st_size / (1024 * 1024)
@@ -273,11 +280,9 @@ class Command(BaseCommand):
         type_code = {"qualification": "qm", "quarterfinal": "qf", "semifinal": "sf", "final": "f"}.get(match_type, "qm")
         headers = {"X-TBA-Auth-Key": tba_key}
         try:
-            # Fetch this match's actual_time
             resp = requests.get(f"https://www.thebluealliance.com/api/v3/match/{comp}_{type_code}{num}", headers=headers, timeout=10)
             match_time = (resp.json().get("actual_time") or 0) if resp.status_code == 200 else 0
 
-            # Fetch match 1's actual_time as the first match reference
             resp1 = requests.get(f"https://www.thebluealliance.com/api/v3/match/{comp}_qm1", headers=headers, timeout=10)
             first_match_time = (resp1.json().get("actual_time") or 0) if resp1.status_code == 200 else 0
 
@@ -301,11 +306,9 @@ class Command(BaseCommand):
         remaining_in_seg = seg_dur - video_start
 
         if remaining_in_seg >= clip_duration:
-            # Entire clip fits in one segment
             self.stdout.write(f"  Clipping from {seg_path.name} at {video_start:.1f}s...")
             return self._clip_from_obs(str(seg_path), video_start, clip_duration, output_path)
 
-        # Need to span into next segment — find it
         segments = sorted(
             [(datetime.strptime(f.stem, "%Y-%m-%d %H-%M-%S"), f)
              for f in Path(obs_dir).glob("*.mp4")
@@ -412,7 +415,6 @@ class Command(BaseCommand):
         fake = FakeMatch(video_path)
         fake.competition = FakeCompetition()
 
-        # Monkey-patch _get_video_path to return our path
         import backend.utils.video_downloader as vd
         original = vd._get_video_path
         vd._get_video_path = lambda *args, **kwargs: video_path

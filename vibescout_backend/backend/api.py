@@ -737,6 +737,55 @@ def offsite_pending(request):
     return result
 
 
+@api.get("/offsite/all-matches")
+def offsite_all_matches(request):
+    """
+    Return all played matches for offsite processing (including already-processed ones).
+    Used with --force flag to reprocess/override existing data.
+    Requires X-Offsite-Key header.
+    """
+    from ninja.errors import HttpError
+    if not _check_offsite_key(request):
+        raise HttpError(403, "Invalid or missing offsite API key")
+
+    matches = Match.objects.filter(
+        has_played=True,
+        skip_processing=False,
+    ).select_related("competition").order_by("competition__code", "match_number")
+
+    first_match_times = {}
+    result = []
+    for match in matches:
+        comp = match.competition
+        if comp.code not in first_match_times:
+            first = (
+                Match.objects.filter(competition=comp, start_match_time__gt=0)
+                .order_by("start_match_time")
+                .values_list("start_match_time", flat=True)
+                .first()
+            )
+            first_match_times[comp.code] = first or 0
+        result.append({
+            "match_id": match.pk,
+            "competition_code": comp.code,
+            "match_number": match.match_number,
+            "match_type": match.match_type,
+            "set_number": match.set_number,
+            "start_match_time": match.start_match_time,
+            "first_match_start_time": first_match_times[comp.code],
+            "stream_link_day_1": comp.stream_link_day_1,
+            "stream_link_day_2": comp.stream_link_day_2,
+            "stream_link_day_3": comp.stream_link_day_3,
+            "offset_day_1": comp.offset_stream_time_to_unix_timestamp_day_1,
+            "offset_day_2": comp.offset_stream_time_to_unix_timestamp_day_2,
+            "offset_day_3": comp.offset_stream_time_to_unix_timestamp_day_3,
+            "first_match_pos_day_1": comp.first_match_video_position_day_1,
+            "first_match_pos_day_2": comp.first_match_video_position_day_2,
+            "first_match_pos_day_3": comp.first_match_video_position_day_3,
+        })
+    return result
+
+
 class _OffsiteSubmitBody(Schema):
     fuel_timeline: dict
 
