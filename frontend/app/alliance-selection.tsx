@@ -239,31 +239,43 @@ function TeamStatsModal({
     }
   }
 
-  // Save notes with debounce
-  const saveNotes = useCallback(
-    (text: string) => {
+  // Save notes immediately
+  const saveNotesNow = useCallback(
+    async (text: string) => {
       if (!team || !competitionCode) return;
-      if (notesTimeoutRef.current) clearTimeout(notesTimeoutRef.current);
-      notesTimeoutRef.current = setTimeout(async () => {
-        try {
-          const existing = await db.teamInfo.get([
-            competitionCode,
-            team.team_number,
-          ]);
-          if (existing) {
-            await db.teamInfo.put({ ...existing, personal_notes: text });
-          }
-        } catch (err) {
-          console.error('Failed to save notes:', err);
+      try {
+        const existing = await db.teamInfo.get([
+          competitionCode,
+          team.team_number,
+        ]);
+        if (existing) {
+          await db.teamInfo.put({ ...existing, personal_notes: text });
         }
-      }, 500);
+      } catch (err) {
+        console.error('Failed to save notes:', err);
+      }
     },
     [team, competitionCode],
+  );
+
+  // Save notes with debounce while typing
+  const saveNotes = useCallback(
+    (text: string) => {
+      if (notesTimeoutRef.current) clearTimeout(notesTimeoutRef.current);
+      notesTimeoutRef.current = setTimeout(() => saveNotesNow(text), 500);
+    },
+    [saveNotesNow],
   );
 
   const handleNotesChange = (text: string) => {
     setNotes(text);
     saveNotes(text);
+  };
+
+  const handleClose = () => {
+    if (notesTimeoutRef.current) clearTimeout(notesTimeoutRef.current);
+    saveNotesNow(notes);
+    onClose();
   };
 
   if (!team) return null;
@@ -272,7 +284,7 @@ function TeamStatsModal({
     (team.median_auto_fuel ?? 0) + (team.median_tele_fuel ?? 0);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalBackdrop />
       <ModalContent className='max-w-sm max-h-[85%]'>
         <ModalHeader>
@@ -555,7 +567,7 @@ function TeamStatsModal({
           </ScrollView>
         </ModalBody>
         <ModalFooter>
-          <Button onPress={onClose} className='flex-1'>
+          <Button onPress={handleClose} className='flex-1'>
             <ButtonText>Close</ButtonText>
           </Button>
         </ModalFooter>
