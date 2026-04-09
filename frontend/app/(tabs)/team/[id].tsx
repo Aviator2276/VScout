@@ -23,7 +23,11 @@ import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { TeamInfo, TeamComment } from '@/types/team';
 import { getTeamInfo, getTeamName, updateTeamPrescout } from '@/api/teams';
-import { fetchTeamComments, getCachedTeamComments, deleteTeamComment } from '@/api/teamComments';
+import {
+  fetchTeamComments,
+  getCachedTeamComments,
+  deleteTeamComment,
+} from '@/api/teamComments';
 import { updateCommentTagsForTeam } from '@/api/commentTags';
 import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
@@ -1107,8 +1111,8 @@ export default function TeamDetailScreen() {
             </HStack>
             <ScrollView
               ref={commentsScrollRef}
-              className='max-h-1/2'
-              showsVerticalScrollIndicator
+              className='mb-2'
+              style={{ height: 300 }}
               contentContainerStyle={{ paddingBottom: 8 }}
             >
               <VStack space='sm'>
@@ -1152,6 +1156,7 @@ export default function TeamDetailScreen() {
                   value={commentText}
                   onChangeText={setCommentText}
                   numberOfLines={3}
+                  className='min-h-20'
                 />
               </Textarea>
               <Button
@@ -1170,14 +1175,20 @@ export default function TeamDetailScreen() {
       </Actionsheet>
 
       {/* Delete Comment Confirmation Dialog */}
-      <AlertDialog isOpen={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <AlertDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
             <Heading size='md'>Delete Comment</Heading>
           </AlertDialogHeader>
           <AlertDialogBody>
-            <Text>Are you sure you want to delete this comment? This action cannot be undone.</Text>
+            <Text>
+              Are you sure you want to delete this comment? This action cannot
+              be undone.
+            </Text>
           </AlertDialogBody>
           <AlertDialogFooter>
             <HStack space='md' className='w-full justify-end'>
