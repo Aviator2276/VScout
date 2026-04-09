@@ -89,6 +89,7 @@ class TeamInfo(models.Model):
     AUTO_STARTING_POSE_CHOICES = [
         ("bump", "Bump"),
         ("trench", "Trench"),
+        ("hub", "Hub"),
         ("either", "Either"),
         ("na", "N/A"),
     ]
