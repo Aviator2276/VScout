@@ -50,6 +50,14 @@ class TeamInfoSchema(Schema):
     prescout_shooter_type: Optional[str] = None
     prescout_trench_travel: bool = False
     prescout_trench_travel_preference: Optional[str] = None
+    prescout_has_auto: bool = False
+    prescout_has_disruption_auto: bool = False
+    prescout_auto_starting_pose: Optional[str] = None
+    prescout_auto_depot: bool = False
+    prescout_auto_outpost: bool = False
+    prescout_auto_crosses_center_line: bool = False
+    prescout_auto_climb_level: Optional[str] = None
+    prescout_auto_center_sweeps: Optional[str] = None
 
     # Stats fields
     accuracy: Optional[Decimal] = None
@@ -87,6 +95,14 @@ class TeamInfoSchema(Schema):
             prescout_shooter_type=obj.prescout_shooter_type,
             prescout_trench_travel=obj.prescout_trench_travel,
             prescout_trench_travel_preference=obj.prescout_trench_travel_preference,
+            prescout_has_auto=obj.prescout_has_auto,
+            prescout_has_disruption_auto=obj.prescout_has_disruption_auto,
+            prescout_auto_starting_pose=obj.prescout_auto_starting_pose,
+            prescout_auto_depot=obj.prescout_auto_depot,
+            prescout_auto_outpost=obj.prescout_auto_outpost,
+            prescout_auto_crosses_center_line=obj.prescout_auto_crosses_center_line,
+            prescout_auto_climb_level=obj.prescout_auto_climb_level,
+            prescout_auto_center_sweeps=obj.prescout_auto_center_sweeps,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
             avg_shuttle=obj.avg_shuttle,
@@ -123,6 +139,14 @@ class TeamInfoWithoutPictureSchema(Schema):
     prescout_shooter_type: Optional[str] = None
     prescout_trench_travel: bool = False
     prescout_trench_travel_preference: Optional[str] = None
+    prescout_has_auto: bool = False
+    prescout_has_disruption_auto: bool = False
+    prescout_auto_starting_pose: Optional[str] = None
+    prescout_auto_depot: bool = False
+    prescout_auto_outpost: bool = False
+    prescout_auto_crosses_center_line: bool = False
+    prescout_auto_climb_level: Optional[str] = None
+    prescout_auto_center_sweeps: Optional[str] = None
 
     # Stats fields
     accuracy: Optional[Decimal] = None
@@ -159,6 +183,14 @@ class TeamInfoWithoutPictureSchema(Schema):
             prescout_shooter_type=obj.prescout_shooter_type,
             prescout_trench_travel=obj.prescout_trench_travel,
             prescout_trench_travel_preference=obj.prescout_trench_travel_preference,
+            prescout_has_auto=obj.prescout_has_auto,
+            prescout_has_disruption_auto=obj.prescout_has_disruption_auto,
+            prescout_auto_starting_pose=obj.prescout_auto_starting_pose,
+            prescout_auto_depot=obj.prescout_auto_depot,
+            prescout_auto_outpost=obj.prescout_auto_outpost,
+            prescout_auto_crosses_center_line=obj.prescout_auto_crosses_center_line,
+            prescout_auto_climb_level=obj.prescout_auto_climb_level,
+            prescout_auto_center_sweeps=obj.prescout_auto_center_sweeps,
             accuracy=obj.accuracy,
             avg_fuel_scored=obj.avg_fuel_scored,
             avg_shuttle=obj.avg_shuttle,
@@ -184,6 +216,14 @@ class PrescouttingUpdateSchema(Schema):
     prescout_shooter_type: Optional[str] = None
     prescout_trench_travel: Optional[bool] = None
     prescout_trench_travel_preference: Optional[str] = None
+    prescout_has_auto: Optional[bool] = None
+    prescout_has_disruption_auto: Optional[bool] = None
+    prescout_auto_starting_pose: Optional[str] = None
+    prescout_auto_depot: Optional[bool] = None
+    prescout_auto_outpost: Optional[bool] = None
+    prescout_auto_crosses_center_line: Optional[bool] = None
+    prescout_auto_climb_level: Optional[str] = None
+    prescout_auto_center_sweeps: Optional[str] = None
 
 
 class MatchSchema(Schema):

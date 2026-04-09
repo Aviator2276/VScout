@@ -86,6 +86,27 @@ class TeamInfo(models.Model):
         ("both", "Both"),
     ]
 
+    AUTO_STARTING_POSE_CHOICES = [
+        ("bump", "Bump"),
+        ("trench", "Trench"),
+        ("either", "Either"),
+        ("na", "N/A"),
+    ]
+
+    AUTO_CLIMB_LEVEL_CHOICES = [
+        ("none", "No Climb"),
+        ("1", "Level 1"),
+        ("2", "Level 2"),
+        ("3", "Level 3"),
+    ]
+
+    AUTO_CENTER_SWEEPS_CHOICES = [
+        ("na", "Not Applicable"),
+        ("1", "1"),
+        ("2", "2"),
+        ("3", "3"),
+    ]
+
     # Official rank from TBA (cached) - TBA handles all sorting
     rank = models.IntegerField(default=0, blank=True, null=True)
 
@@ -122,6 +143,20 @@ class TeamInfo(models.Model):
     prescout_trench_travel = models.BooleanField(default=False)
     prescout_trench_travel_preference = models.CharField(
         max_length=20, choices=TRENCH_TRAVEL_PREFERENCE_CHOICES, blank=True, null=True
+    )
+    prescout_has_auto = models.BooleanField(default=False)
+    prescout_has_disruption_auto = models.BooleanField(default=False)
+    prescout_auto_starting_pose = models.CharField(
+        max_length=20, choices=AUTO_STARTING_POSE_CHOICES, blank=True, null=True
+    )
+    prescout_auto_depot = models.BooleanField(default=False)
+    prescout_auto_outpost = models.BooleanField(default=False)
+    prescout_auto_crosses_center_line = models.BooleanField(default=False)
+    prescout_auto_climb_level = models.CharField(
+        max_length=10, choices=AUTO_CLIMB_LEVEL_CHOICES, blank=True, null=True
+    )
+    prescout_auto_center_sweeps = models.CharField(
+        max_length=10, choices=AUTO_CENTER_SWEEPS_CHOICES, blank=True, null=True
     )
 
     # Basic stats

@@ -108,6 +108,14 @@ def update_prescouting(
         "prescout_shooter_type",
         "prescout_trench_travel",
         "prescout_trench_travel_preference",
+        "prescout_has_auto",
+        "prescout_has_disruption_auto",
+        "prescout_auto_starting_pose",
+        "prescout_auto_depot",
+        "prescout_auto_outpost",
+        "prescout_auto_crosses_center_line",
+        "prescout_auto_climb_level",
+        "prescout_auto_center_sweeps",
     ]
 
     for attr, value in payload.dict(exclude_unset=True).items():
