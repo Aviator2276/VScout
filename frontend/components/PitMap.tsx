@@ -112,6 +112,7 @@ export function PitMap({
   const lastPinchDistance = useRef<number | null>(null);
   const pinchCenter = useRef({ x: 0, y: 0 });
   const zoomAtPinchStart = useRef(0.5);
+  const isPinching = useRef(false);
   const router = useRouter();
   const { lastDataUpdate } = useApp();
   const isDark = useColorScheme() === 'dark';
@@ -318,12 +319,14 @@ export function PitMap({
         const distance = getTouchDistance(e.touches);
         const center = getTouchCenter(e.touches);
         if (distance && center) {
+          isPinching.current = true;
+          setIsPanning(false);
           lastPinchDistance.current = distance;
           pinchCenter.current = center;
           zoomAtPinchStart.current = zoom;
           didPan.current = false;
         }
-      } else if (e.touches.length === 1) {
+      } else if (e.touches.length === 1 && !isPinching.current) {
         setIsPanning(true);
         didPan.current = false;
         panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -335,11 +338,9 @@ export function PitMap({
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault(); // prevent page scroll during pinch
+      if (e.touches.length === 2 && isPinching.current) {
         const distance = getTouchDistance(e.touches);
-        const center = getTouchCenter(e.touches);
-        if (distance && center && lastPinchDistance.current) {
+        if (distance && lastPinchDistance.current) {
           const scale = distance / lastPinchDistance.current;
           const newZoom = Math.min(
             Math.max(zoomAtPinchStart.current * scale, MIN_ZOOM),
@@ -348,15 +349,24 @@ export function PitMap({
           setZoom(newZoom);
           didPan.current = true;
         }
+      } else if (e.touches.length === 1 && isPanning && !isPinching.current) {
+        const dx = e.touches[0].clientX - panStart.current.x;
+        const dy = e.touches[0].clientY - panStart.current.y;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+          didPan.current = true;
+        }
+        setPan({
+          x: panOffset.current.x + dx,
+          y: panOffset.current.y + dy,
+        });
       }
-      // Single-finger touch: let the browser handle scrolling natively.
-      // Panning is handled by pointer events instead.
     },
-    [getTouchDistance, getTouchCenter],
+    [getTouchDistance, isPanning],
   );
 
   const handleTouchEnd = useCallback(() => {
     lastPinchDistance.current = null;
+    isPinching.current = false;
     setIsPanning(false);
   }, []);
 
