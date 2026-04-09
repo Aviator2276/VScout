@@ -291,6 +291,7 @@ export function PitMap({
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return; // let page scroll normally
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     setZoom((z) => Math.min(Math.max(z + delta, MIN_ZOOM), MAX_ZOOM));
@@ -335,6 +336,7 @@ export function PitMap({
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       if (e.touches.length === 2) {
+        e.preventDefault(); // prevent page scroll during pinch
         const distance = getTouchDistance(e.touches);
         const center = getTouchCenter(e.touches);
         if (distance && center && lastPinchDistance.current) {
@@ -346,19 +348,11 @@ export function PitMap({
           setZoom(newZoom);
           didPan.current = true;
         }
-      } else if (e.touches.length === 1 && isPanning) {
-        const dx = e.touches[0].clientX - panStart.current.x;
-        const dy = e.touches[0].clientY - panStart.current.y;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-          didPan.current = true;
-        }
-        setPan({
-          x: panOffset.current.x + dx,
-          y: panOffset.current.y + dy,
-        });
       }
+      // Single-finger touch: let the browser handle scrolling natively.
+      // Panning is handled by pointer events instead.
     },
-    [getTouchDistance, getTouchCenter, isPanning],
+    [getTouchDistance, getTouchCenter],
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -418,7 +412,7 @@ export function PitMap({
               width: '100%',
               height: '100%',
               cursor: isPanning ? 'grabbing' : 'grab',
-              touchAction: 'none',
+              touchAction: 'pan-y',
             } as any
           }
           onPointerDown={handlePointerDown as any}
