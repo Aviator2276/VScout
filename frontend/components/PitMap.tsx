@@ -49,6 +49,7 @@ const COLORS = {
     areaBorder: 'rgb(87,194,246)',
     areaText: 'rgb(9,115,168)',
     labelText: 'rgb(163,163,163)',
+    arrowText: 'rgb(163,163,163)',
     pitEmptyBg: 'rgb(220,219,219)',
     pitEmptyBorder: 'rgb(221,220,219)',
     pitGreyBg: 'rgb(213,212,212)',
@@ -69,6 +70,7 @@ const COLORS = {
     areaBorder: 'rgb(11,141,205)',
     areaText: 'rgb(124,207,248)',
     labelText: 'rgb(140,140,140)',
+    arrowText: 'rgb(140,140,140)',
     pitEmptyBg: 'rgb(83,82,82)',
     pitEmptyBorder: 'rgb(83,82,82)',
     pitGreyBg: 'rgb(116,116,116)',
@@ -107,6 +109,9 @@ export function PitMap({
   const didPan = useRef(false);
   const containerRef = useRef<View>(null);
   const isFirstLoad = useRef(true);
+  const lastPinchDistance = useRef<number | null>(null);
+  const pinchCenter = useRef({ x: 0, y: 0 });
+  const zoomAtPinchStart = useRef(0.5);
   const router = useRouter();
   const { lastDataUpdate } = useApp();
   const isDark = useColorScheme() === 'dark';
@@ -291,6 +296,76 @@ export function PitMap({
     setZoom((z) => Math.min(Math.max(z + delta, MIN_ZOOM), MAX_ZOOM));
   }, []);
 
+  const getTouchDistance = useCallback((touches: React.TouchList) => {
+    if (touches.length < 2) return null;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  const getTouchCenter = useCallback((touches: React.TouchList) => {
+    if (touches.length < 2) return null;
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2) {
+        const distance = getTouchDistance(e.touches);
+        const center = getTouchCenter(e.touches);
+        if (distance && center) {
+          lastPinchDistance.current = distance;
+          pinchCenter.current = center;
+          zoomAtPinchStart.current = zoom;
+          didPan.current = false;
+        }
+      } else if (e.touches.length === 1) {
+        setIsPanning(true);
+        didPan.current = false;
+        panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        panOffset.current = { ...pan };
+      }
+    },
+    [getTouchDistance, getTouchCenter, zoom, pan],
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2) {
+        const distance = getTouchDistance(e.touches);
+        const center = getTouchCenter(e.touches);
+        if (distance && center && lastPinchDistance.current) {
+          const scale = distance / lastPinchDistance.current;
+          const newZoom = Math.min(
+            Math.max(zoomAtPinchStart.current * scale, MIN_ZOOM),
+            MAX_ZOOM,
+          );
+          setZoom(newZoom);
+          didPan.current = true;
+        }
+      } else if (e.touches.length === 1 && isPanning) {
+        const dx = e.touches[0].clientX - panStart.current.x;
+        const dy = e.touches[0].clientY - panStart.current.y;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+          didPan.current = true;
+        }
+        setPan({
+          x: panOffset.current.x + dx,
+          y: panOffset.current.y + dy,
+        });
+      }
+    },
+    [getTouchDistance, getTouchCenter, isPanning],
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    lastPinchDistance.current = null;
+    setIsPanning(false);
+  }, []);
+
   if (loading) {
     return (
       <Card variant='filled' className='p-4 mb-2'>
@@ -351,6 +426,10 @@ export function PitMap({
           onPointerUp={handlePointerUp as any}
           onPointerCancel={handlePointerUp as any}
           onWheel={handleWheel as any}
+          onTouchStart={handleTouchStart as any}
+          onTouchMove={handleTouchMove as any}
+          onTouchEnd={handleTouchEnd as any}
+          onTouchCancel={handleTouchEnd as any}
         >
           <View
             style={{
