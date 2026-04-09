@@ -10,7 +10,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema
 
-from .models import Competition, Match, RobotAction, Team, TeamInfo
+from .models import Competition, Match, RobotAction, Team, TeamComment, TeamInfo
 from .schemas import (
     BulkRobotActionsResponseSchema,
     BulkRobotActionsSchema,
@@ -866,3 +866,46 @@ def offsite_upload_video(request, match_id: int):
     match.save(update_fields=["video_available"])
 
     return {"success": True, "match_id": match_id, "filename": filename}
+
+
+# --- Team Comments ---
+
+class TeamCommentSchema(Schema):
+    id: int
+    team_number: int
+    comment: str
+    created_at: str
+
+    @staticmethod
+    def from_orm(obj):
+        return TeamCommentSchema(
+            id=obj.pk,
+            team_number=obj.team.number,
+            comment=obj.comment,
+            created_at=obj.created_at.isoformat(),
+        )
+
+
+class TeamCommentCreateSchema(Schema):
+    comment: str
+
+
+@api.get("/teams/{team_number}/comments", response=List[TeamCommentSchema])
+def get_team_comments(request, team_number: int):
+    team = get_object_or_404(Team, number=team_number)
+    return [TeamCommentSchema.from_orm(c) for c in TeamComment.objects.filter(team=team)]
+
+
+@api.post("/teams/{team_number}/comments", response=TeamCommentSchema)
+def create_team_comment(request, team_number: int, payload: TeamCommentCreateSchema):
+    team = get_object_or_404(Team, number=team_number)
+    comment = TeamComment.objects.create(team=team, comment=payload.comment)
+    return TeamCommentSchema.from_orm(comment)
+
+
+@api.delete("/teams/{team_number}/comments/{comment_id}")
+def delete_team_comment(request, team_number: int, comment_id: int):
+    team = get_object_or_404(Team, number=team_number)
+    comment = get_object_or_404(TeamComment, pk=comment_id, team=team)
+    comment.delete()
+    return {"success": True}
