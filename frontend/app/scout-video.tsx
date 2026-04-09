@@ -164,29 +164,19 @@ export default function ScoutVideoScreen() {
     setCountdown(3);
   }, [isMuted]);
 
-  // Tick down the countdown, then start video, then start session after 1s pre-roll
-  // countdown > 0: visible countdown overlay
-  // countdown === 0: start video, enter pre-roll
-  // countdown === -1: video playing pre-match footage, wait 1s then start session
+  // Tick down the countdown, then start video and session immediately
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
-      // Start video, enter 1-second pre-roll phase
+      // Start video and session immediately
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
         videoRef.current.playbackRate = playbackSpeed;
         videoRef.current.play().catch(() => {});
       }
-      setCountdown(-1);
+      setCountdown(null);
+      session.startSession();
       return;
-    }
-    if (countdown === -1) {
-      // Pre-roll: video is playing pre-match footage, start session after 1s
-      const timer = setTimeout(() => {
-        setCountdown(null);
-        session.startSession();
-      }, (1 / playbackSpeed) * 1000);
-      return () => clearTimeout(timer);
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
