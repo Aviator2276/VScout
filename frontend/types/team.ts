@@ -85,4 +85,6 @@ export interface TeamInfo {
   avg_defense_time?: number;
   // Local-only personal notes
   personal_notes?: string;
+  // Tags extracted from team comments (e.g. TTFF, TTCL)
+  comment_tags?: Record<string, string>;
 }

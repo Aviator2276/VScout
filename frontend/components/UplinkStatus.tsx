@@ -29,6 +29,7 @@ import { uploadPrescout, uploadTeamPicture } from '@/api/teams';
 import { PrescoutRecord, ScoutRecord, CommentRecord } from '@/types/record';
 import { uploadScoutRecord } from '@/api/scout';
 import { createTeamComment } from '@/api/teamComments';
+import { updateCommentTagsForTeam } from '@/api/commentTags';
 import { useRecords } from '@/hooks/useRecords';
 
 interface UplinkStatusProps {
@@ -233,6 +234,9 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
 
           // Also cache the comment locally in teamComments
           await db.teamComments.put(created);
+
+          // Recompute comment tags for this team
+          await updateCommentTagsForTeam(record.team.number);
 
           setLastUploadTime(new Date());
         } catch (error) {

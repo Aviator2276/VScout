@@ -6,6 +6,8 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  Alert,
 } from 'react-native';
 import { Match } from '@/types/match';
 import { db } from '@/utils/db';
@@ -21,7 +23,8 @@ import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { TeamInfo, TeamComment } from '@/types/team';
 import { getTeamInfo, getTeamName, updateTeamPrescout } from '@/api/teams';
-import { fetchTeamComments, getCachedTeamComments } from '@/api/teamComments';
+import { fetchTeamComments, getCachedTeamComments, deleteTeamComment } from '@/api/teamComments';
+import { updateCommentTagsForTeam } from '@/api/commentTags';
 import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
 import {
@@ -70,6 +73,7 @@ import {
   ActionsheetDragIndicatorWrapper,
 } from '@/components/ui/actionsheet';
 import { Input, InputField, InputSlot, InputIcon } from '@/components/ui/input';
+import { Textarea, TextareaInput } from '@/components/ui/textarea';
 
 type TabType = 'overview' | 'prescout' | 'matches' | 'map';
 
@@ -95,6 +99,9 @@ export default function TeamDetailScreen() {
   const [comments, setComments] = useState<TeamComment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [isSendingComment, setIsSendingComment] = useState(false);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
   const commentsScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -158,7 +165,15 @@ export default function TeamDetailScreen() {
 
     // Load cached comments first
     const cached = await getCachedTeamComments(teamNumber);
-    setComments(cached);
+    // Deduplicate by comment text + team_number (guards against id:0 duplicates)
+    const seen = new Set<string>();
+    const deduped = cached.filter((c) => {
+      const key = `${c.team_number}-${c.comment}-${c.created_at}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    setComments(deduped);
 
     // Try fetching from server
     try {
@@ -166,6 +181,32 @@ export default function TeamDetailScreen() {
       setComments(fresh);
     } catch (err) {
       console.error('Failed to fetch comments from server:', err);
+    }
+  }
+
+  function handleDeleteComment(commentId: number) {
+    if (commentId === 0) return; // Can't delete local-only comments
+    setCommentToDelete(commentId);
+    setDeleteDialogOpen(true);
+  }
+
+  async function confirmDeleteComment() {
+    const teamNumber = parseInt(id || '0', 10);
+    if (!teamNumber || !commentToDelete) return;
+
+    setIsDeletingComment(true);
+    setDeleteDialogOpen(false);
+    try {
+      await deleteTeamComment(teamNumber, commentToDelete);
+      // Reload comments after deletion
+      await loadComments();
+      // Recompute tags after deletion
+      await updateCommentTagsForTeam(teamNumber);
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+    } finally {
+      setIsDeletingComment(false);
+      setCommentToDelete(null);
     }
   }
 
@@ -194,15 +235,13 @@ export default function TeamDetailScreen() {
       });
 
       // Add to local display immediately
-      setComments((prev) => [
-        ...prev,
-        {
-          id: 0,
-          team_number: teamNumber,
-          comment: commentText.trim(),
-          created_at: Math.floor(Date.now() / 1000),
-        },
-      ]);
+      const localComment = {
+        id: 0,
+        team_number: teamNumber,
+        comment: commentText.trim(),
+        created_at: Math.floor(Date.now() / 1000),
+      };
+      setComments((prev) => [...prev, localComment]);
 
       setCommentText('');
     } catch (err) {
@@ -263,6 +302,10 @@ export default function TeamDetailScreen() {
       if (teamInfo) {
         setTeam(teamInfo);
         setTeamName(name);
+        // Recompute comment tags when opening team screen
+        updateCommentTagsForTeam(teamNumber).catch((err) =>
+          console.error('Failed to update comment tags:', err),
+        );
       } else {
         setError('Team not found');
       }
@@ -485,6 +528,22 @@ export default function TeamDetailScreen() {
                           {team.sd_points_contributed ?? '-'}
                         </BadgeText>
                       </Badge>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
+                        Time to First Fuel (seconds):
+                      </Text>
+                      <Text className='font-semibold'>
+                        {team.comment_tags?.TTFF ?? 'N/A'}
+                      </Text>
+                    </HStack>
+                    <HStack className='justify-between'>
+                      <Text className='text-typography-700'>
+                        Time to Center Line (seconds):
+                      </Text>
+                      <Text className='font-semibold'>
+                        {team.comment_tags?.TTCL ?? 'N/A'}
+                      </Text>
                     </HStack>
                   </VStack>
                 </VStack>
@@ -1064,37 +1123,82 @@ export default function TeamDetailScreen() {
                       variant='outline'
                       className='p-3'
                     >
-                      <Text className='text-xs text-typography-400 mb-1'>
-                        {new Date(c.created_at * 1000).toLocaleString()}
-                      </Text>
+                      <HStack className='justify-between items-center mb-1'>
+                        <Text className='text-xs text-typography-400'>
+                          {new Date(c.created_at * 1000).toLocaleString()}
+                        </Text>
+                        {c.id !== 0 && (
+                          <Button
+                            size='xs'
+                            variant='link'
+                            action='negative'
+                            onPress={() => handleDeleteComment(c.id)}
+                            isDisabled={isDeletingComment}
+                          >
+                            <ButtonText className='text-xs'>Delete</ButtonText>
+                          </Button>
+                        )}
+                      </HStack>
                       <Text className='text-typography-800'>{c.comment}</Text>
                     </Card>
                   ))
                 )}
               </VStack>
             </ScrollView>
-            <HStack space='sm' className='items-center'>
-              <Input size='md' className='flex-1'>
-                <InputField
+            <VStack space='sm'>
+              <Textarea size='md' className='flex-1'>
+                <TextareaInput
                   placeholder='Write a comment...'
                   value={commentText}
                   onChangeText={setCommentText}
-                  onSubmitEditing={handleSendComment}
-                  returnKeyType='send'
+                  numberOfLines={3}
                 />
-              </Input>
+              </Textarea>
               <Button
                 size='md'
                 action='primary'
                 onPress={handleSendComment}
                 isDisabled={!commentText.trim() || isSendingComment}
+                className='self-end'
               >
-                <ButtonIcon as={Send} />
+                <ButtonText>Send</ButtonText>
+                <ButtonIcon as={Send} className='ml-1' />
               </Button>
-            </HStack>
+            </VStack>
           </VStack>
         </ActionsheetContent>
       </Actionsheet>
+
+      {/* Delete Comment Confirmation Dialog */}
+      <AlertDialog isOpen={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <Heading size='md'>Delete Comment</Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text>Are you sure you want to delete this comment? This action cannot be undone.</Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <HStack space='md' className='w-full justify-end'>
+              <Button
+                variant='outline'
+                action='secondary'
+                onPress={() => setDeleteDialogOpen(false)}
+              >
+                <ButtonText>Cancel</ButtonText>
+              </Button>
+              <Button
+                action='negative'
+                onPress={confirmDeleteComment}
+                isDisabled={isDeletingComment}
+              >
+                <ButtonText>Delete</ButtonText>
+              </Button>
+            </HStack>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdaptiveSafeArea>
   );
 }

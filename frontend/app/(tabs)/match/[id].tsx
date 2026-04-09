@@ -19,6 +19,7 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { Match } from '@/types/match';
+import { TeamInfo } from '@/types/team';
 import { getMatches } from '@/api/matches';
 import { Box } from '@/components/ui/box';
 import { Header } from '@/components/Header';
@@ -56,7 +57,7 @@ import { db } from '@/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useVideoDownload } from '@/contexts/VideoDownloadContext';
 
-type TabType = 'overview' | 'scores';
+type TabType = 'prematch' | 'overview' | 'scores';
 
 export default function MatchDetailScreen() {
   const { id, from, teamId } = useLocalSearchParams<{
@@ -75,7 +76,7 @@ export default function MatchDetailScreen() {
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('prematch');
   const [isScoutSheetOpen, setIsScoutSheetOpen] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -84,6 +85,7 @@ export default function MatchDetailScreen() {
     number: number;
     name: string;
   } | null>(null);
+  const [teamInfoMap, setTeamInfoMap] = useState<Record<number, TeamInfo>>({});
   const videoPlayerRef = useRef<MatchVideoPlayerRef>(null);
   const { startDownload, activeDownloads } = useVideoDownload();
 
@@ -124,6 +126,7 @@ export default function MatchDetailScreen() {
 
       if (foundMatch) {
         setMatch(foundMatch);
+        await loadTeamInfo(foundMatch);
       } else {
         setError('Match not found');
       }
@@ -132,6 +135,37 @@ export default function MatchDetailScreen() {
       setError('Failed to load match details');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadTeamInfo(match: Match) {
+    try {
+      const compCode = (await db.config.get({ key: 'compCode' }))?.value;
+      if (!compCode) return;
+
+      const teamNumbers = [
+        match.red_team_1.number,
+        match.red_team_2.number,
+        match.red_team_3.number,
+        match.blue_team_1.number,
+        match.blue_team_2.number,
+        match.blue_team_3.number,
+      ];
+
+      const teamInfos = await Promise.all(
+        teamNumbers.map((num) => db.teamInfo.get([compCode, num])),
+      );
+
+      const infoMap: Record<number, TeamInfo> = {};
+      teamInfos.forEach((info, idx) => {
+        if (info) {
+          infoMap[teamNumbers[idx]] = info;
+        }
+      });
+
+      setTeamInfoMap(infoMap);
+    } catch (err) {
+      console.error('Failed to load team info:', err);
     }
   }
 
@@ -636,23 +670,253 @@ export default function MatchDetailScreen() {
           <HStack className=' mb-2 p-1 rounded bg-secondary-100'>
             <Button
               size='xs'
+              variant={activeTab === 'prematch' ? 'solid' : 'link'}
+              action='secondary'
+              className='w-1/3'
+              onPress={() => setActiveTab('prematch')}
+            >
+              <Text className='text-center font-semibold'>Prematch</Text>
+            </Button>
+            <Button
+              size='xs'
               variant={activeTab === 'overview' ? 'solid' : 'link'}
               action='secondary'
-              className='w-1/2'
+              className='w-1/3'
               onPress={() => setActiveTab('overview')}
             >
-              <Text className='text-center font-semibold'>Match Overview</Text>
+              <Text className='text-center font-semibold'>Overview</Text>
             </Button>
             <Button
               size='xs'
               variant={activeTab === 'scores' ? 'solid' : 'link'}
               action='secondary'
-              className='w-1/2'
+              className='w-1/3'
               onPress={() => setActiveTab('scores')}
             >
-              <Text className='text-center font-semibold'>Team Scores</Text>
+              <Text className='text-center font-semibold'>Scores</Text>
             </Button>
           </HStack>
+          {activeTab === 'prematch' && (
+            <>
+              <Card variant='outline' className='p-4 mb-2'>
+                <VStack space='md'>
+                  <Heading size='lg'>Team Stats</Heading>
+                  <HStack space='md' className='gap-1'>
+                    <VStack space='xs' className='flex-1'>
+                      {[
+                        { key: 'red_team_1', alliance: 'red' },
+                        { key: 'red_team_2', alliance: 'red' },
+                        { key: 'red_team_3', alliance: 'red' },
+                      ].map(({ key, alliance }) => {
+                        const team = match[key as keyof Match] as {
+                          number: number;
+                          name: string;
+                        };
+                        const teamInfo = teamInfoMap[team.number];
+                        const ttff = teamInfo?.comment_tags?.TTFF ?? 'N/A';
+                        const ttcl = teamInfo?.comment_tags?.TTCL ?? 'N/A';
+
+                        return (
+                          <Badge
+                            key={key}
+                            size='lg'
+                            variant='solid'
+                            className='bg-red-500/20 rounded w-full font-medium py-2'
+                          >
+                            <VStack className='w-full' space='xs'>
+                              <Heading className='text-lg text-center'>
+                                {team.number}
+                              </Heading>
+
+                              <VStack>
+                                <Heading className='text-sm text-typography-600 text-center'>
+                                  Auto
+                                </Heading>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    TTFF:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {ttff}
+                                    {ttff !== 'N/A' && 's'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    TTCL:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {ttcl}
+                                    {ttcl !== 'N/A' && 's'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Median Fuel:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.median_auto_fuel?.toFixed(1) ??
+                                      '-'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Center Sweeps:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_auto_center_sweeps ||
+                                      'N/A'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Disruption:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_has_disruption_auto
+                                      ? 'Yes'
+                                      : 'No'}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+
+                              <VStack>
+                                <Heading className='text-sm text-typography-600 text-center'>
+                                  Teleop
+                                </Heading>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Median Fuel:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.median_tele_fuel?.toFixed(1) ??
+                                      '-'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Hopper Size:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_hopper_size ?? '-'}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+                            </VStack>
+                          </Badge>
+                        );
+                      })}
+                    </VStack>
+                    <VStack space='xs' className='flex-1'>
+                      {[
+                        { key: 'blue_team_1', alliance: 'blue' },
+                        { key: 'blue_team_2', alliance: 'blue' },
+                        { key: 'blue_team_3', alliance: 'blue' },
+                      ].map(({ key, alliance }) => {
+                        const team = match[key as keyof Match] as {
+                          number: number;
+                          name: string;
+                        };
+                        const teamInfo = teamInfoMap[team.number];
+                        const ttff = teamInfo?.comment_tags?.TTFF ?? 'N/A';
+                        const ttcl = teamInfo?.comment_tags?.TTCL ?? 'N/A';
+
+                        return (
+                          <Badge
+                            key={key}
+                            size='lg'
+                            variant='solid'
+                            className='bg-blue-500/20 rounded font-medium justify-center py-2'
+                          >
+                            <VStack className='w-full' space='xs'>
+                              <Heading className='text-lg text-center'>
+                                {team.number}
+                              </Heading>
+
+                              <VStack>
+                                <Heading className='text-sm text-typography-600 text-center'>
+                                  Auto
+                                </Heading>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    TTFF:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {ttff}
+                                    {ttff !== 'N/A' && 's'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    TTCL:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {ttcl}
+                                    {ttcl !== 'N/A' && 's'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Median Fuel:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.median_auto_fuel?.toFixed(1) ??
+                                      '-'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Center Sweeps:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_auto_center_sweeps ||
+                                      'N/A'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Disruption:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_has_disruption_auto
+                                      ? 'Yes'
+                                      : 'No'}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+
+                              <VStack>
+                                <Heading className='text-sm text-typography-600 text-center'>
+                                  Teleop
+                                </Heading>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Median Fuel:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.median_tele_fuel?.toFixed(1) ??
+                                      '-'}
+                                  </Text>
+                                </HStack>
+                                <HStack className='justify-between'>
+                                  <Text className='text-sm opacity-80'>
+                                    Hopper Size:
+                                  </Text>
+                                  <Text className='text-sm opacity-80'>
+                                    {teamInfo?.prescout_hopper_size ?? '-'}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+                            </VStack>
+                          </Badge>
+                        );
+                      })}
+                    </VStack>
+                  </HStack>
+                </VStack>
+              </Card>
+            </>
+          )}
           {activeTab === 'overview' && (
             <>
               <Card variant='outline' className='p-4 mb-2'>

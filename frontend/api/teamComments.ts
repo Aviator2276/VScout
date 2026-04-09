@@ -1,6 +1,7 @@
 import { TeamComment } from '@/types/team';
 import { apiRequest } from '@/utils/api';
 import { db } from '@/utils/db';
+import { updateCommentTagsForTeam } from '@/api/commentTags';
 
 /**
  * Fetch all comments for a team from the server and cache locally.
@@ -17,6 +18,9 @@ export async function fetchTeamComments(
   if (comments.length > 0) {
     await db.teamComments.bulkPut(comments);
   }
+
+  // Recompute comment tags for this team
+  await updateCommentTagsForTeam(teamNumber);
 
   return comments;
 }
@@ -49,6 +53,10 @@ export async function createTeamComment(
   );
 
   await db.teamComments.put(created);
+
+  // Recompute comment tags for this team
+  await updateCommentTagsForTeam(teamNumber);
+
   return created;
 }
 

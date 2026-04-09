@@ -25,6 +25,7 @@ import {
   NoCompetitionCodeError as ScoutNoCompCodeError,
 } from '@/api/scout';
 import { calculateAllTeamStats } from '@/api/teamStats';
+import { updateAllCommentTags } from '@/api/commentTags';
 import { cacheNexusData } from '@/api/nexus';
 
 type DataFreshnessStatus = 'current' | 'aging' | 'stale';
@@ -393,6 +394,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Calculate team stats from match data
       console.log('Calculating team stats...');
       await calculateAllTeamStats();
+
+      // Recompute comment tags for all teams
+      console.log('Updating comment tags...');
+      await updateAllCommentTags().catch((err) =>
+        console.error('Failed to update comment tags (non-blocking):', err),
+      );
 
       // Cache Nexus pit map and pit addresses
       console.log('Caching Nexus data...');
