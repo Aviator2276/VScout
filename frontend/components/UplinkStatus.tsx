@@ -26,8 +26,9 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { db } from '@/utils/db';
 import { uploadPrescout, uploadTeamPicture } from '@/api/teams';
-import { PrescoutRecord, ScoutRecord } from '@/types/record';
+import { PrescoutRecord, ScoutRecord, CommentRecord } from '@/types/record';
 import { uploadScoutRecord } from '@/api/scout';
+import { createTeamComment } from '@/api/teamComments';
 import { useRecords } from '@/hooks/useRecords';
 
 interface UplinkStatusProps {
@@ -127,6 +128,14 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
             prescout_shooter_type: record.prescout_shooter_type,
             prescout_trench_travel: record.prescout_trench_travel,
             prescout_trench_travel_preference: record.prescout_trench_travel_preference,
+            prescout_has_auto: record.prescout_has_auto,
+            prescout_has_disruption_auto: record.prescout_has_disruption_auto,
+            prescout_auto_starting_pose: record.prescout_auto_starting_pose,
+            prescout_auto_depot: record.prescout_auto_depot,
+            prescout_auto_outpost: record.prescout_auto_outpost,
+            prescout_auto_crosses_center_line: record.prescout_auto_crosses_center_line,
+            prescout_auto_climb_level: record.prescout_auto_climb_level,
+            prescout_auto_center_sweeps: record.prescout_auto_center_sweeps,
           });
 
           // Update status to synced
@@ -195,6 +204,46 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
         }
       }
 
+      // Get pending comment records
+      const pendingComments = await db.commentRecords
+        .filter((r) => r.info.status === 'pending')
+        .toArray();
+
+      for (const record of pendingComments) {
+        try {
+          await db.commentRecords.put({
+            ...record,
+            info: {
+              ...record.info,
+              status: 'uploading',
+              last_retry: Date.now(),
+            },
+          });
+
+          const created = await createTeamComment(
+            record.team.number,
+            record.comment,
+          );
+
+          await db.commentRecords.put({
+            ...record,
+            info: { ...record.info, status: 'synced', last_retry: Date.now() },
+            server_id: created.id,
+          });
+
+          // Also cache the comment locally in teamComments
+          await db.teamComments.put(created);
+
+          setLastUploadTime(new Date());
+        } catch (error) {
+          console.error('Failed to upload comment record:', error);
+          await db.commentRecords.put({
+            ...record,
+            info: { ...record.info, status: 'error', last_retry: Date.now() },
+          });
+        }
+      }
+
     } finally {
       isProcessingRef.current = false;
       setIsProcessing(false);
@@ -257,6 +306,17 @@ export function UplinkStatus({ size = 'lg' }: UplinkStatusProps) {
 
     for (const record of errorScouts) {
       await db.scoutRecords.put({
+        ...record,
+        info: { ...record.info, status: 'pending' },
+      });
+    }
+
+    const errorComments = await db.commentRecords
+      .filter((r) => r.info.status === 'error')
+      .toArray();
+
+    for (const record of errorComments) {
+      await db.commentRecords.put({
         ...record,
         info: { ...record.info, status: 'pending' },
       });

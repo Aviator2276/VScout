@@ -4,6 +4,13 @@ export interface Team {
   competitionCode?: string;
 }
 
+export interface TeamComment {
+  id: number;
+  team_number: number;
+  comment: string;
+  created_at: number;
+}
+
 export interface Competition {
   name: string;
   code: string;
@@ -34,6 +41,14 @@ export interface TeamInfo {
   prescout_shooter_type: string;
   prescout_trench_travel: boolean;
   prescout_trench_travel_preference: string;
+  prescout_has_auto: boolean;
+  prescout_has_disruption_auto: boolean;
+  prescout_auto_starting_pose: string;
+  prescout_auto_depot: boolean;
+  prescout_auto_outpost: boolean;
+  prescout_auto_crosses_center_line: boolean;
+  prescout_auto_climb_level: string;
+  prescout_auto_center_sweeps: string;
   tags: string[];
   accuracy: string;
   avg_fuel_scored: string;

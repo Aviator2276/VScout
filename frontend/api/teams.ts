@@ -159,6 +159,14 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
           prescout_shooter_type: info.prescout_shooter_type,
           prescout_trench_travel: info.prescout_trench_travel,
           prescout_trench_travel_preference: info.prescout_trench_travel_preference,
+          prescout_has_auto: info.prescout_has_auto,
+          prescout_has_disruption_auto: info.prescout_has_disruption_auto,
+          prescout_auto_starting_pose: info.prescout_auto_starting_pose,
+          prescout_auto_depot: info.prescout_auto_depot,
+          prescout_auto_outpost: info.prescout_auto_outpost,
+          prescout_auto_crosses_center_line: info.prescout_auto_crosses_center_line,
+          prescout_auto_climb_level: info.prescout_auto_climb_level,
+          prescout_auto_center_sweeps: info.prescout_auto_center_sweeps,
           tags: info.tags,
           picture: info.picture,
           pictureHash: info.pictureHash,
@@ -210,6 +218,38 @@ export async function cacheTeamInfo(): Promise<TeamInfo[]> {
         prescout_trench_travel_preference:
           info.prescout_trench_travel_preference ||
           existingLocal?.prescout_trench_travel_preference ||
+          '',
+        prescout_has_auto:
+          info.prescout_has_auto ??
+          existingLocal?.prescout_has_auto ??
+          false,
+        prescout_has_disruption_auto:
+          info.prescout_has_disruption_auto ??
+          existingLocal?.prescout_has_disruption_auto ??
+          false,
+        prescout_auto_starting_pose:
+          info.prescout_auto_starting_pose ||
+          existingLocal?.prescout_auto_starting_pose ||
+          '',
+        prescout_auto_depot:
+          info.prescout_auto_depot ??
+          existingLocal?.prescout_auto_depot ??
+          false,
+        prescout_auto_outpost:
+          info.prescout_auto_outpost ??
+          existingLocal?.prescout_auto_outpost ??
+          false,
+        prescout_auto_crosses_center_line:
+          info.prescout_auto_crosses_center_line ??
+          existingLocal?.prescout_auto_crosses_center_line ??
+          false,
+        prescout_auto_climb_level:
+          info.prescout_auto_climb_level ||
+          existingLocal?.prescout_auto_climb_level ||
+          '',
+        prescout_auto_center_sweeps:
+          info.prescout_auto_center_sweeps ||
+          existingLocal?.prescout_auto_center_sweeps ||
           '',
         tags:
           (info.tags && info.tags.length > 0
@@ -290,6 +330,14 @@ export async function updateTeamPrescout(
     prescout_shooter_type: string;
     prescout_trench_travel: boolean;
     prescout_trench_travel_preference: string;
+    prescout_has_auto: boolean;
+    prescout_has_disruption_auto: boolean;
+    prescout_auto_starting_pose: string;
+    prescout_auto_depot: boolean;
+    prescout_auto_outpost: boolean;
+    prescout_auto_crosses_center_line: boolean;
+    prescout_auto_climb_level: string;
+    prescout_auto_center_sweeps: string;
     picture: string;
   },
 ): Promise<TeamInfo | undefined> {
@@ -382,6 +430,14 @@ export interface PrescoutData {
   prescout_shooter_type: string;
   prescout_trench_travel: boolean;
   prescout_trench_travel_preference: string;
+  prescout_has_auto: boolean;
+  prescout_has_disruption_auto: boolean;
+  prescout_auto_starting_pose: string;
+  prescout_auto_depot: boolean;
+  prescout_auto_outpost: boolean;
+  prescout_auto_crosses_center_line: boolean;
+  prescout_auto_climb_level: string;
+  prescout_auto_center_sweeps: string;
 }
 
 interface PictureSyncResponse {

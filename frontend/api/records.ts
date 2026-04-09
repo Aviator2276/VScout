@@ -1,7 +1,7 @@
 import { db } from '@/utils/db';
-import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord } from '@/types/record';
+import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord, CommentRecord } from '@/types/record';
 
-export type RecordType = 'match' | 'prescout' | 'picture' | 'scout';
+export type RecordType = 'match' | 'prescout' | 'picture' | 'scout' | 'comment';
 
 export interface UnifiedRecord {
   type: RecordType;
@@ -12,7 +12,7 @@ export interface UnifiedRecord {
   competitionCode: string;
   teamNumber: number;
   teamName: string;
-  data: MatchRecord | PrescoutRecord | PictureRecord | ScoutRecord;
+  data: MatchRecord | PrescoutRecord | PictureRecord | ScoutRecord | CommentRecord;
 }
 
 function getStatusPriority(status: string): number {
@@ -29,11 +29,12 @@ function getStatusPriority(status: string): number {
 }
 
 export async function getAllRecords(): Promise<UnifiedRecord[]> {
-  const [matchRecords, prescoutRecords, pictureRecords, scoutRecords] = await Promise.all([
+  const [matchRecords, prescoutRecords, pictureRecords, scoutRecords, commentRecords] = await Promise.all([
     db.matchRecords.toArray(),
     db.prescoutRecords.toArray(),
     db.pictureRecords.toArray(),
     db.scoutRecords.toArray(),
+    db.commentRecords.toArray(),
   ]);
 
   const unifiedRecords: UnifiedRecord[] = [];
@@ -84,6 +85,20 @@ export async function getAllRecords(): Promise<UnifiedRecord[]> {
     unifiedRecords.push({
       type: 'scout',
       id: `scout-${record.info.competitionCode}-${record.match_type}-${record.set_number}-${record.match_number}-${record.team.number}`,
+      status: record.info.status,
+      created_at: record.info.created_at,
+      last_retry: record.info.last_retry,
+      competitionCode: record.info.competitionCode,
+      teamNumber: record.team.number,
+      teamName: record.team.name,
+      data: record,
+    });
+  });
+
+  commentRecords.forEach((record) => {
+    unifiedRecords.push({
+      type: 'comment',
+      id: `comment-${record.local_id}`,
       status: record.info.status,
       created_at: record.info.created_at,
       last_retry: record.info.last_retry,
@@ -150,6 +165,11 @@ export async function deleteRecord(record: UnifiedRecord): Promise<void> {
           scoutData.team.number,
         ])
         .delete();
+      break;
+    }
+    case 'comment': {
+      const commentData = data as CommentRecord;
+      await db.commentRecords.delete(commentData.local_id);
       break;
     }
   }

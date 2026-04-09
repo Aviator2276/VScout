@@ -25,6 +25,7 @@ import {
   NoCompetitionCodeError as ScoutNoCompCodeError,
 } from '@/api/scout';
 import { calculateAllTeamStats } from '@/api/teamStats';
+import { cacheNexusData } from '@/api/nexus';
 
 type DataFreshnessStatus = 'current' | 'aging' | 'stale';
 
@@ -392,6 +393,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Calculate team stats from match data
       console.log('Calculating team stats...');
       await calculateAllTeamStats();
+
+      // Cache Nexus pit map and pit addresses
+      console.log('Caching Nexus data...');
+      await cacheNexusData().catch((err) =>
+        console.error('Failed to cache Nexus data (non-blocking):', err),
+      );
 
       // Update timestamp and hash, store in db for persistence
       const now = new Date();

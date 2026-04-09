@@ -439,6 +439,40 @@ function TeamStatsModal({
                           }
                         />
                       )}
+                      <StatRow
+                        label='Has Auto'
+                        value={team.prescout_has_auto ? 'Yes' : 'No'}
+                      />
+                      <StatRow
+                        label='Disruption Auto'
+                        value={team.prescout_has_disruption_auto ? 'Yes' : 'No'}
+                      />
+                      <StatRow
+                        label='Starting Pose'
+                        value={team.prescout_auto_starting_pose || undefined}
+                      />
+                      <StatRow
+                        label='Auto Depot'
+                        value={team.prescout_auto_depot ? 'Yes' : 'No'}
+                      />
+                      <StatRow
+                        label='Auto Outpost'
+                        value={team.prescout_auto_outpost ? 'Yes' : 'No'}
+                      />
+                      <StatRow
+                        label='Crosses Center Line'
+                        value={
+                          team.prescout_auto_crosses_center_line ? 'Yes' : 'No'
+                        }
+                      />
+                      <StatRow
+                        label='Auto Climb Level'
+                        value={team.prescout_auto_climb_level || undefined}
+                      />
+                      <StatRow
+                        label='Center Sweeps'
+                        value={team.prescout_auto_center_sweeps || undefined}
+                      />
                       {team.prescout_additional_comments ? (
                         <VStack space='xs' className='mt-1'>
                           <Text className='text-typography-600 text-sm'>

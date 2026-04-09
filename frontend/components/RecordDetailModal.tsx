@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/modal';
 import { UnifiedRecord, deleteRecord } from '@/api/records';
 import { db } from '@/utils/db';
-import { MatchRecord, PrescoutRecord, PictureRecord } from '@/types/record';
+import { MatchRecord, PrescoutRecord, PictureRecord, CommentRecord } from '@/types/record';
 import {
   Binoculars,
   Camera,
@@ -26,6 +26,7 @@ import {
   CloudCheck,
   CloudAlert,
   CloudUpload,
+  MessageSquare,
   RefreshCw,
   Trash2,
   X,
@@ -78,6 +79,8 @@ function getTypeIcon(type: string) {
       return Binoculars;
     case 'picture':
       return Camera;
+    case 'comment':
+      return MessageSquare;
     default:
       return ClipboardList;
   }
@@ -150,6 +153,14 @@ export function RecordDetailModal({
           const pictureData = data as PictureRecord;
           await db.pictureRecords.put({
             ...pictureData,
+            info: updatedInfo,
+          });
+          break;
+        }
+        case 'comment': {
+          const commentData = data as CommentRecord;
+          await db.commentRecords.put({
+            ...commentData,
             info: updatedInfo,
           });
           break;

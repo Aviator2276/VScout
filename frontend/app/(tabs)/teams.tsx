@@ -26,7 +26,7 @@ cssInterop(FlatList, {
 });
 
 const DEFAULT_FILTERS: TeamFilters = {
-  sortBy: 'rank',
+  sortBy: 'ranking_points',
   sortOrder: 'asc',
   drivetrain: null,
   rangeFilter: null,
@@ -81,7 +81,7 @@ export default function TeamsScreen() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.sortBy !== 'rank' || filters.sortOrder !== 'asc') count++;
+    if (filters.sortBy !== 'ranking_points' || filters.sortOrder !== 'asc') count++;
     if (filters.drivetrain) count++;
     if (filters.rangeFilter) count++;
     if (filters.turret !== null) count++;

@@ -1,10 +1,11 @@
 import Dexie, { Table } from 'dexie';
 import { Platform } from 'react-native';
 import { Match } from '@/types/match';
-import { Team, TeamInfo } from '@/types/team';
-import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord } from '@/types/record';
+import { Team, TeamInfo, TeamComment } from '@/types/team';
+import { MatchRecord, PrescoutRecord, PictureRecord, ScoutRecord, CommentRecord } from '@/types/record';
 import { MatchVideo } from '@/types/video';
 import { RobotActionRecord } from '@/types/scouting';
+import { NexusData } from '@/api/nexus';
 
 export interface Config {
   key: string;
@@ -22,6 +23,9 @@ class IndexDb extends Dexie {
   matchVideos!: Table<MatchVideo>;
   robotActions!: Table<RobotActionRecord>;
   scoutRecords!: Table<ScoutRecord>;
+  teamComments!: Table<TeamComment>;
+  commentRecords!: Table<CommentRecord>;
+  nexus!: Table<NexusData>;
 
   constructor() {
     super('vscout', {
@@ -31,7 +35,7 @@ class IndexDb extends Dexie {
     });
 
     // Increment version number when changing table schema to migrate.
-    this.version(15).stores({
+    this.version(18).stores({
       config: '&key, value',
       matches:
         '[competitionCode+match_type+set_number+match_number], match_number, set_number, match_type, start_match_time, end_match_time, blue_team_1.number, blue_team_2.number, blue_team_3.number, red_team_1.number, red_team_2.number, red_team_3.number',
@@ -50,6 +54,12 @@ class IndexDb extends Dexie {
         '[competitionCode+match_type+set_number+match_number+team_number]',
       scoutRecords:
         '[info.competitionCode+match_type+set_number+match_number+team.number], info.status, info.created_at, info.last_retry, team.number, team.name',
+      teamComments:
+        '&id, team_number, created_at',
+      commentRecords:
+        '&local_id, [info.competitionCode+team.number], info.status, info.created_at, team.number',
+      nexus:
+        '&competitionCode',
     });
   }
 }

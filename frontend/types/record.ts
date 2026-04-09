@@ -28,6 +28,14 @@ export interface PrescoutRecord {
   prescout_shooter_type: string;
   prescout_trench_travel: boolean;
   prescout_trench_travel_preference: string;
+  prescout_has_auto: boolean;
+  prescout_has_disruption_auto: boolean;
+  prescout_auto_starting_pose: string;
+  prescout_auto_depot: boolean;
+  prescout_auto_outpost: boolean;
+  prescout_auto_crosses_center_line: boolean;
+  prescout_auto_climb_level: string;
+  prescout_auto_center_sweeps: string;
 }
 export interface PictureRecord {
   info: RecordInfo;
@@ -45,4 +53,12 @@ export interface ScoutRecord {
   notes?: string;
   auto: { duration: number; action: string }[];
   tele: { duration: number; action: string }[];
+}
+
+export interface CommentRecord {
+  info: RecordInfo;
+  team: Team;
+  comment: string;
+  local_id: string;
+  server_id?: number;
 }

@@ -73,6 +73,14 @@ export default function PrescoutFormScreen() {
   const [trenchTravel, setTrenchTravel] = useState(false);
   const [trenchTravelPreference, setTrenchTravelPreference] =
     useState<string>('');
+  const [hasAuto, setHasAuto] = useState(false);
+  const [hasDisruptionAuto, setHasDisruptionAuto] = useState(false);
+  const [autoStartingPose, setAutoStartingPose] = useState<string>('');
+  const [autoDepot, setAutoDepot] = useState(false);
+  const [autoOutpost, setAutoOutpost] = useState(false);
+  const [autoCrossesCenterLine, setAutoCrossesCenterLine] = useState(false);
+  const [autoClimbLevel, setAutoClimbLevel] = useState<string>('');
+  const [autoCenterSweeps, setAutoCenterSweeps] = useState<string>('');
   const [showCameraView, setShowCameraView] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
@@ -91,6 +99,14 @@ export default function PrescoutFormScreen() {
     setShooterType('');
     setTrenchTravel(false);
     setTrenchTravelPreference('');
+    setHasAuto(false);
+    setHasDisruptionAuto(false);
+    setAutoStartingPose('');
+    setAutoDepot(false);
+    setAutoOutpost(false);
+    setAutoCrossesCenterLine(false);
+    setAutoClimbLevel('');
+    setAutoCenterSweeps('');
     setUri(null);
     loadTeamName();
   }, [id]);
@@ -117,7 +133,11 @@ export default function PrescoutFormScreen() {
     if (!driverExperience.trim()) return 'Driver experience is required';
     if (!range.trim()) return 'Range is required';
     if (!shooterType.trim()) return 'Shooter type is required';
-    if (!trenchTravelPreference.trim()) return 'Trench travel preference is required';
+    if (!trenchTravelPreference.trim())
+      return 'Trench travel preference is required';
+    if (!autoStartingPose.trim()) return 'Auto starting pose is required';
+    if (!autoClimbLevel.trim()) return 'Auto climb level is required';
+    if (!autoCenterSweeps.trim()) return 'Auto center sweeps is required';
     return null;
   }
 
@@ -143,6 +163,14 @@ export default function PrescoutFormScreen() {
         prescout_shooter_type: shooterType,
         prescout_trench_travel: trenchTravel,
         prescout_trench_travel_preference: trenchTravelPreference,
+        prescout_has_auto: hasAuto,
+        prescout_has_disruption_auto: hasDisruptionAuto,
+        prescout_auto_starting_pose: autoStartingPose,
+        prescout_auto_depot: autoDepot,
+        prescout_auto_outpost: autoOutpost,
+        prescout_auto_crosses_center_line: autoCrossesCenterLine,
+        prescout_auto_climb_level: autoClimbLevel,
+        prescout_auto_center_sweeps: autoCenterSweeps,
         picture: uri || '',
       };
 
@@ -174,6 +202,14 @@ export default function PrescoutFormScreen() {
         prescout_shooter_type: shooterType,
         prescout_trench_travel: trenchTravel,
         prescout_trench_travel_preference: trenchTravelPreference,
+        prescout_has_auto: hasAuto,
+        prescout_has_disruption_auto: hasDisruptionAuto,
+        prescout_auto_starting_pose: autoStartingPose,
+        prescout_auto_depot: autoDepot,
+        prescout_auto_outpost: autoOutpost,
+        prescout_auto_crosses_center_line: autoCrossesCenterLine,
+        prescout_auto_climb_level: autoClimbLevel,
+        prescout_auto_center_sweeps: autoCenterSweeps,
       };
       await db.prescoutRecords.put(prescoutRecord);
 
@@ -433,6 +469,136 @@ export default function PrescoutFormScreen() {
                         <SelectItem label='Trench Only' value='trench' />
                         <SelectItem label='Bump Only' value='bump' />
                         <SelectItem label='Both' value='both' />
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                </VStack>
+              </VStack>
+            </Card>
+
+            {/* Auto */}
+            <Card variant='outline' size='md'>
+              <VStack space='md'>
+                <Heading size='md'>Autonomous</Heading>
+                <Text className='my-0 text-sm text-typography-400'>
+                  This is their preferred Autonomous.
+                </Text>
+                <Checkbox
+                  value='hasAuto'
+                  isChecked={hasAuto}
+                  onChange={setHasAuto}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Has Auto</CheckboxLabel>
+                </Checkbox>
+                <Checkbox
+                  value='hasDisruptionAuto'
+                  isChecked={hasDisruptionAuto}
+                  onChange={setHasDisruptionAuto}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Has Disruption Auto</CheckboxLabel>
+                </Checkbox>
+                <Checkbox
+                  value='autoDepot'
+                  isChecked={autoDepot}
+                  onChange={setAutoDepot}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Auto Depot</CheckboxLabel>
+                </Checkbox>
+                <Checkbox
+                  value='autoOutpost'
+                  isChecked={autoOutpost}
+                  onChange={setAutoOutpost}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Auto Outpost</CheckboxLabel>
+                </Checkbox>
+                <Checkbox
+                  value='autoCrossesCenterLine'
+                  isChecked={autoCrossesCenterLine}
+                  onChange={setAutoCrossesCenterLine}
+                >
+                  <CheckboxIndicator>
+                    <CheckboxIcon as={CheckIcon} />
+                  </CheckboxIndicator>
+                  <CheckboxLabel>Crosses Center Line</CheckboxLabel>
+                </Checkbox>
+                <VStack space='xs'>
+                  <Text className='font-medium'>Auto Starting Pose</Text>
+                  <Select
+                    selectedValue={autoStartingPose}
+                    onValueChange={setAutoStartingPose}
+                  >
+                    <SelectTrigger>
+                      <SelectInput placeholder='Select starting pose' />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent>
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        <SelectItem label='Bump' value='bump' />
+                        <SelectItem label='Trench' value='trench' />
+                        <SelectItem label='Hub' value='hub' />
+                        <SelectItem label='Either' value='either' />
+                        <SelectItem label='N/A' value='na' />
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                </VStack>
+                <VStack space='xs'>
+                  <Text className='font-medium'>Auto Climb Level</Text>
+                  <Select
+                    selectedValue={autoClimbLevel}
+                    onValueChange={setAutoClimbLevel}
+                  >
+                    <SelectTrigger>
+                      <SelectInput placeholder='Select climb level' />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent>
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        <SelectItem label='No Climb' value='none' />
+                        <SelectItem label='Level 1' value='1' />
+                        <SelectItem label='Level 2' value='2' />
+                        <SelectItem label='Level 3' value='3' />
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                </VStack>
+                <VStack space='xs'>
+                  <Text className='font-medium'>Auto Center Sweeps</Text>
+                  <Select
+                    selectedValue={autoCenterSweeps}
+                    onValueChange={setAutoCenterSweeps}
+                  >
+                    <SelectTrigger>
+                      <SelectInput placeholder='Select center sweeps' />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent>
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        <SelectItem label='Not Applicable' value='na' />
+                        <SelectItem label='1' value='1' />
+                        <SelectItem label='2' value='2' />
+                        <SelectItem label='3' value='3' />
                       </SelectContent>
                     </SelectPortal>
                   </Select>

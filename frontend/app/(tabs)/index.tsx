@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { Header } from '@/components/Header';
+import { PitMap } from '@/components/PitMap';
 import { RecordsSheet } from '@/components/RecordsSheet';
 import { RecordCard } from '@/components/RecordCard';
 import { useState, useMemo } from 'react';
@@ -79,6 +80,7 @@ export default function HomeScreen() {
                 </Card>
               </Pressable>
             </VStack>
+            <PitMap />
             <Pressable onPress={() => setShowRecords(true)}>
               <Card variant='filled' className='p-4'>
                 <VStack space='sm'>
