@@ -874,7 +874,7 @@ class TeamCommentSchema(Schema):
     id: int
     team_number: int
     comment: str
-    created_at: str
+    created_at: int
 
     @staticmethod
     def from_orm(obj):
@@ -882,7 +882,7 @@ class TeamCommentSchema(Schema):
             id=obj.pk,
             team_number=obj.team.number,
             comment=obj.comment,
-            created_at=obj.created_at.isoformat(),
+            created_at=int(obj.created_at.timestamp()),
         )
 
 
