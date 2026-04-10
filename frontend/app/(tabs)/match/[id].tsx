@@ -307,12 +307,15 @@ export default function MatchDetailScreen() {
                         }
                       >
                         <HStack
-                          className={`grid grid-cols-4 items-center p-1 rounded bg-red-500/20 ${isScouted ? 'opacity-40' : ''}`}
+                          className={`grid grid-cols-12 items-center p-1 rounded bg-red-500/20 ${isScouted ? 'opacity-40' : ''}`}
                         >
-                          <Text className='col-span-1 font-medium'>
+                          <Text className='col-span-1 text-xs px-0 mx-0 text-typography-500'>
+                            {1+index}
+                          </Text>
+                          <Text className='col-span-3 font-medium'>
                             {team.number}
                           </Text>
-                          <Text className='col-span-3 text-xs text-right truncate text-typography-600'>
+                          <Text className='col-span-8 text-xs text-right truncate text-clamp-1 text-typography-600'>
                             {team.name}
                           </Text>
                         </HStack>
@@ -341,12 +344,15 @@ export default function MatchDetailScreen() {
                         }
                       >
                         <HStack
-                          className={`grid grid-cols-4 items-center p-1 rounded bg-blue-500/20 ${isScouted ? 'opacity-40' : ''}`}
+                          className={`grid grid-cols-12 items-center p-1 rounded bg-blue-500/20 ${isScouted ? 'opacity-40' : ''}`}
                         >
-                          <Text className='col-span-1 font-medium'>
+                          <Text className='col-span-1 text-xs px-0 mx-0 text-typography-500'>
+                            {3-index}
+                          </Text>
+                          <Text className='col-span-3 font-medium'>
                             {team.number}
                           </Text>
-                          <Text className='col-span-3 text-xs text-right truncate text-typography-600'>
+                          <Text className='col-span-8 text-xs text-right truncate text-clamp-1 text-typography-600'>
                             {team.name}
                           </Text>
                         </HStack>
