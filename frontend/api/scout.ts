@@ -199,6 +199,7 @@ interface BulkRobotActionsTeamResponse {
   tele: { duration: number; action: string; fuel?: number }[];
   auto_fuel: number;
   tele_fuel: number;
+  notes?: string;
 }
 
 interface MatchRobotActionsResponse {
@@ -244,6 +245,7 @@ export async function fetchMatchRobotActions(
         })),
         auto_fuel: teamData.auto_fuel,
         tele_fuel: teamData.tele_fuel,
+        notes: teamData.notes,
       };
 
       await db.robotActions.put(record);

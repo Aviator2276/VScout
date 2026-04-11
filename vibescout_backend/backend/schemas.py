@@ -419,6 +419,7 @@ class BulkRobotActionsResponseSchema(Schema):
     tele: list[RobotActionItemSchema]
     auto_fuel: int
     tele_fuel: int
+    notes: str = None
 
 
 class MatchRobotActionsResponseSchema(Schema):

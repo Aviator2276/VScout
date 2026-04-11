@@ -621,12 +621,16 @@ def get_bulk_robot_actions(
             else:
                 tele_actions.append(item)
 
+        # Get notes from the first action that has notes for this team
+        team_notes = next((a.notes for a in actions if a.notes), None)
+
         teams_result.append({
             "team_number": team.number,
             "auto": auto_actions,
             "tele": tele_actions,
             "auto_fuel": auto_fuel,
             "tele_fuel": tele_fuel,
+            "notes": team_notes,
         })
 
     return {"teams": teams_result}
