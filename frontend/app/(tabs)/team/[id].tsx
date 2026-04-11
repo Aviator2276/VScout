@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Match } from '@/types/match';
+import { RobotActionRecord } from '@/types/scouting';
 import { db } from '@/utils/db';
 import { TeamMatchCard } from '@/components/TeamMatchCard';
 import { AdaptiveSafeArea } from '@/components/AdaptiveSafeArea';
@@ -99,6 +100,9 @@ export default function TeamDetailScreen() {
   const [uri, setUri] = useState<string | null>(null);
   const [teamMatches, setTeamMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
+  const [scoutingNotes, setScoutingNotes] = useState<
+    { matchNumber: number; matchType: string; notes: string }[]
+  >([]);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [comments, setComments] = useState<TeamComment[]>([]);
   const [commentText, setCommentText] = useState('');
@@ -156,6 +160,21 @@ export default function TeamDetailScreen() {
 
       filtered.sort((a, b) => a.match_number - b.match_number);
       setTeamMatches(filtered);
+
+      // Load scouting notes for this team
+      const allActions = await db.robotActions
+        .where('competitionCode')
+        .equals(competitionCode)
+        .toArray();
+      const teamNotes = allActions
+        .filter((r) => r.team_number === teamNumber && r.notes)
+        .map((r) => ({
+          matchNumber: r.match_number,
+          matchType: r.match_type,
+          notes: r.notes!,
+        }))
+        .sort((a, b) => a.matchNumber - b.matchNumber);
+      setScoutingNotes(teamNotes);
     } catch (err) {
       console.error('Failed to load team matches:', err);
     } finally {
@@ -712,6 +731,40 @@ export default function TeamDetailScreen() {
                 matches={teamMatches}
                 teamNumber={parseInt(id || '0', 10)}
               />
+
+              {scoutingNotes.length > 0 && (
+                <Card variant='outline' className='p-4 mb-2'>
+                  <VStack space='sm'>
+                    <Heading size='lg'>Scouting Notes</Heading>
+                    {scoutingNotes.map((note, idx) => (
+                      <Card
+                        key={`note-${note.matchType}-${note.matchNumber}-${idx}`}
+                        variant='outline'
+                        className='p-3'
+                      >
+                        <Button
+                          size='xs'
+                          variant='link'
+                          action='primary'
+                          className='self-start mb-1'
+                          onPress={() =>
+                            router.push(
+                              `/(tabs)/match/${note.matchNumber}?from=team&teamId=${id}`,
+                            )
+                          }
+                        >
+                          <ButtonText className='text-xs capitalize'>
+                            {note.matchType} {note.matchNumber}
+                          </ButtonText>
+                        </Button>
+                        <Text className='text-typography-800'>
+                          {note.notes}
+                        </Text>
+                      </Card>
+                    ))}
+                  </VStack>
+                </Card>
+              )}
             </>
           )}
           {activeTab === 'matches' && (
