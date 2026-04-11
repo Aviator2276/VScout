@@ -162,12 +162,14 @@ export default function TeamDetailScreen() {
       setTeamMatches(filtered);
 
       // Load scouting notes for this team
-      const allActions = await db.robotActions
-        .where('competitionCode')
-        .equals(competitionCode)
-        .toArray();
+      const allActions = await db.robotActions.toArray();
       const teamNotes = allActions
-        .filter((r) => r.team_number === teamNumber && r.notes)
+        .filter(
+          (r) =>
+            r.competitionCode === competitionCode &&
+            r.team_number === teamNumber &&
+            r.notes,
+        )
         .map((r) => ({
           matchNumber: r.match_number,
           matchType: r.match_type,
