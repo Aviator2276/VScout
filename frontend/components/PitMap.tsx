@@ -140,13 +140,24 @@ export function PitMap({
     }
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
+    const pitsWidth = maxX - minX;
+    const pitsHeight = maxY - minY;
     const el = containerRef.current as unknown as HTMLElement | null;
     const containerW = el?.clientWidth ?? 300;
-    const newZoom = 0.5;
+    const containerH = 300;
+    const padding = 0.9; // leave 10% margin
+    const newZoom = Math.max(
+      MIN_ZOOM,
+      Math.min(
+        (containerW / pitsWidth) * padding,
+        (containerH / pitsHeight) * padding,
+        MAX_ZOOM,
+      ),
+    );
     setZoom(newZoom);
     setPan({
       x: containerW / 2 - centerX * newZoom,
-      y: 300 / 2 - centerY * newZoom,
+      y: containerH / 2 - centerY * newZoom,
     });
   }, []);
 
@@ -452,6 +463,7 @@ export function PitMap({
               pits={pits}
               highlightTeam={highlightTeam}
               teamInfoMap={teamInfoMap}
+              teams={teams}
               colors={T}
               onTeamPress={(team) => {
                 if (didPan.current) return;
@@ -485,6 +497,7 @@ interface MapContentProps {
   pits: PitAddresses | null;
   highlightTeam?: string;
   teamInfoMap: Record<string, TeamInfo>;
+  teams: Team[];
   colors: ColorMap;
   onTeamPress: (team: string) => void;
 }
@@ -494,6 +507,7 @@ function MapContent({
   pits,
   highlightTeam,
   teamInfoMap,
+  teams,
   colors: T,
   onTeamPress,
 }: MapContentProps) {
@@ -503,7 +517,10 @@ function MapContent({
       addressToTeam[address] = teamNum;
     }
   }
-
+  const localTeamNumbers = useMemo(
+    () => new Set(teams.map((t) => t.number.toString())),
+    [teams],
+  );
   return (
     <View style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Walls */}
@@ -555,67 +572,11 @@ function MapContent({
           </View>
         ))}
 
-      {/* Labels */}
-      {map.labels &&
-        Object.entries(map.labels).map(([id, label]) => (
-          <View
-            key={`label-${id}`}
-            style={{
-              position: 'absolute',
-              left: label.position.x * SCALE_FACTOR,
-              top: label.position.y * SCALE_FACTOR,
-              width: label.size.x * SCALE_FACTOR,
-              height: label.size.y * SCALE_FACTOR,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text
-              style={{
-                fontSize:
-                  Math.min(label.size.x, label.size.y) * SCALE_FACTOR * 0.3,
-                color: T.labelText,
-                textAlign: 'center',
-              }}
-              numberOfLines={2}
-            >
-              {label.label}
-            </Text>
-          </View>
-        ))}
-
-      {/* Arrows */}
-      {map.arrows &&
-        Object.entries(map.arrows).map(([id, arrow]) => (
-          <View
-            key={`arrow-${id}`}
-            style={{
-              position: 'absolute',
-              left: arrow.position.x * SCALE_FACTOR,
-              top: arrow.position.y * SCALE_FACTOR,
-              width: arrow.size.x * SCALE_FACTOR,
-              height: arrow.size.y * SCALE_FACTOR,
-              alignItems: 'center',
-              justifyContent: 'center',
-              transform: arrow.angle ? [{ rotate: `${arrow.angle}deg` }] : [],
-            }}
-          >
-            <Text
-              style={{
-                fontSize:
-                  Math.min(arrow.size.x, arrow.size.y) * SCALE_FACTOR * 0.5,
-                color: T.arrowText,
-              }}
-            >
-              {'\u2192'}
-            </Text>
-          </View>
-        ))}
-
       {/* Pits */}
       {Object.entries(map.pits).map(([address, pit]) => {
         const teamNum = pit.team || addressToTeam[address] || null;
         const isHighlighted = !!highlightTeam && teamNum === highlightTeam;
+        const isLocalTeam = !!teamNum && localTeamNumbers.has(teamNum);
         const info = teamNum ? teamInfoMap[teamNum] : undefined;
         const scouted = !!info?.prescout_drivetrain;
         const pictured = !!info?.picture;
@@ -648,7 +609,7 @@ function MapContent({
         return (
           <Pressable
             key={`pit-${address}`}
-            onPress={() => teamNum && onTeamPress(teamNum)}
+            onPress={() => teamNum && isLocalTeam && onTeamPress(teamNum)}
             style={{
               position: 'absolute',
               left: pit.position.x * SCALE_FACTOR,
@@ -709,6 +670,65 @@ function MapContent({
           </Pressable>
         );
       })}
+
+      {/* Labels (rendered above pits) */}
+      {map.labels &&
+        Object.entries(map.labels).map(([id, label]) => (
+          <View
+            key={`label-${id}`}
+            pointerEvents='none'
+            style={{
+              position: 'absolute',
+              left: label.position.x * SCALE_FACTOR,
+              top: label.position.y * SCALE_FACTOR,
+              width: label.size.x * SCALE_FACTOR,
+              height: label.size.y * SCALE_FACTOR,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text
+              style={{
+                fontSize:
+                  Math.min(label.size.x, label.size.y) * SCALE_FACTOR * 0.3,
+                color: T.labelText,
+                textAlign: 'center',
+              }}
+              numberOfLines={2}
+            >
+              {label.label}
+            </Text>
+          </View>
+        ))}
+
+      {/* Arrows (rendered above pits) */}
+      {map.arrows &&
+        Object.entries(map.arrows).map(([id, arrow]) => (
+          <View
+            key={`arrow-${id}`}
+            pointerEvents='none'
+            style={{
+              position: 'absolute',
+              left: arrow.position.x * SCALE_FACTOR,
+              top: arrow.position.y * SCALE_FACTOR,
+              width: arrow.size.x * SCALE_FACTOR,
+              height: arrow.size.y * SCALE_FACTOR,
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: arrow.angle ? [{ rotate: `${arrow.angle}deg` }] : [],
+            }}
+          >
+            <Text
+              style={{
+                fontSize:
+                  Math.min(arrow.size.x, arrow.size.y) * SCALE_FACTOR * 0.5,
+                color: T.arrowText,
+              }}
+            >
+              {'\u2192'}
+            </Text>
+          </View>
+        ))}
     </View>
   );
 }

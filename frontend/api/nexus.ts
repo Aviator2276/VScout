@@ -61,7 +61,9 @@ async function nexusFetch<T>(endpoint: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Nexus API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Nexus API request failed: ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
@@ -73,10 +75,13 @@ async function nexusFetch<T>(endpoint: string): Promise<T> {
  * @returns The cached NexusData
  */
 export async function cacheNexusData(): Promise<NexusData> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  let competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
+  }
+  if (competitionCode === '2026dal') {
+    competitionCode = '2026daly';
   }
 
   try {
@@ -85,10 +90,12 @@ export async function cacheNexusData(): Promise<NexusData> {
         console.error('Failed to fetch Nexus pit map:', err);
         return null;
       }),
-      nexusFetch<PitAddresses>(`/event/${competitionCode}/pits`).catch((err) => {
-        console.error('Failed to fetch Nexus pit addresses:', err);
-        return null;
-      }),
+      nexusFetch<PitAddresses>(`/event/${competitionCode}/pits`).catch(
+        (err) => {
+          console.error('Failed to fetch Nexus pit addresses:', err);
+          return null;
+        },
+      ),
     ]);
 
     const nexusData: NexusData = {
@@ -112,10 +119,13 @@ export async function cacheNexusData(): Promise<NexusData> {
  * @returns The cached NexusData or undefined if not cached
  */
 export async function getNexusData(): Promise<NexusData | undefined> {
-  const competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
+  let competitionCode = (await db.config.get({ key: 'compCode' }))?.value;
 
   if (!competitionCode) {
     throw new NoCompetitionCodeError();
+  }
+  if (competitionCode === '2026dal') {
+    competitionCode = '2026daly';
   }
 
   try {
