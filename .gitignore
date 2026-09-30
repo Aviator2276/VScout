@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .turbo
 
 .plan/
+.DS_Store
