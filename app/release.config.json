@@ -1,0 +1,4 @@
+{
+  "$comment": "Release channel for `pnpm version:bump` (ADR-068, PV-6). alpha | beta | rc | stable. Changing alpha -> beta makes the next bump 2.0.0-beta.0; stable releases the current prerelease (2.0.0-rc.2 -> 2.0.0), then bumps by conventional commits.",
+  "channel": "alpha"
+}

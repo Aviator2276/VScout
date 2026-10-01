@@ -7,6 +7,9 @@
 //   node scripts/bump-version.mjs --next [type]           print the next version, change nothing
 //
 // type: auto (default) | prerelease | patch | minor | major | release
+//   auto follows app/release.config.json "channel" (alpha | beta | rc | stable, PV-6):
+//   a prerelease channel bumps the prerelease (switching channel resets to .0); stable releases a
+//   prerelease base, otherwise picks major/minor/patch from conventional commits.
 // Options:
 //   --base <ref>     git ref holding the base version (default: origin/main)
 //   --ref <rev>      check the version committed at <rev> instead of the working tree
@@ -120,6 +123,31 @@ export function inc(version, type, preid) {
   return format(s)
 }
 
+const CHANNELS = ["alpha", "beta", "rc", "stable"]
+
+/** Reads app/release.config.json; a missing file means "follow the base's channel". */
+export function readChannel(path) {
+  let raw
+  try {
+    raw = readFileSync(path, "utf8")
+  } catch {
+    return null
+  }
+  const channel = JSON.parse(raw).channel
+  if (!CHANNELS.includes(channel))
+    throw new Error(`${path}: "channel" must be one of ${CHANNELS.join(", ")}`)
+  return channel
+}
+
+/** Picks the bump type (and prerelease id) for `auto` from the channel and the branch's commits. */
+export function autoPlan(baseVersion, commitText, channel) {
+  const basePre = parse(baseVersion)?.pre.length > 0
+  if (channel && channel !== "stable")
+    return { type: "prerelease", preid: channel }
+  if (channel === "stable" && basePre) return { type: "release" }
+  return { type: autoType(baseVersion, commitText) }
+}
+
 /** Picks the bump type from conventional-commit subjects/bodies on the branch. */
 export function autoType(baseVersion, commitText) {
   if (parse(baseVersion)?.pre.length) return "prerelease" // stay on the channel until a release PR
@@ -137,6 +165,7 @@ export function autoType(baseVersion, commitText) {
 const here = dirname(fileURLToPath(import.meta.url))
 const appDir = join(here, "..")
 const pkgPath = join(appDir, "package.json")
+const channelPath = join(appDir, "release.config.json")
 
 // Git exports GIT_DIR (and friends) to hooks. With GIT_DIR set, `rev-parse --show-toplevel`
 // returns the cwd (app/) instead of the repo root, so drop them and let git discover the repo.
@@ -266,7 +295,7 @@ function main() {
     console.log(
       readFileSync(fileURLToPath(import.meta.url), "utf8")
         .split("\n")
-        .slice(1, 17)
+        .slice(1, 20)
         .map((l) => l.replace(/^\/\/ ?/, ""))
         .join("\n")
     )
@@ -296,6 +325,7 @@ function main() {
     : readVersionFromText(readFileSync(pkgPath, "utf8"), pkgPath)
 
   let type = o.type
+  let preid = o.preid ?? undefined
   if (type === "auto") {
     let commits = ""
     try {
@@ -303,9 +333,11 @@ function main() {
     } catch {
       /* no shared history: fall back to patch/prerelease */
     }
-    type = autoType(base, commits)
+    const plan = autoPlan(base, commits, readChannel(channelPath))
+    type = plan.type
+    preid = preid ?? plan.preid
   }
-  const next = inc(base, type, o.preid ?? undefined)
+  const next = inc(base, type, preid)
   const ahead = compare(current, base) > 0
 
   if (o.mode === "next") {
@@ -318,7 +350,7 @@ function main() {
       log(`[version] ok: ${current} > ${base} (${o.base})`)
       return 0
     }
-    const msg = `app/package.json version ${current} must be greater than ${o.base} (${base}). Every PR into main bumps the version.`
+    const msg = `app/package.json version ${current} must be greater than ${o.base} (${base}). The PR from dev into main bumps the version; PRs into dev don't.`
     if (process.env.GITHUB_ACTIONS)
       console.log(
         `::error file=${pkgGitPath()},title=Version not bumped::${msg} Suggested: ${next}`

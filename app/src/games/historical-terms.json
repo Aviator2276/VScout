@@ -1,0 +1,17 @@
+{
+  "$comment": "Game words from past FRC seasons, banned outside src/games (game-module.md §9). 'note' and 'stage' are left out on purpose: the app uses them as plain English (personal notes, form stages).",
+  "terms": [
+    "coral",
+    "algae",
+    "reef",
+    "barge",
+    "cage",
+    "processor",
+    "net",
+    "amp",
+    "speaker",
+    "cube",
+    "cone",
+    "cargo"
+  ]
+}

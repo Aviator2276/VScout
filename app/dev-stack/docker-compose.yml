@@ -1,0 +1,12 @@
+# Local backend stand-ins (roadmap Phase 0, LQ-5). `pnpm stack:up` / `pnpm stack:down`.
+# The mock HTTP API runs on the host (`pnpm mock:api`) because it loads the app's TypeScript
+# MSW handlers through Vite. The push test server joins in Phase 5.
+name: vscout-dev
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883" # TCP, for the mock API and scripts
+      - "9001:9001" # MQTT over WebSockets, for the app
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
