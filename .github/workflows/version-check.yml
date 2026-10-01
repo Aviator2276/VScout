@@ -1,0 +1,59 @@
+# ADR-068: every PR into main must raise app/package.json "version" above main's.
+# Make this a required status check on main, with "Require branches to be up to date before
+# merging" (or a merge queue), so two PRs that both bump from the same base can't both merge.
+name: Version check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: App version is bumped
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the script reads the base package.json and the branch's commit subjects
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Resolve base
+        id: base
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.base_ref }}
+          MQ_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+        run: |
+          if [ "$EVENT" = "merge_group" ]; then
+            echo "ref=$MQ_BASE_SHA" >> "$GITHUB_OUTPUT"
+          else
+            git fetch --no-tags origin "+refs/heads/${PR_BASE}:refs/remotes/origin/${PR_BASE}"
+            echo "ref=origin/${PR_BASE}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check version > base
+        env:
+          BASE_REF: ${{ steps.base.outputs.ref }}
+        run: |
+          node app/scripts/bump-version.mjs --check --base "$BASE_REF"
+          {
+            echo "### App version"
+            echo ""
+            echo "| | version |"
+            echo "|---|---|"
+            echo "| base (\`$BASE_REF\`) | $(git show "$BASE_REF:app/package.json" | node -pe 'JSON.parse(require("fs").readFileSync(0)).version || "0.0.0"') |"
+            echo "| this PR | $(node -pe 'require("./app/package.json").version') |"
+          } >> "$GITHUB_STEP_SUMMARY"

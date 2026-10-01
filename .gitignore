@@ -150,3 +150,9 @@ vite.config.ts.timestamp-*
 
 .plan/
 .DS_Store
+
+.claude/
+AGENTS.md
+CLAUDE.md
+temp/
+.DS_Store

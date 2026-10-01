@@ -1,0 +1,31 @@
+# Runs from the git root (husky v9). The npm package lives in app/.
+# 1. typecheck, plus unit tests once app/package.json has a "test" script (Phase 0)
+# 2. every branch headed for a PR into main must carry a version > origin/main's (ADR-068).
+#    Never prompts: on failure it prints the exact command to run.
+# Emergency skip: `git push --no-verify` (CI's version-check.yml still enforces the version).
+cd app
+
+z40=0000000000000000000000000000000000000000
+shas=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$z40" ] && continue # branch deletion
+  case "$local_ref" in refs/heads/*) ;; *) continue ;; esac # tags, notes
+  case "$remote_ref" in refs/heads/main) continue ;; esac # main: branch protection + CI
+  shas="$shas $local_sha"
+done
+
+[ -z "$shas" ] && exit 0
+
+echo "[pre-push] typecheck (tsc --noEmit)"
+tsc --noEmit
+
+if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+  echo "[pre-push] unit tests (vitest run)"
+  vitest run --passWithNoTests
+fi
+
+fetch="--fetch"
+for sha in $shas; do
+  node scripts/bump-version.mjs --check $fetch --ref "$sha"
+  fetch=""
+done
