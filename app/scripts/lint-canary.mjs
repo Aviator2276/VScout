@@ -19,6 +19,7 @@ const files = {
   [`src/utils/${P}-server.ts`]: `import { createServerFn } from "@tanstack/react-start"\nexport const s = createServerFn\n`,
   [`src/utils/LintCanaryCase.ts`]: `export const c = 1\n`,
   [`src/features/${P}-barrel/index.ts`]: `export const b = 1\n`,
+  [`src/lib/${P}-game.ts`]: `import { phases } from "@/games/2026-rebuilt/phases"\nexport const p = phases\n`,
 }
 const expected = {
   [`src/features/matches/${P}-cross.ts`]: "import/no-restricted-paths",
@@ -30,6 +31,7 @@ const expected = {
   [`src/utils/${P}-server.ts`]: "no-restricted-imports",
   [`src/utils/LintCanaryCase.ts`]: "check-file/filename-naming-convention",
   [`src/features/${P}-barrel/index.ts`]: "check-file/filename-blocklist",
+  [`src/lib/${P}-game.ts`]: "import/no-restricted-paths",
 }
 const clean = [`src/lib/${P}-control.ts`, `src/features/teams/${P}-target.ts`]
 
