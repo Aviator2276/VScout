@@ -157,3 +157,50 @@ describe("per-record ordering", () => {
     expect(calls).toBe(0)
   })
 })
+
+describe("more responses", () => {
+  it("409 request_in_progress is retried after Retry-After, not a conflict (§4.1)", async () => {
+    const { db, deps, push, applyCtx } = setup(() =>
+      Promise.reject(
+        new ApiError({ status: 409, code: "request_in_progress" }, "http", 1000)
+      )
+    )
+    await createRecord(deps, "comment", comment)
+    await flushOutbox(push)
+    expect(await db.conflicts.count()).toBe(0)
+    expect(await db.outbox.toArray()).toMatchObject([
+      { state: "queued", attempts: 0, nextAttemptAt: applyCtx.now() + 1000 },
+    ])
+  })
+
+  it("does nothing without a session", async () => {
+    const { deps, push } = setup(() => ok(null))
+    await createRecord(deps, "comment", comment)
+    expect(await flushOutbox({ ...push, session: () => null })).toEqual({
+      sent: 0,
+      stoppedBy: null,
+      needsRerun: false,
+    })
+  })
+
+  it("keeps the code as the message when a server error has none", async () => {
+    const { db, deps, push } = setup(() =>
+      Promise.reject(
+        new ApiError(
+          {
+            status: 422,
+            code: "validation_failed",
+            errors: [{ path: "body", code: "too_small" }],
+          },
+          "http",
+          null
+        )
+      )
+    )
+    await createRecord(deps, "comment", comment)
+    await flushOutbox(push)
+    expect((await db.conflicts.toArray())[0]?.serverErrors).toEqual([
+      { path: "body", code: "too_small", message: "too_small" },
+    ])
+  })
+})

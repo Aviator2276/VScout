@@ -383,3 +383,98 @@ describe("engine defaults and odd pages", () => {
     ])
   })
 })
+
+describe("coalescing details", () => {
+  it("merges a push-only request after a resync into the resync's entities", () => {
+    return import("../engine").then(({ mergeRequests }) => {
+      expect(
+        mergeRequests(
+          { reason: "mqtt-control", pushOnly: false, entities: ["eventTeam"] },
+          { reason: "write", pushOnly: true }
+        )
+      ).toEqual({ reason: "write", pushOnly: false, entities: ["eventTeam"] })
+    })
+  })
+
+  it("a resync requested during a run pulls only its entities next", async () => {
+    const s = setupEngine()
+    const urls: Array<string> = []
+    server.events.on("request:start", ({ request }) => {
+      urls.push(decodeURIComponent(request.url))
+    })
+    const first = s.engine.syncNow("boot")
+    void s.engine.syncNow("mqtt-control", { entities: ["eventTeam"] })
+    await first
+    server.events.removeAllListeners()
+    const pulls = urls.filter((u) => u.includes("/sync/changes"))
+    expect(pulls.at(-1)).toContain("entities=eventTeam")
+  })
+
+  it("syncs sooner while writes are pending", async () => {
+    const s = setupEngine({ intervalMs: { idle: 10_000, pending: 15 } })
+    await createRecord(s.mutateDeps, "comment", comment())
+    server.use(
+      http.post(`${API}/events/:ek/comments`, () =>
+        HttpResponse.json({ status: 503, code: "x" }, { status: 503 })
+      )
+    )
+    let pushes = 0
+    server.events.on("request:start", ({ request }) => {
+      if (request.method === "POST") pushes++
+    })
+    await s.engine.start()
+    await s.db.outbox.toCollection().modify({ nextAttemptAt: 0 })
+    await vi.waitFor(async () => {
+      await s.db.outbox.toCollection().modify({ nextAttemptAt: 0 })
+      expect(pushes).toBeGreaterThanOrEqual(2)
+    })
+    s.engine.stop()
+    server.events.removeAllListeners()
+  })
+})
+
+describe("pull details", () => {
+  it("keeps a cursor the server didn't return and retries forbidden scopes from scratch", async () => {
+    const s = setupEngine()
+    const { pullScope } = await import("../pull")
+    const ctx = {
+      db: s.db,
+      games: () => null,
+      now: s.clock.now,
+      newId: () => "x",
+      api: s.api,
+    }
+    await s.db.syncCursors.put({
+      scope: "event:2026casj",
+      entity: "eventTeam",
+      cursor: null,
+      lastPulledAt: 0,
+      bootstrapState: "none",
+      forbidden: true,
+    })
+    server.use(
+      http.get(`${API}/sync/changes`, () =>
+        HttpResponse.json({
+          changes: [],
+          cursors: {},
+          hasMore: false,
+          serverTime: "2026-03-20T15:00:00.000Z",
+        })
+      )
+    )
+    await s.db.syncCursors.put({
+      scope: "event:2026casj",
+      entity: "match",
+      cursor: "7",
+      lastPulledAt: 0,
+      bootstrapState: "done",
+    })
+    await pullScope(ctx, "event:2026casj", ["match", "eventTeam"])
+    expect(
+      await s.db.syncCursors.get(["event:2026casj", "match"])
+    ).toMatchObject({ cursor: "7", bootstrapState: "done" })
+    expect(
+      await s.db.syncCursors.get(["event:2026casj", "eventTeam"])
+    ).toMatchObject({ cursor: null, bootstrapState: "done" })
+  })
+})

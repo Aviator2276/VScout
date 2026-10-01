@@ -50,6 +50,7 @@ export default defineConfig({
         "src/lib/sync/**": { lines: 90, branches: 90 },
         "src/lib/db/**": { lines: 90, branches: 90 },
         "src/lib/authorization.ts": { lines: 90, branches: 90 },
+        "src/lib/auth/**": { lines: 90, branches: 90 },
         "src/games/**": { lines: 90, branches: 90 },
         "src/lib/contracts/**": { lines: 90, branches: 90 },
         "src/lib/api/**": { lines: 90, branches: 90 },

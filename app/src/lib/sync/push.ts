@@ -8,6 +8,7 @@ import type { ApiClient } from "@/lib/api/api-client"
 import { ApiError, OfflineError } from "@/lib/api/errors"
 import type { EntityName } from "@/lib/contracts/entities"
 import type { KnownErrorCode } from "@/lib/contracts/problem"
+import { deleteResponse } from "@/lib/contracts/sync-changes"
 import { setKv } from "@/lib/db/kv"
 import type { ConflictKind, OutboxOp } from "@/lib/db/types"
 import { logger } from "@/lib/logger"
@@ -95,8 +96,7 @@ async function seal(deps: PushDeps, op: StoredOp): Promise<StoredOp | null> {
     const def = ENTITY_DEFS[fresh.entity as EntityName]
     const row = await tableOf(deps, fresh.entity).get(def.key(fresh.recordId))
     const tomb = await deps.db.tombstones.get([fresh.entity, fresh.recordId])
-    const baseRev =
-      fresh.kind === "delete" ? (tomb?.rev ?? row?.rev ?? 0) : (row?.rev ?? 0)
+    const baseRev = fresh.kind === "delete" ? (tomb?.rev ?? 0) : (row?.rev ?? 0)
     const sealedBody = buildBody(fresh, row)
     await deps.db.outbox.update(fresh.seq, {
       state: "inflight",
@@ -109,28 +109,29 @@ async function seal(deps: PushDeps, op: StoredOp): Promise<StoredOp | null> {
 
 function successChange(op: StoredOp, body: unknown): DomainChange | null {
   if (op.kind === "delete") {
-    const b = body as { rev?: unknown; deletedAt?: unknown } | null
-    if (typeof b?.rev !== "number") return null
+    const b = deleteResponse.safeParse(body)
+    if (!b.success) return null
     return {
       entity: op.entity as EntityName,
       op: "delete",
       id: op.recordId,
-      rev: b.rev,
+      rev: b.data.rev,
       eventKey: op.eventKey,
-      ts: typeof b.deletedAt === "string" ? Date.parse(b.deletedAt) : 0,
+      ts: Date.parse(b.data.deletedAt),
       opId: op.opId,
     }
   }
   const decoded = decodeRecord(op.entity as EntityName, body)
   if (!decoded.ok) return null
-  const record = decoded.value as unknown as Row
+  // every domain record carries the server's rev and updatedAt (epoch ms)
+  const meta = decoded.value as { rev: number; updatedAt: number }
   return {
     entity: op.entity as EntityName,
     op: "upsert",
     id: op.recordId,
-    rev: record.rev,
+    rev: meta.rev,
     eventKey: op.eventKey,
-    ts: typeof record.updatedAt === "number" ? record.updatedAt : 0,
+    ts: meta.updatedAt,
     opId: op.opId,
     record: decoded.value,
   } as DomainChange
@@ -318,9 +319,8 @@ export async function flushOutbox(deps: PushDeps): Promise<FlushResult> {
     .filter((o) => o.userId === user.userId && o.nextAttemptAt <= deps.now())
     .sortBy("seq")
 
-  for (const listed of due) {
-    if (listed.seq === undefined) continue
-    const candidate: StoredOp = { ...listed, seq: listed.seq }
+  // rows read from Dexie always carry their auto-increment key
+  for (const candidate of due as Array<StoredOp>) {
     if (await isBlockedByOrder(deps, candidate)) continue
     const op = await seal(deps, candidate)
     if (!op) continue
@@ -350,7 +350,16 @@ export async function flushOutbox(deps: PushDeps): Promise<FlushResult> {
       }
       const { status } = error
       const code = error.problem.code
-      if (status === 409) {
+      if (status === 409 && code === "request_in_progress") {
+        // the server is still handling this key: ask again shortly, it isn't a conflict (§4.1)
+        await requeue(deps, op, {
+          countAttempt: false,
+          retryAfterMs: error.retryAfterMs ?? 1000,
+          message: error.message,
+          status,
+          code,
+        })
+      } else if (status === 409) {
         if ((await onConflict(deps, op, error)) === "rerun")
           result.needsRerun = true
       } else if (
