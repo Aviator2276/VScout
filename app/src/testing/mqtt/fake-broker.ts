@@ -75,48 +75,51 @@ export class FakeBroker implements RpcLink {
     for (const h of this.responseHandlers) h(payload, correlationData)
   }
 
-  private currentHandlers(): Array<RequestHandler> {
-    // includes per-test server.use() overrides, like the HTTP path
-    const list = server.listHandlers() as Array<RequestHandler>
-    return list.length > 0 ? list : defaultHandlers
-  }
-
   private async answer(payload: string, props: RpcPublishProps): Promise<void> {
-    const req = rpcRequest.parse(JSON.parse(payload))
-    const url = new URL(this.apiBase + req.path)
-    for (const [k, v] of Object.entries(req.query ?? {}))
-      for (const value of Array.isArray(v) ? v : [v])
-        url.searchParams.append(k, value)
-    const request = new Request(url, {
-      method: req.method,
-      headers: {
-        ...req.headers,
-        // marks the path so a test handler can answer differently per transport
-        "x-test-transport": "mqtt",
-        ...(req.body === undefined
-          ? {}
-          : { "Content-Type": "application/json" }),
-      },
-      body: req.body === undefined ? undefined : JSON.stringify(req.body),
-    })
-    const res =
-      (await getResponse(this.currentHandlers(), request)) ??
-      Response.json({ status: 404, code: "not_found" }, { status: 404 })
-    const text = await res.text()
-    const headers: Record<string, string> = {}
-    for (const name of ["content-type", "date", "retry-after", "etag"]) {
-      const v = res.headers.get(name)
-      if (v) headers[name] = v
-    }
-    const response = JSON.stringify({
-      v: 1,
-      id: req.id,
-      status: res.status,
-      headers,
-      body: text ? (JSON.parse(text) as unknown) : null,
-    })
+    const response = await answerRpc(payload, this.apiBase)
     if (this.dropResponses) return
-    await Promise.resolve()
     this.deliver(response, props.correlationData)
   }
+}
+
+/** Answers one RPC request JSON like the backend dispatcher: the same MSW handlers as HTTP. */
+export async function answerRpc(
+  payload: string,
+  apiBase = "http://localhost/api/v1"
+): Promise<string> {
+  const req = rpcRequest.parse(JSON.parse(payload))
+  const url = new URL(apiBase + req.path)
+  for (const [k, v] of Object.entries(req.query ?? {}))
+    for (const value of Array.isArray(v) ? v : [v])
+      url.searchParams.append(k, value)
+  const request = new Request(url, {
+    method: req.method,
+    headers: {
+      ...req.headers,
+      // marks the path so a test handler can answer differently per transport
+      "x-test-transport": "mqtt",
+      ...(req.body === undefined ? {} : { "Content-Type": "application/json" }),
+    },
+    body: req.body === undefined ? undefined : JSON.stringify(req.body),
+  })
+  // includes per-test server.use() overrides, like the HTTP path
+  const listed = server.listHandlers() as Array<RequestHandler>
+  const res =
+    (await getResponse(
+      listed.length > 0 ? listed : defaultHandlers,
+      request
+    )) ?? Response.json({ status: 404, code: "not_found" }, { status: 404 })
+  const text = await res.text()
+  const headers: Record<string, string> = {}
+  for (const name of ["content-type", "date", "retry-after", "etag"]) {
+    const v = res.headers.get(name)
+    if (v) headers[name] = v
+  }
+  return JSON.stringify({
+    v: 1,
+    id: req.id,
+    status: res.status,
+    headers,
+    body: text ? (JSON.parse(text) as unknown) : null,
+  })
 }

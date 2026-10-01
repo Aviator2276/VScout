@@ -38,7 +38,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/routeTree.gen.ts", "src/**/*.test.*", "src/testing/**"],
+      exclude: [
+        "src/routeTree.gen.ts",
+        "src/**/*.test.*",
+        "src/testing/**",
+        // the mqtt.js adapter is covered by real-broker.test.ts (MQTT_URL, docker), not the fake
+        "src/lib/mqtt/transport.ts",
+      ],
       // ≥ 90% on the core modules (testing.md). Enforced per folder once they have code.
       thresholds: {
         "src/lib/sync/**": { lines: 90, branches: 90 },

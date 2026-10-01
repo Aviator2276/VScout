@@ -5,16 +5,18 @@ import type { VScoutDB } from "./schema"
 
 const MAX_ROWS = 2000
 
+/** Returns a detach function that resolves once every pending entry is written. */
 export function attachLogStore(
   db: VScoutDB,
   flushMs = 2000,
   maxRows = MAX_ROWS
-): () => void {
+): () => Promise<void> {
   let pending: Array<LogEntry> = []
   let timer: ReturnType<typeof setTimeout> | null = null
+  // flushes run one after another so a trim never races a write
+  let chain: Promise<void> = Promise.resolve()
 
-  const flush = async () => {
-    timer = null
+  const writeBatch = async () => {
     const batch = pending
     pending = []
     if (batch.length === 0) return
@@ -29,6 +31,12 @@ export function attachLogStore(
     }
   }
 
+  const flush = () => {
+    timer = null
+    chain = chain.then(writeBatch, writeBatch)
+    return chain
+  }
+
   setLogSink((entry) => {
     pending.push(entry)
     timer ??= setTimeout(() => void flush(), flushMs)
@@ -36,6 +44,6 @@ export function attachLogStore(
   return () => {
     setLogSink(null)
     if (timer) clearTimeout(timer)
-    void flush()
+    return flush()
   }
 }

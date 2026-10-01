@@ -22,7 +22,7 @@ describe("logger", () => {
     logger.error("api", "boom")
     await vi.advanceTimersByTimeAsync(20)
     await vi.waitFor(async () => expect(await db.logs.count()).toBe(2))
-    detach()
+    await detach()
     vi.useRealTimers()
     expect((await db.logs.toArray()).map((l) => l.message)).toEqual([
       "conflict",

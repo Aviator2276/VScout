@@ -43,9 +43,7 @@ describe("drafts and logs", () => {
     const db = createTestDb()
     const detach = attachLogStore(db, 1, 3)
     for (let i = 0; i < 5; i++) logger.info("t", `m${i}`)
-    await new Promise((r) => setTimeout(r, 30))
-    await new Promise((r) => setTimeout(r, 30))
-    detach()
+    await detach()
     expect(
       (await db.logs.orderBy("id").toArray()).map((l) => l.message)
     ).toEqual(["m2", "m3", "m4"])

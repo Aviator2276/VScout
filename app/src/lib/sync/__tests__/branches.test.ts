@@ -37,8 +37,7 @@ describe("branches", () => {
     const db = createTestDb()
     const detach = attachLogStore(db, 60_000)
     logger.info("t", "late")
-    detach()
-    await new Promise((r) => setTimeout(r, 30))
+    await detach()
     expect(await db.logs.count()).toBe(1)
   })
 
