@@ -1,0 +1,12 @@
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiJ9.e30.sig",
+  "accessExpiresAt": "2026-10-03T18:15:00.000Z",
+  "refreshExpiresAt": "2026-11-02T18:00:00.000Z",
+  "user": {
+    "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7K",
+    "username": "alex",
+    "displayName": "Alex",
+    "role": "scouter",
+    "teamNumber": 2276
+  }
+}

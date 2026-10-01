@@ -1,0 +1,9 @@
+{
+  "type": "https://vscout.app/errors/rev_conflict",
+  "title": "Revision conflict",
+  "status": 409,
+  "code": "rev_conflict",
+  "detail": "Record was modified by another device.",
+  "requestId": "01J9ZQ5000000000000000000",
+  "current": { "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7A", "rev": 4 }
+}
