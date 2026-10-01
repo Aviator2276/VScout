@@ -1,0 +1,38 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema v1 > declares the frozen v1 stores (edit a shipped version → this fails; add v002 instead) 1`] = `
+{
+  "adminAudit": "id, eventKey, [eventKey+at]",
+  "allianceBoards": "eventKey",
+  "allianceRanks": "id, eventKey, [eventKey+matchKey], [eventKey+authorId], syncState",
+  "allianceSims": "id, eventKey, [eventKey+ownerId]",
+  "comments": "id, eventKey, [eventKey+teamNumber+createdAt], [eventKey+matchKey], [eventKey+authorId], syncState",
+  "conflicts": "id, [entity+recordId], status, eventKey",
+  "deviceSettings": "id",
+  "drafts": "id, [userId+kind], [userId+eventKey], eventKey, updatedAt",
+  "eventSettings": "eventKey",
+  "eventTeams": "id, eventKey, [eventKey+teamNumber], [eventKey+rank]",
+  "events": "key, year, startDate",
+  "kv": "key",
+  "logs": "++id, at",
+  "matches": "key, eventKey, [eventKey+compLevel+setNumber+matchNumber], [eventKey+scheduledTime], *teamNumbers",
+  "mediaAssets": "id, eventKey, [eventKey+teamNumber], kind",
+  "mediaUploads": "id, ownerRecordId, uploadState",
+  "mediaVideos": "id, eventKey, [eventKey+matchKey], downloadState, lastOpenedAt",
+  "messages": "id, eventKey, [channelId+createdAt], [eventKey+kind+createdAt], syncState",
+  "outbox": "++seq, &opId, recordKey, state, nextAttemptAt, userId, eventKey",
+  "picklistEntries": "id, eventKey, [picklistId+rank], [eventKey+teamNumber], syncState",
+  "picklists": "id, eventKey, [eventKey+ownerId], syncState",
+  "pitScouting": "id, eventKey, [eventKey+teamNumber], [eventKey+authorId], syncState",
+  "postScouting": "id, eventKey, [eventKey+teamNumber], [eventKey+authorId], syncState",
+  "reactions": "id, eventKey, targetId, [eventKey+authorId], syncState",
+  "scoutEntries": "id, eventKey, [eventKey+matchKey], [eventKey+teamNumber], [eventKey+authorId], [matchKey+teamNumber], syncState",
+  "session": "id",
+  "syncCursors": "[scope+entity], scope",
+  "teamSettings": "id",
+  "teams": "teamNumber",
+  "tombstones": "[entity+id], deletedAt, eventKey",
+  "userSettings": "userId",
+  "users": "id, teamNumber",
+}
+`;

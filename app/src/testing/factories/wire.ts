@@ -11,7 +11,7 @@ import type { WireSessionResponse } from "@/lib/contracts/auth"
 import { testId, testTime } from "./ids"
 
 export const TEST_EVENT = "2026casj"
-export const TEST_GAME = "test-game"
+export const TEST_GAME = "2099-test-game" // games/__fixtures__/test-game
 
 function build<TEntity extends EntityName>(
   entity: TEntity,
@@ -115,11 +115,24 @@ export const wireScoutEntry = (o: Partial<WireRecord<"scoutEntry">> = {}) =>
       ...ownedMeta(),
       gameId: TEST_GAME,
       schemaVersion: 1,
-      data: { widgetsScored: 3 },
+      data: { "pre.noShow": false, "auto.effectiveness": 4 },
       matchKey: `${TEST_EVENT}_qm1`,
       teamNumber: 254,
       station: "red1",
       scouterLevel: "new",
+    },
+    o
+  )
+
+export const wirePostScouting = (o: Partial<WireRecord<"postScouting">> = {}) =>
+  build(
+    "postScouting",
+    {
+      ...ownedMeta(),
+      gameId: TEST_GAME,
+      schemaVersion: 2,
+      data: { "postForm.willingDefense": true },
+      teamNumber: 254,
     },
     o
   )

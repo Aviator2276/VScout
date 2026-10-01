@@ -5,6 +5,7 @@ import type {
   Condition,
   FieldDef,
   FormDef,
+  GameDefinition,
   ScouterLevel,
 } from "../types"
 
@@ -54,4 +55,20 @@ export function conditionFields(condition: Condition): Array<string> {
   if ("all" in condition) return condition.all.flatMap(conditionFields)
   if ("any" in condition) return condition.any.flatMap(conditionFields)
   return [condition.field]
+}
+
+/** The form that validates a record's payload. */
+export function formOf(game: GameDefinition, form: FormDef["id"]): FormDef {
+  return form === "match"
+    ? game.matchForm
+    : form === "pit"
+      ? game.pitForm
+      : game.postForm
+}
+
+/** Qualification vs playoff from a TBA match key (`…_qm12` is a qual). */
+export function stageOfMatchKey(matchKey: unknown): CompLevelScope {
+  return typeof matchKey === "string" && !/_qm\d+$/.test(matchKey)
+    ? "playoff"
+    : "qual"
 }

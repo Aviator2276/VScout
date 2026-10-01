@@ -113,10 +113,20 @@ export type AllianceBoardRecord = ServerMeta &
 
 // ---------- owned data ----------
 
-export type ScoutEntryRecord = OwnedMeta & Omit<WireScoutEntry, OwnedWireMeta>
-export type PitScoutingRecord = OwnedMeta & Omit<WirePitScouting, OwnedWireMeta>
+/** Set on ingest when the payload's (gameId, schemaVersion) is newer or unknown to this app. */
+export interface GamePayloadFlags {
+  unsupported?: true
+}
+
+export type ScoutEntryRecord = OwnedMeta &
+  Omit<WireScoutEntry, OwnedWireMeta> &
+  GamePayloadFlags
+export type PitScoutingRecord = OwnedMeta &
+  Omit<WirePitScouting, OwnedWireMeta> &
+  GamePayloadFlags
 export type PostScoutingRecord = OwnedMeta &
-  Omit<WirePostScouting, OwnedWireMeta>
+  Omit<WirePostScouting, OwnedWireMeta> &
+  GamePayloadFlags
 export type AllianceRankRecord = OwnedMeta &
   Omit<WireAllianceRank, OwnedWireMeta>
 export type CommentRecord = OwnedMeta & Omit<WireComment, OwnedWireMeta>
@@ -148,4 +158,133 @@ export interface DomainRecords {
   eventSettings: EventSettingsRecord
   allianceBoard: AllianceBoardRecord
   mediaAsset: MediaAssetRecord
+}
+
+// ---------- local tables (data-layer §4.1) ----------
+
+export interface SessionRow {
+  id: "current"
+  userId: string
+  username: string | null
+  displayName: string
+  role: "admin" | "scouter" | "guest"
+  /** guest sessions are scoped to one event (ADR-073) */
+  eventKey: string | null
+  refreshExpiresAt: number
+  status: "active" | "needs-reauth"
+  lastVerifiedAt: number
+}
+
+export interface KvRow {
+  key: string
+  value: unknown
+}
+
+export interface DeviceSettingsRow {
+  id: "device"
+  activeEventKey?: string
+  solidSurfaces: boolean
+  haptics: boolean
+  iosHapticsExperiment: boolean
+  keepScreenAwake: boolean
+  autoDownloadVideos: boolean
+  pushSubscriptionId?: string
+  transport: "auto" | "http-only" | "prefer-mqtt"
+  /** a guest's preferences, same shape as userSettings, never synced (ADR-066) */
+  guestPrefs?: Record<string, unknown>
+}
+
+export type OutboxKind = "create" | "update" | "delete" | "upload"
+export type OutboxState = "queued" | "inflight" | "blocked" | "failed"
+
+export interface OutboxOp {
+  seq?: number
+  /** UUIDv7 → Idempotency-Key */
+  opId: string
+  userId: string
+  entity: string
+  recordId: string
+  /** `${entity}:${recordId}` */
+  recordKey: string
+  eventKey: string | null
+  kind: OutboxKind
+  /** recordKeys that must be done first (photo uploads before the pit entry) */
+  dependsOn?: Array<string>
+  state: OutboxState
+  /** set on first attempt; resent verbatim on retry */
+  sealedBody?: unknown
+  baseRev?: number
+  /** userSettings merge patches: the top-level keys this op changes (per-key LWW) */
+  patchKeys?: Array<string>
+  attempts: number
+  nextAttemptAt: number
+  lastError?: { status?: number; code?: string; message: string; at: number }
+  createdAt: number
+}
+
+export interface SyncCursorRow {
+  scope: string
+  entity: string
+  cursor: string | null
+  lastPulledAt: number
+  bootstrapState: "none" | "running" | "done"
+  forbidden?: true
+}
+
+export interface TombstoneRow {
+  entity: string
+  id: string
+  rev: number
+  deletedAt: number
+  eventKey: string | null
+  syncState: SyncState
+  /** local deletes keep the record so a rejected delete or Undo can restore it */
+  snapshot?: unknown
+}
+
+export type ConflictKind =
+  "rev-mismatch" | "deleted-remotely" | "duplicate" | "rejected" | "forbidden"
+
+export interface ConflictRow {
+  id: string
+  entity: string
+  recordId: string
+  eventKey: string | null
+  kind: ConflictKind
+  source: "push" | "pull"
+  detectedAt: number
+  status: "open" | "resolved"
+  resolvedAt?: number
+  local: unknown
+  /** the server record; null when deleted remotely */
+  remote: unknown
+  baseRev: number
+  remoteRev: number | null
+  serverErrors?: Array<{ path: string; code: string; message: string }>
+  blockedOpIds: Array<string>
+}
+
+export interface DraftRow {
+  /** the future record id */
+  id: string
+  userId: string
+  kind: "match" | "pit" | "post" | "comment"
+  eventKey: string
+  context: { matchKey?: string; teamNumber?: number; station?: string }
+  stage?: string
+  values: Record<string, unknown>
+  gameId: string
+  schemaVersion: number
+  needsReview?: true
+  createdAt: number
+  updatedAt: number
+}
+
+export interface LogRow {
+  id?: number
+  at: number
+  level: "debug" | "info" | "warn" | "error"
+  scope: string
+  message: string
+  data?: unknown
 }
