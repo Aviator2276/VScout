@@ -46,5 +46,5 @@ describe("purgeEvent safety", () => {
       ok: true,
       deleted: 2100,
     })
-  })
+  }, 20_000) // 2,100 rows: slow under coverage instrumentation
 })
