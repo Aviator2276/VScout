@@ -1,0 +1,104 @@
+{
+  "changes": [
+    {
+      "v": 1,
+      "entity": "match",
+      "op": "upsert",
+      "id": "2026casj_qm12",
+      "rev": 3,
+      "eventKey": "2026casj",
+      "ts": "2026-03-20T15:02:00.000Z",
+      "data": {
+        "id": "2026casj_qm12",
+        "rev": 3,
+        "updatedAt": "2026-03-20T15:02:00.000Z",
+        "eventKey": "2026casj",
+        "compLevel": "qm",
+        "setNumber": 1,
+        "matchNumber": 12,
+        "scheduledTime": "2026-03-20T16:00:00.000Z",
+        "predictedTime": "2026-03-20T16:08:00.000Z",
+        "predictedAt": "2026-03-20T15:58:00.000Z",
+        "alliances": {
+          "red": { "teamNumbers": [254, 1678, 971], "score": null },
+          "blue": { "teamNumbers": [2276, 604, 846], "score": null }
+        },
+        "status": "queuing",
+        "nexusQueue": "Q-3"
+      }
+    },
+    {
+      "v": 1,
+      "entity": "scoutEntry",
+      "op": "upsert",
+      "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7A",
+      "rev": 2,
+      "eventKey": "2026casj",
+      "ts": "2026-03-20T15:03:00.000Z",
+      "actorId": "01J9ZQ4X8Y6V3T2S1R0P9N8M7K",
+      "opId": "01J9ZQ4X8Y6V3T2S1R0P9N8M7B",
+      "data": {
+        "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7A",
+        "rev": 2,
+        "updatedAt": "2026-03-20T15:03:00.000Z",
+        "createdAt": "2026-03-20T15:01:00.000Z",
+        "eventKey": "2026casj",
+        "authorId": "01J9ZQ4X8Y6V3T2S1R0P9N8M7K",
+        "gameId": "2026-rebuilt",
+        "schemaVersion": 1,
+        "data": { "auto": { "moved": true } },
+        "matchKey": "2026casj_qm12",
+        "teamNumber": 254,
+        "station": "red1",
+        "scouterLevel": "experienced"
+      }
+    },
+    {
+      "v": 1,
+      "entity": "comment",
+      "op": "delete",
+      "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7C",
+      "rev": 5,
+      "eventKey": "2026casj",
+      "ts": "2026-03-20T15:04:00.000Z"
+    },
+    {
+      "v": 1,
+      "entity": "reaction",
+      "op": "upsert",
+      "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7D",
+      "rev": 1,
+      "eventKey": "2026casj",
+      "ts": "2026-03-20T15:05:00.000Z",
+      "data": {
+        "id": "01J9ZQ4X8Y6V3T2S1R0P9N8M7D",
+        "rev": 1,
+        "updatedAt": "2026-03-20T15:05:00.000Z",
+        "createdAt": "2026-03-20T15:05:00.000Z",
+        "eventKey": "2026casj",
+        "authorId": "01J9ZQ4X8Y6V3T2S1R0P9N8M7K",
+        "targetType": "announcement",
+        "targetId": "01J9ZQ4X8Y6V3T2S1R0P9N8M7E",
+        "emoji": "🚀"
+      }
+    },
+    {
+      "v": 1,
+      "entity": "futureEntity",
+      "op": "upsert",
+      "id": "x",
+      "rev": 1,
+      "eventKey": null,
+      "ts": "2026-03-20T15:06:00.000Z",
+      "data": {}
+    }
+  ],
+  "cursors": {
+    "match": "c-981",
+    "scoutEntry": "c-982",
+    "comment": "c-983",
+    "reaction": "c-984"
+  },
+  "hasMore": false,
+  "serverTime": "2026-03-20T15:06:30.000Z"
+}

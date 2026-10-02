@@ -117,11 +117,23 @@ export default [
             })).filter((z) => z.from.length > 0),
             // 5. production code never imports testing utilities
             { target: "./src", from: "./src/testing" },
-            // 6. only the game registry and config pick a concrete game (game-module.md §9)
+            // 6. only src/config (game.ts, the switch point) and src/games/registry.ts pick a
+            //    concrete game (game-module.md §9). Add each new season folder here.
             {
-              target: "./src",
+              target: [
+                ...APP,
+                "./src/features",
+                "./src/components",
+                "./src/hooks",
+                "./src/stores",
+                "./src/content",
+                "./src/lib",
+                "./src/utils",
+                "./src/types",
+                "./src/games/kit",
+                "./src/games/types.ts",
+              ],
               from: "./src/games/2026-rebuilt",
-              except: ["./games", "./config/game.ts"],
               message:
                 "Import @/games/types or @/config/game, not a concrete game.",
             },

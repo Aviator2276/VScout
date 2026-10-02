@@ -1,4 +1,13 @@
 import type { RequestHandler } from "msw"
+import { authHandlers } from "./auth"
+import { metaHandlers } from "./meta"
+import { syncHandlers } from "./sync"
+import { writeHandlers } from "./writes"
 
-/** Every domain's handlers, combined. Phase 1 adds meta, auth, sync, … */
-export const handlers: Array<RequestHandler> = []
+/** Every domain's handlers, combined. Later tracks add writes, push and admin endpoints. */
+export const handlers: Array<RequestHandler> = [
+  ...metaHandlers,
+  ...authHandlers,
+  ...syncHandlers,
+  ...writeHandlers,
+]
