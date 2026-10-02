@@ -33,6 +33,7 @@ export function BooleanField({
           label={label}
           checked={value === true}
           onCheckedChange={onChange}
+          size="form"
         />
       </div>
     )

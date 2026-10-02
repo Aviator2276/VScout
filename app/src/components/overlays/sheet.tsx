@@ -59,7 +59,9 @@ function Content({
         detent === "medium"
           ? "[--drawer-height:55dvh]"
           : "[--drawer-height:calc(100dvh-3rem)]",
-        surface === "glass" ? "glass bg-transparent" : "bg-surface-grouped"
+        surface === "glass"
+          ? "glass bg-(--glass-tint-sheet)"
+          : "bg-surface-grouped"
       )}
     >
       <DrawerHeader className="flex flex-row items-center gap-3 px-4 pt-2 pb-3">

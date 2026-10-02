@@ -73,6 +73,24 @@ describe("session lifecycle (routing-auth §7.2)", () => {
     expect(t.runtime.activeEventKey.getSnapshot()).toBeNull()
   })
 
+  it("waits for the signed-in pages to leave before wiping the database", async () => {
+    const t = setupAppRuntime()
+    await signIn(t.runtime)
+    const order: Array<string> = []
+    t.runtime.onSessionEnded(async () => {
+      order.push(`leaving, db open: ${String(t.db.isOpen())}`)
+      await new Promise((r) => setTimeout(r, 10))
+      order.push("left")
+    })
+    const realDelete = t.db.delete.bind(t.db)
+    vi.spyOn(t.db, "delete").mockImplementation((opts) => {
+      order.push("wipe")
+      return opts ? realDelete(opts) : realDelete()
+    })
+    await t.runtime.auth.logout()
+    expect(order).toEqual(["leaving, db open: true", "left", "wipe"])
+  })
+
   it("another tab's logout ends this tab's session too", async () => {
     const t = setupAppRuntime()
     await signIn(t.runtime)

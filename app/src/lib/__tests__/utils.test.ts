@@ -12,6 +12,12 @@ describe("cn", () => {
       )
   })
 
+  it("keeps important type-scale sizes next to important colors", () => {
+    expect(cn("min-h-11", "text-subhead! text-foreground!")).toBe(
+      "min-h-11 text-subhead! text-foreground!"
+    )
+  })
+
   it("still merges conflicts within a group", () => {
     expect(cn("text-sm", "text-body")).toBe("text-body")
     expect(cn("text-headline", "text-footnote")).toBe("text-footnote")

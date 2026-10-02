@@ -26,14 +26,15 @@ export function SessionRuntime({
 
   useEffect(
     () =>
-      app.onSessionEnded((reason) => {
+      app.onSessionEnded(async (reason) => {
         getTabMemory().reset()
-        void router.invalidate()
-        void router.navigate({
+        // resolves once /login has rendered, so nothing signed-in still reads Dexie
+        await router.navigate({
           to: "/login",
           search: { reason },
           replace: true,
         })
+        await router.invalidate()
       }),
     [app, router]
   )

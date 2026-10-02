@@ -50,7 +50,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
   /* Field Green, tuned for contrast (§5.1) */
-  --primary: oklch(0.52 0.12 165);
+  --primary: oklch(0.5 0.12 165); /* 4.5:1 on --muted (axe, Phase 2 gate) */
   --primary-foreground: oklch(0.985 0.01 166);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -58,7 +58,9 @@
   --muted-foreground: oklch(0.48 0.021 213.5);
   --accent: oklch(0.955 0.003 197.1);
   --accent-foreground: oklch(0.218 0.008 223.9);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(
+    0.5 0.2 27.325
+  ); /* 4.5:1 on its own 10% tint and on --muted */
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.91 0.005 214.3);
   --input: oklch(0.91 0.005 214.3);
@@ -97,6 +99,8 @@
   --glass-blur: 20px;
   --glass-saturate: 180%;
   --glass-tint: oklch(1 0 0 / 0.72);
+  /* content sheets: text sits on it, so less of what's behind may show through (axe, Phase 2) */
+  --glass-tint-sheet: oklch(1 0 0 / 0.9);
   --glass-tint-solid: oklch(0.99 0.002 220);
   --glass-edge: oklch(1 0 0 / 0.7);
   --glass-hairline: oklch(0 0 0 / 0.1);
@@ -150,6 +154,7 @@
   --chart-5: oklch(0.72 0.12 300);
 
   --glass-tint: oklch(0.24 0.008 224 / 0.82);
+  --glass-tint-sheet: oklch(0.24 0.008 224 / 0.92);
   --glass-tint-solid: oklch(0.22 0.008 224);
   --glass-edge: oklch(1 0 0 / 0.14);
   --glass-hairline: oklch(1 0 0 / 0.1);
@@ -264,6 +269,19 @@
     inset 0 1px 0 0 var(--glass-edge),
     inset 0 0 0 0.5px var(--glass-hairline),
     var(--glass-shadow);
+}
+
+/* A 56 pt hit area for scouting-form controls (gloves, §6.4) */
+@utility hit-56 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: max(100%, 56px);
+    height: max(100%, 56px);
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* A small visible glyph with a 44 pt hit area (§6.4) */

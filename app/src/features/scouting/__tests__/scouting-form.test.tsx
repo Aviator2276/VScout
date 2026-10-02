@@ -295,19 +295,20 @@ describe("every 2026 section renders (BETA content, any level, either alliance)"
   it("new scouters see help and fold detail fields; the start zone mirrors for red", () => {
     render(<Harness g={rebuilt} level="new" alliance="red" startAt="auto" />)
     expect(screen.getByText(/More Details/)).toBeInTheDocument()
-    render(<Harness g={rebuilt} level="experienced" startAt="pre" />)
-    const zones = screen.getAllByRole("radiogroup", {
-      name: t(rebuilt, "pre.startZone"),
-    })
-    expect(zones[0]?.querySelector("g")?.getAttribute("transform")).toBeNull()
-    render(
+    const blue = render(
+      <Harness g={rebuilt} level="experienced" startAt="pre" />
+    )
+    expect(
+      blue.container.querySelector("svg g")?.getAttribute("transform")
+    ).toBeNull()
+    expect(
+      screen.getAllByRole("radiogroup", { name: t(rebuilt, "pre.startZone") })
+    ).toHaveLength(1)
+    const red = render(
       <Harness g={rebuilt} level="experienced" alliance="red" startAt="pre" />
     )
-    const both = screen.getAllByRole("radiogroup", {
-      name: t(rebuilt, "pre.startZone"),
-    })
-    expect(both[1]?.querySelector("g")?.getAttribute("transform")).toMatch(
-      /scale\(-1 1\)/
-    )
+    expect(
+      red.container.querySelector("svg g")?.getAttribute("transform")
+    ).toMatch(/scale\(-1 1\)/)
   })
 })

@@ -13,6 +13,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedEventRouteImport } from './routes/_authed/_event'
 import { Route as AuthedOnboardingRouteImport } from './routes/_authed/onboarding'
+import { Route as DevGalleryRouteImport } from './routes/dev/gallery'
 import { Route as AuthedEventTabsRouteImport } from './routes/_authed/_event/_tabs'
 import { Route as AuthedEventTabsIndexRouteImport } from './routes/_authed/_event/_tabs/index'
 import { Route as AuthedEventTabsMatchesIndexRouteImport } from './routes/_authed/_event/_tabs/matches/index'
@@ -38,6 +39,11 @@ const AuthedOnboardingRoute = AuthedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthedRoute,
+} as any)
+const DevGalleryRoute = DevGalleryRouteImport.update({
+  id: '/dev/gallery',
+  path: '/dev/gallery',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthedEventTabsRoute = AuthedEventTabsRouteImport.update({
   id: '/_tabs',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedEventTabsIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
   '/settings/event': typeof AuthedEventTabsSettingsEventRoute
   '/matches/': typeof AuthedEventTabsMatchesIndexRoute
   '/scout/': typeof AuthedEventTabsScoutIndexRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthedEventTabsIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
   '/settings/event': typeof AuthedEventTabsSettingsEventRoute
   '/matches': typeof AuthedEventTabsMatchesIndexRoute
   '/scout': typeof AuthedEventTabsScoutIndexRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authed/_event': typeof AuthedEventRouteWithChildren
   '/_authed/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
   '/_authed/_event/_tabs': typeof AuthedEventTabsRouteWithChildren
   '/_authed/_event/_tabs/': typeof AuthedEventTabsIndexRoute
   '/_authed/_event/_tabs/settings/event': typeof AuthedEventTabsSettingsEventRoute
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/dev/gallery'
     | '/settings/event'
     | '/matches/'
     | '/scout/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/dev/gallery'
     | '/settings/event'
     | '/matches'
     | '/scout'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authed/_event'
     | '/_authed/onboarding'
+    | '/dev/gallery'
     | '/_authed/_event/_tabs'
     | '/_authed/_event/_tabs/'
     | '/_authed/_event/_tabs/settings/event'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  DevGalleryRoute: typeof DevGalleryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -183,6 +196,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthedOnboardingRouteImport
       parentRoute: typeof AuthedRoute
+    }
+    '/dev/gallery': {
+      id: '/dev/gallery'
+      path: '/dev/gallery'
+      fullPath: '/dev/gallery'
+      preLoaderRoute: typeof DevGalleryRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authed/_event/_tabs': {
       id: '/_authed/_event/_tabs'
@@ -286,6 +306,7 @@ const AuthedRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
   LoginRoute: LoginRoute,
+  DevGalleryRoute: DevGalleryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

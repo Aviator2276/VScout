@@ -183,6 +183,20 @@ describe("List", () => {
     expect(screen.getByRole("checkbox", { name: "Haptics" })).toBeChecked()
   })
 
+  it("a navigating row is exactly one link (no link inside a link)", () => {
+    const { container } = ios(
+      <List>
+        <List.Row
+          title="Event"
+          detail="Silicon Valley"
+          href="/settings/event"
+        />
+      </List>
+    )
+    expect(container.querySelectorAll("a")).toHaveLength(1)
+    expect(container.querySelectorAll("a a")).toHaveLength(0)
+  })
+
   it("falls back to a plain link outside the app shell", () => {
     ios(
       <List>

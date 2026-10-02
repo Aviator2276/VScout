@@ -83,3 +83,45 @@ test("a wrong password is explained", async ({ page }) => {
   await page.getByRole("button", { name: "Sign In" }).click()
   await expect(page.getByRole("alert")).toHaveText(/don't match/)
 })
+
+test("sign out and back in, with no console errors", async ({ page }) => {
+  // React warnings (nested links) and render crashes (a closed database) are bugs
+  const problems: Array<string> = []
+  page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`))
+  page.on("console", (m) => {
+    const text = m.text()
+    // the e2e server has no MQTT broker
+    if (m.type() === "error" && !/WebSocket|Failed to load resource/.test(text))
+      problems.push(`console: ${text.slice(0, 200)}`)
+  })
+  await mockApi(page)
+  await page.goto("/login")
+  const signIn = async () => {
+    await page.getByLabel("Username").fill(CREDENTIALS.username)
+    await page.getByLabel("Password").fill(CREDENTIALS.password)
+    await page.getByRole("button", { name: "Sign In" }).click()
+  }
+  await signIn()
+  await page.getByRole("button", { name: /Silicon Valley Regional/ }).click()
+  await page.getByRole("link", { name: "Settings" }).click()
+  await page.getByRole("link", { name: "Event" }).click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Event" })
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Settings" }).click()
+
+  await page.getByRole("button", { name: "Sign Out" }).click()
+  await expect(page.getByRole("heading", { name: "VScout" })).toBeVisible()
+  await expect(page).toHaveURL(/\/login/)
+
+  // the wiped database reopens: signing in again works and asks for the event again
+  await signIn()
+  await expect(
+    page.getByRole("heading", { name: "Choose an Event" })
+  ).toBeVisible()
+  await page.getByRole("button", { name: /Silicon Valley Regional/ }).click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Home" })
+  ).toBeVisible()
+  expect(problems).toEqual([])
+})

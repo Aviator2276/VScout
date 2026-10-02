@@ -1,8 +1,9 @@
-// Tap a zone on a field drawing (game-module.md fieldPosition, zone mode). Zones are normalized
-// polygons drawn from the blue side; `mirror` flips them for the red alliance. Each zone is a radio
-// with its own name, so it works without seeing the drawing.
+// Pick a zone on the field (game-module.md fieldPosition, zone mode). The named zones are a
+// radiogroup of large chips (56 pt for gloves); the drawing shows where they are and is a tap
+// shortcut. Zones are normalized polygons drawn from the blue side; `mirror` flips them for red.
 import { haptic } from "@/lib/haptics"
 import { cn } from "@/lib/utils"
+import { ChoiceChips } from "./choice-chips"
 
 export interface Zone<TId extends string> {
   id: TId
@@ -18,7 +19,6 @@ export function ZoneMap<TId extends string>({
   value,
   onValueChange,
   mirror = false,
-  emptyHint = "Tap a zone.",
   describedBy,
 }: {
   label: string
@@ -27,8 +27,6 @@ export function ZoneMap<TId extends string>({
   value: TId | null
   onValueChange: (id: TId) => void
   mirror?: boolean
-  /** shown until a zone is picked */
-  emptyHint?: string
   describedBy?: string | undefined
 }) {
   const { width: w, height: h } = image
@@ -36,55 +34,40 @@ export function ZoneMap<TId extends string>({
     haptic("selection")
     onValueChange(id)
   }
-  const move = (from: number, step: number) => {
-    const z = zones[(from + step + zones.length) % zones.length]
-    if (z) pick(z.id)
-  }
-  const selected = zones.find((z) => z.id === value)
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      {/* a pointer shortcut; the chips below are the accessible control */}
       <svg
-        role="radiogroup"
-        aria-label={label}
-        aria-describedby={describedBy}
+        aria-hidden
         viewBox={`0 0 ${w} ${h}`}
         className="w-full rounded-xl bg-muted"
       >
-        <image href={image.src} width={w} height={h} aria-hidden />
+        <image href={image.src} width={w} height={h} />
         <g transform={mirror ? `translate(${w} 0) scale(-1 1)` : undefined}>
-          {zones.map((z, i) => {
-            const checked = z.id === value
-            return (
-              <polygon
-                key={z.id}
-                role="radio"
-                aria-checked={checked}
-                aria-label={z.label}
-                tabIndex={checked || (value === null && i === 0) ? 0 : -1}
-                points={z.polygon
-                  .map(([x, y]) => `${x * w},${y * h}`)
-                  .join(" ")}
-                onClick={() => pick(z.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowRight" || e.key === "ArrowDown")
-                    move(i, 1)
-                  if (e.key === "ArrowLeft" || e.key === "ArrowUp") move(i, -1)
-                  if (e.key === " " || e.key === "Enter") pick(z.id)
-                }}
-                className={cn(
-                  "cursor-pointer stroke-foreground/40 stroke-[4] outline-none focus-visible:stroke-ring focus-visible:stroke-[10]",
-                  checked
-                    ? "fill-primary/45"
-                    : "fill-transparent hover:fill-primary/15"
-                )}
-              />
-            )
-          })}
+          {zones.map((z) => (
+            <polygon
+              key={z.id}
+              data-zone={z.id}
+              points={z.polygon.map(([x, y]) => `${x * w},${y * h}`).join(" ")}
+              onClick={() => pick(z.id)}
+              className={cn(
+                "cursor-pointer stroke-foreground/40 stroke-[4]",
+                z.id === value
+                  ? "fill-primary/45"
+                  : "fill-transparent hover:fill-primary/15"
+              )}
+            />
+          ))}
         </g>
       </svg>
-      <p aria-hidden className="text-footnote text-muted-foreground">
-        {selected ? selected.label : emptyHint}
-      </p>
+      <ChoiceChips
+        label={label}
+        options={zones.map((z) => ({ value: z.id, label: z.label }))}
+        value={value}
+        onValueChange={onValueChange}
+        size="form"
+        describedBy={describedBy}
+      />
     </div>
   )
 }

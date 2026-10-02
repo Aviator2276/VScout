@@ -43,7 +43,18 @@ export function Segmented<TValue extends string>({
       aria-describedby={describedBy}
       id={name}
     >
-      <KSegmented strong rounded className={height}>
+      {/* explicit colors: the token bridge maps Konsta's text-black to our foreground, which is
+          white in dark mode (1.57:1 on Konsta's light highlight) */}
+      <KSegmented
+        strong
+        rounded
+        className={height}
+        colors={{
+          strongBgIos: "bg-muted",
+          strongHighlightBgIos:
+            "bg-card shadow-sm dark:bg-[oklch(0.38_0.01_220)]",
+        }}
+      >
         {options.map((o, i) => {
           const checked = o.value === value
           return (
@@ -51,7 +62,7 @@ export function Segmented<TValue extends string>({
               key={o.value}
               active={checked}
               component="button"
-              className={cn(height, "text-subhead")}
+              className={cn(height, "text-foreground!")}
               role="radio"
               aria-checked={checked}
               // one tab stop: the selected (or first) option; arrows move like native radios
@@ -65,7 +76,9 @@ export function Segmented<TValue extends string>({
                 if (e.key === "ArrowLeft" || e.key === "ArrowUp") move(i, -1)
               }}
             >
-              {o.label}
+              {/* Konsta's own class merge drops a size class (it reads text-subhead as a color),
+                  and its text-[15px] ignores Dynamic Type: size the label instead */}
+              <span className="text-subhead">{o.label}</span>
             </SegmentedButton>
           )
         })}

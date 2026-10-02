@@ -7,6 +7,8 @@ export interface SwitchProps {
   checked: boolean
   onCheckedChange: (checked: boolean) => void
   disabled?: boolean | undefined
+  /** form = a 56 pt hit area (scouting forms) */
+  size?: "default" | "form"
 }
 
 export function Switch({
@@ -14,6 +16,7 @@ export function Switch({
   checked,
   onCheckedChange,
   disabled,
+  size = "default",
 }: SwitchProps) {
   return (
     <Toggle
@@ -23,7 +26,8 @@ export function Switch({
         onCheckedChange(e.target.checked)
       }
       colors={{ checkedBgIos: "bg-primary" }}
-      className="shrink-0"
+      // the label is the target; hit-44 / hit-56 grow it from 64×28 (ui-design-system §6.4)
+      className={size === "form" ? "hit-56 shrink-0" : "hit-44 shrink-0"}
     >
       <span className="sr-only">{label}</span>
     </Toggle>

@@ -127,7 +127,10 @@ export function createAppRuntime(o: RuntimeOptions) {
   const mqttStatus = createStore<MqttStatus | null>(null)
   /** from /meta: the oldest client version the backend accepts (pwa-offline §8) */
   const minClientVersion = createStore<string | null>(null)
-  const sessionEnded = new Set<(reason: SessionEndedReason) => void>()
+  /** listeners may return a promise: the logout wipe waits for it (leave the signed-in pages first) */
+  const sessionEnded = new Set<
+    (reason: SessionEndedReason) => void | Promise<unknown>
+  >()
   const roleChanged = new Set<(role: Session["role"]) => void>()
   let transportMode: TransportMode = "auto"
   let mqtt: MqttConnection | null = null
@@ -197,7 +200,8 @@ export function createAppRuntime(o: RuntimeOptions) {
     onLoggedOut: async (reason) => {
       await stopTransports()
       activeEventKey.set(null)
-      for (const l of sessionEnded) l(reason)
+      // pages reading Dexie must unmount before the database is deleted (DatabaseClosedError)
+      await Promise.all([...sessionEnded].map(async (l) => l(reason)))
     },
     onRoleChanged: (role) => {
       for (const l of roleChanged) l(role)
@@ -210,10 +214,16 @@ export function createAppRuntime(o: RuntimeOptions) {
     const data = e.data as { type?: unknown; reason?: unknown } | null
     if (data?.type === "logout") {
       auth.invalidate()
-      void stopTransports().then(() => {
-        for (const l of sessionEnded)
-          l(typeof data.reason === "string" ? data.reason : "logout")
-      })
+      const reason = typeof data.reason === "string" ? data.reason : "logout"
+      void stopTransports()
+        .then(() => Promise.all([...sessionEnded].map(async (l) => l(reason))))
+        // the other tab deleted the database; this tab's copy was closed by versionchange
+        .then(() => (db.isOpen() ? undefined : db.open()))
+        .catch((error: unknown) =>
+          logger.warn("auth", "cross-tab logout cleanup failed", {
+            error: String(error),
+          })
+        )
     } else if (data?.type === "session") auth.invalidate()
   })
 
@@ -459,7 +469,9 @@ export function createAppRuntime(o: RuntimeOptions) {
     afterSignIn,
     /** settled when queued session steps finish (tests) */
     whenSettled: () => chain,
-    onSessionEnded(listener: (reason: SessionEndedReason) => void) {
+    onSessionEnded(
+      listener: (reason: SessionEndedReason) => void | Promise<unknown>
+    ) {
       sessionEnded.add(listener)
       return () => {
         sessionEnded.delete(listener)

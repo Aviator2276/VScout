@@ -31,7 +31,7 @@ const zones = [
 const image = { src: "/field.svg", width: 200, height: 100, alt: "Field" }
 
 function MapHarness({ mirror = false }: { mirror?: boolean }) {
-  const [v, setV] = useState<"left" | "right" | null>(null)
+  const [v, setV] = useState<string | null>(null)
   return (
     <ZoneMap
       label="Start zone"
@@ -40,38 +40,38 @@ function MapHarness({ mirror = false }: { mirror?: boolean }) {
       value={v}
       onValueChange={setV}
       mirror={mirror}
-      emptyHint="Tap where it started."
     />
   )
 }
 
 describe("ZoneMap", () => {
-  it("is a radiogroup of named zones you can tap or arrow through", async () => {
-    render(<MapHarness />)
+  it("is a radiogroup of large zone chips; the drawing is a tap shortcut", async () => {
+    const { container } = render(<MapHarness />)
     const group = screen.getByRole("radiogroup", { name: "Start zone" })
-    expect(screen.getByText("Tap where it started.")).toBeInTheDocument()
-    const left = within(group).getByRole("radio", { name: "Left" })
-    expect(left).toHaveAttribute("points", "0,0 100,0 100,100 0,100")
-    await userEvent.click(left)
-    expect(left).toHaveAttribute("aria-checked", "true")
-    fireEvent.keyDown(left, { key: "ArrowRight" })
-    const right = within(group).getByRole("radio", { name: "Right" })
-    expect(right).toHaveAttribute("aria-checked", "true")
-    fireEvent.keyDown(right, { key: "ArrowLeft" })
-    expect(left).toHaveAttribute("aria-checked", "true")
-    fireEvent.keyDown(right, { key: "Enter" })
-    expect(right).toHaveAttribute("aria-checked", "true")
-    expect(group.querySelector("g")?.getAttribute("transform")).toBeNull()
+    await userEvent.click(within(group).getByRole("radio", { name: "Left" }))
+    expect(within(group).getByRole("radio", { name: "Left" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+    const right = container.querySelector('polygon[data-zone="right"]')
+    expect(right?.getAttribute("points")).toBe("100,0 200,0 200,100 100,100")
+    fireEvent.click(right as Element)
+    expect(within(group).getByRole("radio", { name: "Right" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+    expect(container.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    )
+    expect(container.querySelector("g")?.getAttribute("transform")).toBeNull()
   })
 
   it("flips for the red alliance", () => {
-    render(<MapHarness mirror />)
-    expect(
-      screen
-        .getByRole("radiogroup")
-        .querySelector("g")
-        ?.getAttribute("transform")
-    ).toBe("translate(200 0) scale(-1 1)")
+    const { container } = render(<MapHarness mirror />)
+    expect(container.querySelector("g")?.getAttribute("transform")).toBe(
+      "translate(200 0) scale(-1 1)"
+    )
   })
 })
 

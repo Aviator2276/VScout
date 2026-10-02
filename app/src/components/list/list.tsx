@@ -5,6 +5,7 @@ import { List as KList, ListItem } from "konsta/react"
 import { createContext, use } from "react"
 import type { ReactNode } from "react"
 import { Switch } from "@/components/controls/switch"
+import { ChevronRight } from "@/components/icons/icon"
 import { cn } from "@/lib/utils"
 
 /** The app shell provides the router Link; tests and the gallery fall back to <a>. */
@@ -86,20 +87,29 @@ function Row({
     <span className="text-muted-foreground">{detail}</span>
   ) : undefined
   if (href) {
+    // Konsta's `link` mode renders its own <a>; the router link must be the only one
     return (
       <ListItem
-        link
-        chevron
+        // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
+        titleFontSizeIos="text-body"
         colors={ROW_COLORS}
-        component="div"
-        className={cn("min-h-11", className)}
+        className={cn("relative min-h-11", className)}
         title={renderLink({
           href,
           className: "after:absolute after:inset-0",
           children: title,
         })}
         subtitle={subtitle}
-        after={after}
+        after={
+          <span className="flex items-center gap-1">
+            {after}
+            <ChevronRight
+              aria-hidden
+              size={20}
+              className="text-muted-foreground/60"
+            />
+          </span>
+        }
         media={leading}
       />
     )
@@ -107,6 +117,8 @@ function Row({
   if (onSelect)
     return (
       <ListItem
+        // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
+        titleFontSizeIos="text-body"
         colors={ROW_COLORS}
         className={cn("min-h-11", className)}
         title={
@@ -125,6 +137,8 @@ function Row({
     )
   return (
     <ListItem
+      // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
+      titleFontSizeIos="text-body"
       colors={ROW_COLORS}
       className={cn("min-h-11", className)}
       title={title}
@@ -148,6 +162,8 @@ function ToggleRow({
 }) {
   return (
     <ListItem
+      // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
+      titleFontSizeIos="text-body"
       colors={ROW_COLORS}
       className="min-h-11"
       title={<span aria-hidden>{title}</span>}
