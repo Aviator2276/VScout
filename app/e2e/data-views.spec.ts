@@ -114,12 +114,16 @@ test("teams: rank order with an Unranked group, search, detail and watch", async
   await rows.first().getByRole("link").click()
 
   await expect(page).toHaveURL(/\/teams\/1678/)
+  // the detail chunk may still be loading under the old list: wait for the page itself, and match
+  // "Watch" exactly (the list's "Watched" filter is a button too)
+  await expect(
+    page.getByRole("heading", { level: 1, name: "1678" })
+  ).toBeVisible()
   await expect(page.getByText("Citrus Circuits")).toBeVisible()
-  await page.getByRole("button", { name: "Watch" }).click()
-  await expect(page.getByRole("button", { name: "Watch" })).toHaveAttribute(
-    "aria-pressed",
-    "true"
-  )
+  await page.getByRole("button", { name: "Watch", exact: true }).click()
+  await expect(
+    page.getByRole("button", { name: "Watch", exact: true })
+  ).toHaveAttribute("aria-pressed", "true")
   await page.getByRole("radio", { name: "Matches" }).click()
   await expect(page).toHaveURL(/view=matches/)
   await expect(

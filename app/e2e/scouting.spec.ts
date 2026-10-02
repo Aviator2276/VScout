@@ -166,7 +166,10 @@ test("the same author edits on two devices: a conflict, resolved by keeping mine
   await syncNow(b)
   await openTab(b, "Teams")
   await b.getByLabel("Search teams").fill("254")
+  await expect(b).toHaveURL(/[?&]q=%22?254/)
   await b.getByRole("list", { name: "Teams" }).getByRole("link").first().click()
+  // wait for the detail page itself: its chunk may still be loading under the list
+  await expect(b.getByRole("heading", { level: 1, name: "254" })).toBeVisible()
   await b.getByRole("radio", { name: "Pit" }).click()
   await expect(b.getByRole("tabpanel", { name: "Pit" })).toContainText(
     "Swerve",

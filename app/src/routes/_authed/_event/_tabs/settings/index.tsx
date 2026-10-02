@@ -6,6 +6,7 @@ import { useGlossary } from "@/components/glossary/glossary-provider"
 import { NavBackButton } from "@/components/layout/nav-back-button"
 import { StackPage } from "@/components/layout/stack-page"
 import { List } from "@/components/list/list"
+import { FEEDBACK_ENABLED } from "@/config/feedback"
 import { APP_VERSION } from "@/config/version"
 import { useHomeLayout } from "@/features/home-widgets/api/use-home-layout"
 import { templateName } from "@/features/home-widgets/utils/templates"
@@ -187,6 +188,9 @@ function Settings() {
           detail={APP_VERSION}
           href="/settings/about"
         />
+        {FEEDBACK_ENABLED ? (
+          <List.Row title="Send Feedback" href="/settings/feedback" />
+        ) : null}
       </List.Section>
       {session && can(session, "admin:access") ? (
         <List.Section title="Admin">

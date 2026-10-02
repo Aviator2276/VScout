@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest"
 import fc from "fast-check"
 import { compare as scriptCompare } from "../../../scripts/bump-version.mjs"
-import { compareSemver, isBelowMinimum, parseSemver } from "../semver"
+import {
+  compareSemver,
+  isBelowMinimum,
+  parseSemver,
+  releaseChannel,
+} from "../semver"
 
 describe("compareSemver", () => {
   it.each([
@@ -49,5 +54,19 @@ describe("compareSemver", () => {
         expect(compareSemver(a, b)).toBe(scriptCompare(a, b))
       })
     )
+  })
+})
+
+describe("releaseChannel", () => {
+  it.each([
+    ["2.0.0-alpha.0", "alpha"],
+    ["2.0.0-beta.3", "beta"],
+    ["2.0.0-rc.1", "rc"],
+    ["2.0.0", "stable"],
+    ["2.1.0+build.5", "stable"],
+    ["2.0.0-dev", "alpha"],
+    ["not a version", "alpha"],
+  ] as const)("%s → %s", (version, channel) => {
+    expect(releaseChannel(version)).toBe(channel)
   })
 })

@@ -185,3 +185,35 @@ for (const scheme of ["light", "dark"] as const)
     await expect(page.getByRole("dialog", { name: "Help" })).toBeVisible()
     expect(await axe(page), "help").toEqual([])
   })
+
+test("Send Feedback: a testing build embeds the form, loaded only on that page", async ({
+  page,
+  context,
+}) => {
+  let formRequests = 0
+  await context.route("https://docs.google.com/**", (route) => {
+    formRequests++
+    return route.fulfill({
+      contentType: "text/html",
+      body: "<p>Feedback form</p>",
+    })
+  })
+  await signIn(page)
+  await openSettings(page)
+  expect(formRequests).toBe(0)
+  await page.getByRole("link", { name: "Send Feedback" }).click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Send Feedback" })
+  ).toBeVisible()
+  const frame = page.locator('iframe[title="VScout feedback form"]')
+  await expect(frame).toHaveAttribute(
+    "src",
+    /docs\.google\.com\/forms\/.+embedded=true/
+  )
+  await expect(
+    page
+      .frameLocator('iframe[title="VScout feedback form"]')
+      .getByText("Feedback form")
+  ).toBeVisible()
+  expect(formRequests).toBeGreaterThan(0)
+})

@@ -1,6 +1,7 @@
 // Mock HTTP API on http://localhost:8787 answering from the same MSW handlers the tests use
 // (src/testing/mocks/handlers). Vite loads the TypeScript so the @/ alias works.
-// Sign in as alex / "correct horse 42" or the guest code K7M2QX (src/testing/mocks/mock-backend.ts).
+// Sign in as alex (admin) or sam (scouter), password "correct horse 42", or the guest code K7M2QX
+// (src/testing/mocks/seed-dev.ts).
 import { createServer as createHttpServer } from "node:http"
 import { createServer as createViteServer } from "vite"
 import { getResponse } from "msw"

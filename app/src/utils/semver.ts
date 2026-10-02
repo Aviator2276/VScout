@@ -59,3 +59,17 @@ export function compareSemver(a: string, b: string): number {
 export function isBelowMinimum(version: string, minimum: string): boolean {
   return compareSemver(version, minimum) < 0
 }
+
+export type ReleaseChannel = "alpha" | "beta" | "rc" | "stable"
+
+/**
+ * The release channel a version belongs to (release-versioning.md, `app/release.config.json`):
+ * the first prerelease identifier, or stable without one. Unknown tags count as alpha.
+ */
+export function releaseChannel(version: string): ReleaseChannel {
+  const v = parseSemver(version)
+  if (!v) return "alpha"
+  const [tag] = v.pre
+  if (tag === undefined) return "stable"
+  return tag === "beta" || tag === "rc" || tag === "alpha" ? tag : "alpha"
+}

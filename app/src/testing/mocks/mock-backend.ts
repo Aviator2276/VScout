@@ -15,6 +15,15 @@ export const MOCK_CREDENTIALS = {
   password: "correct horse 42",
 }
 export const MOCK_GUEST_CODE = "K7M2QX"
+
+/** A sign-in account. `role: null` follows `mockBackend.role` (tests set that directly). */
+export interface MockAccount {
+  id: string
+  username: string
+  displayName: string
+  password: string
+  role: "admin" | "scouter" | null
+}
 export const MOCK_USER_ID = "01900000-0000-7000-8000-000000009000"
 
 export type MockRecord = Record<string, unknown> & { id: string; rev: number }
@@ -42,6 +51,8 @@ export const mockBackend = {
   trash: new Map<string, MockRecord>(),
   /** moderation history (GET /events/{ek}/admin/audit) */
   audit: [] as Array<Record<string, unknown>>,
+  /** who can sign in (POST /auth/login), by username */
+  accounts: new Map<string, MockAccount>(),
   /** admin-managed accounts (GET/POST/PATCH /admin/users) */
   users: new Map<string, MockRecord>(),
   /** guest codes in use by other events (409 guest_code_taken) */
@@ -67,6 +78,18 @@ export const mockBackend = {
     this.tombstones = new Map()
     this.trash = new Map()
     this.audit = []
+    this.accounts = new Map([
+      [
+        MOCK_CREDENTIALS.username,
+        {
+          id: MOCK_USER_ID,
+          username: "alex",
+          displayName: "Alex",
+          password: MOCK_CREDENTIALS.password,
+          role: null,
+        },
+      ],
+    ])
     this.users = new Map([
       [
         MOCK_USER_ID,
@@ -101,6 +124,20 @@ export const mockBackend = {
   now(): string {
     this.tick++
     return new Date(Date.UTC(2026, 2, 20, 16, 0, 0, this.tick)).toISOString()
+  },
+
+  /** the signed-in account's user, as sessions and /me report it */
+  sessionUser() {
+    const account = [...this.accounts.values()].find(
+      (a) => a.id === this.userId
+    )
+    return {
+      id: this.userId,
+      username: account?.username ?? "alex",
+      displayName: account?.displayName ?? "Alex",
+      role: this.role === "guest" ? ("scouter" as const) : this.role,
+      teamNumber: 2276,
+    }
   },
 
   key(entity: string, id: string) {
