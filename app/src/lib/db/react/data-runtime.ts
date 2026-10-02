@@ -3,6 +3,8 @@
 import { createContext, use } from "react"
 import type { VScoutDB } from "@/lib/db/schema"
 import type { ScopeInfoStore } from "@/lib/sync/scope-info"
+import type { ExternalStore } from "@/lib/mqtt/external-store"
+import type { SyncStatus } from "@/lib/sync/status-store"
 
 export interface DataRuntime {
   db: VScoutDB
@@ -14,6 +16,8 @@ export interface DataRuntime {
   /** ask the engine to fetch a record that isn't here yet (throttled by the caller) */
   requestSync?: () => void
   clockSkewMs?: () => number
+  /** the engine's phase and last success, for the sync pill */
+  syncStatus?: ExternalStore<SyncStatus>
 }
 
 export const DataRuntimeContext = createContext<DataRuntime | null>(null)

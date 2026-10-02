@@ -1,11 +1,20 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+} from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
+import { AppProviders } from "@/app/app-providers"
+import { UpdateRuntime } from "@/app/update-runtime"
+import type { RouterContext } from "@/app/router-context"
+import { RouteNotFound } from "@/components/errors/route-not-found"
 import { PREPAINT_SCRIPT } from "@/lib/theme"
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     // Static only: the root route is prerendered in Node at build time (routing-auth §1).
     meta: [
@@ -37,14 +46,22 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/icons/apple-touch-icon-180.png" },
     ],
   }),
-  notFoundComponent: () => (
-    <main className="container mx-auto p-4 pt-16">
-      <h1>Page not found</h1>
-      <p>This page doesn't exist.</p>
-    </main>
-  ),
+  notFoundComponent: RouteNotFound,
+  component: Root,
   shellComponent: RootDocument,
 })
+
+// No I/O here: the root renders in Node for the shell prerender (routing-auth §1).
+function Root() {
+  const { app } = Route.useRouteContext()
+  return (
+    <AppProviders>
+      <UpdateRuntime app={app}>
+        <Outlet />
+      </UpdateRuntime>
+    </AppProviders>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

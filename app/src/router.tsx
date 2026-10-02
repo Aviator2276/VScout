@@ -1,13 +1,29 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
+import { getAppRuntime } from "@/app/app-runtime"
+import type { RouterContext } from "@/app/router-context"
+import { RouteError } from "@/components/errors/route-error"
+import { RouteNotFound } from "@/components/errors/route-not-found"
+import { RoutePending } from "@/components/layout/route-pending"
+import { activeGame } from "@/config/game"
 import { routeTree } from "./routeTree.gen"
 
+// Called in Node for the shell prerender too: the context is lazy (routing-auth §3).
 export function getRouter() {
+  const context: RouterContext = { app: getAppRuntime, game: activeGame }
   const router = createTanStackRouter({
     routeTree,
-
-    scrollRestoration: true,
+    context,
     defaultPreload: "intent",
+    // loaders are cheap Dexie reads; Dexie is the cache
     defaultPreloadStaleTime: 0,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 300,
+    defaultPendingComponent: RoutePending,
+    defaultErrorComponent: RouteError,
+    defaultNotFoundComponent: RouteNotFound,
+    scrollRestoration: true,
+    getScrollRestorationKey: (l) => l.pathname,
+    // no defaultViewTransition: React <ViewTransition> owns transitions (ui-design-system §10.1)
   })
 
   return router

@@ -1,5 +1,6 @@
 // Author-owned records. They share one mapping: wire meta → OwnedMeta (synced), rest unchanged.
 import type { EntityName } from "@/lib/contracts/entities"
+import type { DomainRecords } from "@/lib/db/types"
 import type { EntityAdapter } from "./entity-adapter"
 import { ownedMeta, withoutOwnedMeta } from "./entity-adapter"
 
@@ -19,7 +20,12 @@ function ownedAdapter<
   TEntity extends OwnedEntity & EntityName,
 >(): EntityAdapter<TEntity> {
   return {
-    toDomain: (w) => ({ ...withoutOwnedMeta(w), ...ownedMeta(w) }),
+    // the spread keeps unknown wire keys (forward compatibility); the record type names the known ones
+    toDomain: (w) =>
+      ({
+        ...withoutOwnedMeta(w),
+        ...ownedMeta(w),
+      }) as unknown as DomainRecords[TEntity],
   }
 }
 

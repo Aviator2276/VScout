@@ -9,50 +9,283 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedEventRouteImport } from './routes/_authed/_event'
+import { Route as AuthedOnboardingRouteImport } from './routes/_authed/onboarding'
+import { Route as AuthedEventTabsRouteImport } from './routes/_authed/_event/_tabs'
+import { Route as AuthedEventTabsIndexRouteImport } from './routes/_authed/_event/_tabs/index'
+import { Route as AuthedEventTabsMatchesIndexRouteImport } from './routes/_authed/_event/_tabs/matches/index'
+import { Route as AuthedEventTabsScoutIndexRouteImport } from './routes/_authed/_event/_tabs/scout/index'
+import { Route as AuthedEventTabsSettingsIndexRouteImport } from './routes/_authed/_event/_tabs/settings/index'
+import { Route as AuthedEventTabsSettingsEventRouteImport } from './routes/_authed/_event/_tabs/settings/event'
+import { Route as AuthedEventTabsTeamsIndexRouteImport } from './routes/_authed/_event/_tabs/teams/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedEventRoute = AuthedEventRouteImport.update({
+  id: '/_event',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedOnboardingRoute = AuthedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedEventTabsRoute = AuthedEventTabsRouteImport.update({
+  id: '/_tabs',
+  getParentRoute: () => AuthedEventRoute,
+} as any)
+const AuthedEventTabsIndexRoute = AuthedEventTabsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedEventTabsRoute,
+} as any)
+const AuthedEventTabsMatchesIndexRoute =
+  AuthedEventTabsMatchesIndexRouteImport.update({
+    id: '/matches/',
+    path: '/matches/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutIndexRoute =
+  AuthedEventTabsScoutIndexRouteImport.update({
+    id: '/scout/',
+    path: '/scout/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsIndexRoute =
+  AuthedEventTabsSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsEventRoute =
+  AuthedEventTabsSettingsEventRouteImport.update({
+    id: '/settings/event',
+    path: '/settings/event',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsTeamsIndexRoute =
+  AuthedEventTabsTeamsIndexRouteImport.update({
+    id: '/teams/',
+    path: '/teams/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthedEventTabsIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof AuthedOnboardingRoute
+  '/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/scout/': typeof AuthedEventTabsScoutIndexRoute
+  '/settings/': typeof AuthedEventTabsSettingsIndexRoute
+  '/teams/': typeof AuthedEventTabsTeamsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof AuthedEventTabsIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof AuthedOnboardingRoute
+  '/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/matches': typeof AuthedEventTabsMatchesIndexRoute
+  '/scout': typeof AuthedEventTabsScoutIndexRoute
+  '/settings': typeof AuthedEventTabsSettingsIndexRoute
+  '/teams': typeof AuthedEventTabsTeamsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authed/_event': typeof AuthedEventRouteWithChildren
+  '/_authed/onboarding': typeof AuthedOnboardingRoute
+  '/_authed/_event/_tabs': typeof AuthedEventTabsRouteWithChildren
+  '/_authed/_event/_tabs/': typeof AuthedEventTabsIndexRoute
+  '/_authed/_event/_tabs/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/_authed/_event/_tabs/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/_authed/_event/_tabs/scout/': typeof AuthedEventTabsScoutIndexRoute
+  '/_authed/_event/_tabs/settings/': typeof AuthedEventTabsSettingsIndexRoute
+  '/_authed/_event/_tabs/teams/': typeof AuthedEventTabsTeamsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/settings/event'
+    | '/matches/'
+    | '/scout/'
+    | '/settings/'
+    | '/teams/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/settings/event'
+    | '/matches'
+    | '/scout'
+    | '/settings'
+    | '/teams'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/login'
+    | '/_authed/_event'
+    | '/_authed/onboarding'
+    | '/_authed/_event/_tabs'
+    | '/_authed/_event/_tabs/'
+    | '/_authed/_event/_tabs/settings/event'
+    | '/_authed/_event/_tabs/matches/'
+    | '/_authed/_event/_tabs/scout/'
+    | '/_authed/_event/_tabs/settings/'
+    | '/_authed/_event/_tabs/teams/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/_event': {
+      id: '/_authed/_event'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedEventRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/onboarding': {
+      id: '/_authed/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthedOnboardingRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/_event/_tabs': {
+      id: '/_authed/_event/_tabs'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedEventTabsRouteImport
+      parentRoute: typeof AuthedEventRoute
+    }
+    '/_authed/_event/_tabs/': {
+      id: '/_authed/_event/_tabs/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedEventTabsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/matches/': {
+      id: '/_authed/_event/_tabs/matches/'
+      path: '/matches'
+      fullPath: '/matches/'
+      preLoaderRoute: typeof AuthedEventTabsMatchesIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/': {
+      id: '/_authed/_event/_tabs/scout/'
+      path: '/scout'
+      fullPath: '/scout/'
+      preLoaderRoute: typeof AuthedEventTabsScoutIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/': {
+      id: '/_authed/_event/_tabs/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthedEventTabsSettingsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/event': {
+      id: '/_authed/_event/_tabs/settings/event'
+      path: '/settings/event'
+      fullPath: '/settings/event'
+      preLoaderRoute: typeof AuthedEventTabsSettingsEventRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/teams/': {
+      id: '/_authed/_event/_tabs/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof AuthedEventTabsTeamsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
     }
   }
 }
 
+interface AuthedEventTabsRouteChildren {
+  AuthedEventTabsIndexRoute: typeof AuthedEventTabsIndexRoute
+  AuthedEventTabsSettingsEventRoute: typeof AuthedEventTabsSettingsEventRoute
+  AuthedEventTabsMatchesIndexRoute: typeof AuthedEventTabsMatchesIndexRoute
+  AuthedEventTabsScoutIndexRoute: typeof AuthedEventTabsScoutIndexRoute
+  AuthedEventTabsSettingsIndexRoute: typeof AuthedEventTabsSettingsIndexRoute
+  AuthedEventTabsTeamsIndexRoute: typeof AuthedEventTabsTeamsIndexRoute
+}
+
+const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
+  AuthedEventTabsIndexRoute: AuthedEventTabsIndexRoute,
+  AuthedEventTabsSettingsEventRoute: AuthedEventTabsSettingsEventRoute,
+  AuthedEventTabsMatchesIndexRoute: AuthedEventTabsMatchesIndexRoute,
+  AuthedEventTabsScoutIndexRoute: AuthedEventTabsScoutIndexRoute,
+  AuthedEventTabsSettingsIndexRoute: AuthedEventTabsSettingsIndexRoute,
+  AuthedEventTabsTeamsIndexRoute: AuthedEventTabsTeamsIndexRoute,
+}
+
+const AuthedEventTabsRouteWithChildren = AuthedEventTabsRoute._addFileChildren(
+  AuthedEventTabsRouteChildren,
+)
+
+interface AuthedEventRouteChildren {
+  AuthedEventTabsRoute: typeof AuthedEventTabsRouteWithChildren
+}
+
+const AuthedEventRouteChildren: AuthedEventRouteChildren = {
+  AuthedEventTabsRoute: AuthedEventTabsRouteWithChildren,
+}
+
+const AuthedEventRouteWithChildren = AuthedEventRoute._addFileChildren(
+  AuthedEventRouteChildren,
+)
+
+interface AuthedRouteChildren {
+  AuthedEventRoute: typeof AuthedEventRouteWithChildren
+  AuthedOnboardingRoute: typeof AuthedOnboardingRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedEventRoute: AuthedEventRouteWithChildren,
+  AuthedOnboardingRoute: AuthedOnboardingRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

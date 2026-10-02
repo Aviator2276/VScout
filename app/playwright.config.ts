@@ -1,5 +1,6 @@
-// E2E runs against the production build (`vite preview`), never the dev server: the service
-// worker only registers in production (pwa-offline.md §13.2). WebKit is the iPhone proxy.
+// E2E runs against the production build served statically like nginx (scripts/serve-static.mjs),
+// never the dev server: the service worker only registers in production (pwa-offline.md §13.2).
+// WebKit is the iPhone proxy.
 import { defineConfig, devices } from "@playwright/test"
 
 const PORT = 4173
@@ -19,7 +20,8 @@ export default defineConfig({
     { name: "webkit", use: { ...devices["iPhone 15"] } },
   ],
   webServer: {
-    command: `pnpm exec vite preview --port ${PORT} --strictPort`,
+    command: `node scripts/serve-static.mjs`,
+    env: { PORT: String(PORT) },
     port: PORT,
     reuseExistingServer: !process.env.CI,
   },

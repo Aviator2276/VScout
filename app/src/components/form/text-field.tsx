@@ -29,6 +29,12 @@ export interface TextFieldProps extends BaseProps {
   /** never autofocus on phones (it pops the keyboard); the caller decides */
   autoFocus?: boolean
   maxLength?: number
+  autoCapitalize?: "off" | "none" | "sentences" | "words" | "characters"
+  autoCorrect?: "on" | "off"
+  spellCheck?: boolean
+  enterKeyHint?: "go" | "next" | "done" | "search" | "send"
+  /** "code": large monospaced digits with wide tracking (guest code, ui-patterns §9B) */
+  variant?: "default" | "code"
 }
 
 function useIds(
@@ -77,6 +83,7 @@ export function TextField({
   description,
   errors,
   type = "text",
+  variant = "default",
   ...rest
 }: TextFieldProps) {
   const ids = useIds(errors, description)
@@ -90,7 +97,11 @@ export function TextField({
         onChange={(e) => onValueChange(e.target.value)}
         aria-invalid={ids.invalid || undefined}
         aria-describedby={ids.describedBy}
-        className="min-h-11 text-body"
+        className={
+          variant === "code"
+            ? "min-h-14 font-mono text-title-2 tracking-[0.3em] tabular-nums"
+            : "min-h-11 text-body"
+        }
         {...rest}
       />
       <Messages ids={ids} description={description} errors={errors} />

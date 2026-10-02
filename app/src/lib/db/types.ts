@@ -41,18 +41,34 @@ export interface OwnedMeta extends ServerMeta {
   localUpdatedAt: number
 }
 
+/**
+ * Omit for loose wire objects: zod's looseObject adds a string index signature, and a plain Omit
+ * over it turns every known key into `unknown`. This drops the index signature first.
+ */
+type KnownOmit<T, TKeys extends PropertyKey> = {
+  [
+    P in keyof T as string extends P
+      ? never
+      : number extends P
+        ? never
+        : P extends TKeys
+          ? never
+          : P
+  ]: T[P]
+}
+
 type Meta = "id" | "rev" | "updatedAt"
 type OwnedWireMeta = Meta | "eventKey" | "authorId" | "createdAt" | "updatedBy"
 
 // ---------- reference data (server-owned, read-only) ----------
 
 export type EventRecord = ServerMeta &
-  Omit<WireEvent, Meta | "isDemo"> & { key: string; isDemo: boolean }
+  KnownOmit<WireEvent, Meta | "isDemo"> & { key: string; isDemo: boolean }
 
-export type TeamRecord = ServerMeta & Omit<WireTeam, Meta>
+export type TeamRecord = ServerMeta & KnownOmit<WireTeam, Meta>
 
 export type EventTeamRecord = ServerMeta &
-  Omit<
+  KnownOmit<
     WireEventTeam,
     Meta | "statsUpdatedAt" | "rank" | "rankingPoints" | "pitLocation"
   > & {
@@ -63,7 +79,7 @@ export type EventTeamRecord = ServerMeta &
   }
 
 export type MatchRecord = ServerMeta &
-  Omit<
+  KnownOmit<
     WireMatch,
     | Meta
     | "scheduledTime"
@@ -82,7 +98,7 @@ export type MatchRecord = ServerMeta &
     teamNumbers: Array<number>
   }
 
-export type UserRecord = ServerMeta & Omit<WireUser, Meta>
+export type UserRecord = ServerMeta & KnownOmit<WireUser, Meta>
 
 export type TeamSettingsRecord = ServerMeta & {
   id: "team"
@@ -94,7 +110,7 @@ export type UserSettingsRecord = ServerMeta &
   UserSettingsDocument & { userId: string; syncState: SyncState }
 
 export type EventSettingsRecord = ServerMeta &
-  Omit<WireEventSettings, Meta | "guestAccess"> & {
+  KnownOmit<WireEventSettings, Meta | "guestAccess"> & {
     guestAccess: {
       enabled: boolean
       code: string | null
@@ -104,10 +120,10 @@ export type EventSettingsRecord = ServerMeta &
   }
 
 export type AllianceBoardRecord = ServerMeta &
-  Omit<WireAllianceBoard, Meta | "lockedAt" | "history"> & {
+  KnownOmit<WireAllianceBoard, Meta | "lockedAt" | "history"> & {
     lockedAt: number | null
     history: Array<
-      Omit<WireAllianceBoard["history"][number], "at"> & { at: number }
+      KnownOmit<WireAllianceBoard["history"][number], "at"> & { at: number }
     >
   }
 
@@ -119,23 +135,24 @@ export interface GamePayloadFlags {
 }
 
 export type ScoutEntryRecord = OwnedMeta &
-  Omit<WireScoutEntry, OwnedWireMeta> &
+  KnownOmit<WireScoutEntry, OwnedWireMeta> &
   GamePayloadFlags
 export type PitScoutingRecord = OwnedMeta &
-  Omit<WirePitScouting, OwnedWireMeta> &
+  KnownOmit<WirePitScouting, OwnedWireMeta> &
   GamePayloadFlags
 export type PostScoutingRecord = OwnedMeta &
-  Omit<WirePostScouting, OwnedWireMeta> &
+  KnownOmit<WirePostScouting, OwnedWireMeta> &
   GamePayloadFlags
 export type AllianceRankRecord = OwnedMeta &
-  Omit<WireAllianceRank, OwnedWireMeta>
-export type CommentRecord = OwnedMeta & Omit<WireComment, OwnedWireMeta>
-export type MessageRecord = OwnedMeta & Omit<WireMessage, OwnedWireMeta>
-export type ReactionRecord = OwnedMeta & Omit<WireReaction, OwnedWireMeta>
-export type PicklistRecord = OwnedMeta & Omit<WirePicklist, OwnedWireMeta>
+  KnownOmit<WireAllianceRank, OwnedWireMeta>
+export type CommentRecord = OwnedMeta & KnownOmit<WireComment, OwnedWireMeta>
+export type MessageRecord = OwnedMeta & KnownOmit<WireMessage, OwnedWireMeta>
+export type ReactionRecord = OwnedMeta & KnownOmit<WireReaction, OwnedWireMeta>
+export type PicklistRecord = OwnedMeta & KnownOmit<WirePicklist, OwnedWireMeta>
 export type PicklistEntryRecord = OwnedMeta &
-  Omit<WirePicklistEntry, OwnedWireMeta>
-export type MediaAssetRecord = OwnedMeta & Omit<WireMediaAsset, OwnedWireMeta>
+  KnownOmit<WirePicklistEntry, OwnedWireMeta>
+export type MediaAssetRecord = OwnedMeta &
+  KnownOmit<WireMediaAsset, OwnedWireMeta>
 
 /** Domain record type per entity name (matches lib/contracts/entities.ts). */
 export interface DomainRecords {

@@ -61,11 +61,8 @@ function tableOf<TEntity extends OwnedEntity>(db: VScoutDB, entity: TEntity) {
 }
 
 /** Validates the domain fields with the wire schema (minus meta) and the game form. */
-function validate(
-  entity: OwnedEntity,
-  record: Record<string, unknown>,
-  games: GameLookup
-): void {
+function validate(entity: OwnedEntity, input: object, games: GameLookup): void {
+  const record = input as Record<string, unknown>
   const fields = Object.fromEntries(
     Object.entries(record).filter(([k]) => !LOCAL_KEYS.has(k))
   )

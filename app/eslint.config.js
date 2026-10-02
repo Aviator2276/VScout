@@ -62,6 +62,10 @@ function restrictedImports({
       message: "VScout is a static SPA. There is no server runtime (ADR-001).",
     },
     {
+      name: "cn",
+      message: "Import cn from @/lib/utils (it knows the iOS type scale).",
+    },
+    {
       name: "motion/react",
       importNames: ["motion"],
       message:
@@ -146,7 +150,19 @@ export default [
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
-      "@typescript-eslint/only-throw-error": "error",
+      // TanStack Router's redirect() and notFound() are thrown by design (routing-auth §5)
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: [
+            {
+              from: "package",
+              package: "@tanstack/router-core",
+              name: ["Redirect", "NotFoundError"],
+            },
+          ],
+        },
+      ],
     },
   },
   // rules of hooks + the React Compiler-aware checks (owner approved, 2026-10-01)

@@ -11,8 +11,9 @@ test("the app shell loads with its manifest and version", async ({
   page,
   request,
 }) => {
-  await page.goto("/")
+  await page.goto("/login")
   await expect(page).toHaveTitle("VScout")
+  await expect(page.getByRole("heading", { name: "VScout" })).toBeVisible()
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
     "href",
     "/manifest.webmanifest"
