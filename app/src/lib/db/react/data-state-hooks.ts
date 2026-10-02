@@ -1,15 +1,21 @@
 // The primitives feature api/ hooks compose (data-layer §9.2). Features never build DataState by
 // hand. Decision tables: §9.2.1 (records) and §9.2.2 (collections).
-import { useCallback, useRef, useState, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import type { DependencyList } from "react"
 import { toAppError } from "@/lib/errors"
-import type { AppError } from "@/lib/errors"
 import { uuidv7Time } from "@/lib/ids"
 import { logger } from "@/lib/logger"
 import type { ScopeInfo } from "@/lib/sync/scope-info"
 import { useDataRuntime } from "./data-runtime"
 import type { DataState, MissingReason } from "./data-state"
 import { useLive } from "./use-live"
+import type { Settled } from "./use-live"
 
 export interface ScopeRef {
   scope: string
@@ -49,45 +55,45 @@ function useRetry() {
   return { key, retry: useCallback(() => setKey((k) => k + 1), []) }
 }
 
-function errorState(
-  error: unknown,
-  retry: () => void,
-  logged: { current: unknown }
-): DataState<never> {
-  const appError: AppError = toAppError(error)
-  if (logged.current !== error) {
-    logged.current = error
-    logger.error("data", "read failed", {
-      code: appError.code,
-      error: String(error),
-    })
-  }
-  return { status: "error", error: appError, retry }
+/** Logs a read failure once per distinct error, after render. */
+function useLogError(result: { kind: string; error?: unknown } | undefined) {
+  const error = result?.kind === "error" ? result.error : undefined
+  useEffect(() => {
+    if (error !== undefined)
+      logger.error("data", "read failed", {
+        code: toAppError(error).code,
+        error: String(error),
+      })
+  }, [error])
 }
 
-/** Reuse previous row objects whose key didn't change, so memoized rows don't re-render (§9.3). */
-function useStructuralShare<TRow>(
-  rows: ReadonlyArray<TRow> | undefined,
-  key: (row: TRow) => string
-) {
-  const prev = useRef<{
-    rows: ReadonlyArray<TRow>
-    byKey: Map<string, TRow>
-  } | null>(null)
-  if (!rows) return rows
-  const byKey = new Map<string, TRow>()
-  let changed = !prev.current || prev.current.rows.length !== rows.length
-  const next = rows.map((row, i) => {
-    const k = key(row)
-    const old = prev.current?.byKey.get(k)
-    const out = old ?? row
-    byKey.set(k, out)
-    if (!changed && prev.current?.rows[i] !== out) changed = true
-    return out
-  })
-  if (!changed && prev.current) return prev.current.rows
-  prev.current = { rows: next, byKey }
-  return next
+function errorState(error: unknown, retry: () => void): DataState<never> {
+  return { status: "error", error: toAppError(error), retry }
+}
+
+/**
+ * Structural sharing (§9.3), applied inside the querier (outside render): rows whose key didn't
+ * change keep their previous object, and an unchanged list keeps its previous array, so memoized
+ * rows don't re-render.
+ */
+function createSharer<TRow>(key: (row: TRow) => string) {
+  let prevRows: ReadonlyArray<TRow> = []
+  let prevByKey = new Map<string, TRow>()
+  return (rows: ReadonlyArray<TRow>): ReadonlyArray<TRow> => {
+    const byKey = new Map<string, TRow>()
+    let changed = rows.length !== prevRows.length
+    const next = rows.map((row, i) => {
+      const k = key(row)
+      const out = prevByKey.get(k) ?? row
+      byKey.set(k, out)
+      if (prevRows[i] !== out) changed = true
+      return out
+    })
+    prevByKey = byKey
+    if (!changed) return prevRows
+    prevRows = next
+    return next
+  }
 }
 
 const defaultShareKey = (row: unknown): string => {
@@ -118,23 +124,23 @@ export function useCollectionState<TRow>(
   const scopes = useScopes(opts.source)
   const canSync = useCanSync()
   const { key, retry } = useRetry()
-  const logged = useRef<unknown>(null)
   const allowed = opts.allowed ?? true
-  const result = useLive(opts.enabled && allowed ? opts.query : null, [
-    ...opts.deps,
-    key,
-  ])
-  const shared = useStructuralShare(
-    result?.kind === "ok" ? result.value : undefined,
-    opts.share ?? (defaultShareKey as (row: TRow) => string)
+  const [share] = useState(() =>
+    createSharer(opts.share ?? (defaultShareKey as (row: TRow) => string))
   )
+  const { query } = opts
+  const result = useLive(
+    opts.enabled && allowed ? async () => share(await query()) : null,
+    [...opts.deps, key]
+  )
+  useLogError(result)
 
   if (!opts.enabled) return { status: "idle" }
   if (!allowed || scopes.some((s) => s.forbidden))
     return { status: "missing", reason: "forbidden" }
   if (!result) return { status: "loading" }
-  if (result.kind === "error") return errorState(result.error, retry, logged)
-  const rows = shared ?? []
+  if (result.kind === "error") return errorState(result.error, retry)
+  const rows = result.kind === "ok" ? result.value : []
   const bootstrapped = scopes.every((s) => s.bootstrapState === "done")
   if (rows.length > 0)
     return {
@@ -171,37 +177,55 @@ export function useRecordState<TRecord>(
   const runtime = useDataRuntime()
   const [scope] = useScopes(opts.source)
   const { key, retry } = useRetry()
-  const logged = useRef<unknown>(null)
-  const requested = useRef<{ id: string; at: number } | null>(null)
   const allowed = opts.allowed ?? true
+  const { db } = runtime
+  const { query, explainMissing, id } = opts
+  const entity = opts.source.entity
 
   const result = useLive<RecordResult<TRecord>>(
     opts.enabled && allowed
       ? async () => {
-          const value = await opts.query()
+          const value = await query()
           if (value !== undefined) return { found: true, value }
           // only on the miss path: one extra read each
-          const deleted = opts.id
-            ? (await runtime.db.tombstones.get([
-                opts.source.entity,
-                opts.id,
-              ])) !== undefined
+          const deleted = id
+            ? (await db.tombstones.get([entity, id])) !== undefined
             : false
-          return {
-            found: false,
-            deleted,
-            explained: await opts.explainMissing?.(),
-          }
+          return { found: false, deleted, explained: await explainMissing?.() }
         }
       : null,
     [...opts.deps, key]
   )
+  useLogError(result)
+  const state = recordState(result, {
+    enabled: opts.enabled,
+    allowed,
+    scope,
+    id,
+    skew: runtime.clockSkewMs?.() ?? 0,
+    retry,
+  })
+  useRequestWhenNotSynced(state, id, runtime.requestSync)
+  return state
+}
 
-  if (!opts.enabled) return { status: "idle" }
-  if (!allowed || scope?.forbidden)
+function recordState<TRecord>(
+  result: Settled<RecordResult<TRecord>> | undefined,
+  ctx: {
+    enabled: boolean
+    allowed: boolean
+    scope: ScopeInfo | undefined
+    id: string | undefined
+    skew: number
+    retry: () => void
+  }
+): DataState<TRecord> {
+  const { scope } = ctx
+  if (!ctx.enabled) return { status: "idle" }
+  if (!ctx.allowed || scope?.forbidden)
     return { status: "missing", reason: "forbidden" }
   if (!result) return { status: "loading" }
-  if (result.kind === "error") return errorState(result.error, retry, logged)
+  if (result.kind === "error") return errorState(result.error, ctx.retry)
   if (result.kind === "idle") return { status: "idle" }
   const r = result.value
   if (r.found)
@@ -212,33 +236,32 @@ export function useRecordState<TRecord>(
     }
   if (r.deleted) return { status: "missing", reason: "not-found" }
   if (scope?.bootstrapState !== "done")
-    return notSynced(runtime, opts.id, requested)
-  const created = opts.id ? uuidv7Time(opts.id) : null
-  const skew = runtime.clockSkewMs?.() ?? 0
+    return { status: "missing", reason: "not-synced" }
+  const created = ctx.id ? uuidv7Time(ctx.id) : null
   if (
     created !== null &&
-    created > scope.lastPulledAt - skew - NOT_SYNCED_GRACE_MS
+    created > scope.lastPulledAt - ctx.skew - NOT_SYNCED_GRACE_MS
   )
-    return notSynced(runtime, opts.id, requested)
+    return { status: "missing", reason: "not-synced" }
   if (r.explained) return { status: "missing", reason: r.explained }
   return { status: "missing", reason: "not-found" }
 }
 
-/** Ask the engine once per id per minute; the live query flips to success when it lands. */
-function notSynced(
-  runtime: ReturnType<typeof useDataRuntime>,
+/** Ask the engine once per id per minute; the live query flips to success when the record lands. */
+function useRequestWhenNotSynced(
+  state: DataState<unknown>,
   id: string | undefined,
-  requested: { current: { id: string; at: number } | null }
-): DataState<never> {
-  const now = Date.now()
-  const key = id ?? ""
-  if (
-    runtime.requestSync &&
-    (requested.current?.id !== key ||
-      now - requested.current.at > REQUEST_THROTTLE_MS)
-  ) {
-    requested.current = { id: key, at: now }
-    queueMicrotask(() => runtime.requestSync?.())
-  }
-  return { status: "missing", reason: "not-synced" }
+  requestSync: (() => void) | undefined
+) {
+  const last = useRef<{ id: string; at: number } | null>(null)
+  const notSynced = state.status === "missing" && state.reason === "not-synced"
+  useEffect(() => {
+    if (!notSynced || !requestSync) return
+    const now = Date.now()
+    const key = id ?? ""
+    if (last.current?.id === key && now - last.current.at < REQUEST_THROTTLE_MS)
+      return
+    last.current = { id: key, at: now }
+    requestSync()
+  }, [notSynced, id, requestSync])
 }

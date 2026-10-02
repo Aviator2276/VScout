@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { tanstackConfig } from "@tanstack/eslint-config"
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript"
 import checkFile from "eslint-plugin-check-file"
+import reactHooks from "eslint-plugin-react-hooks"
 import { createRule, loadGameTerms } from "./eslint-rules/no-game-terms.js"
 
 const gameTerms = loadGameTerms(
@@ -146,6 +147,15 @@ export default [
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/only-throw-error": "error",
+    },
+  },
+  // rules of hooks + the React Compiler-aware checks (owner approved, 2026-10-01)
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      ...reactHooks.configs["recommended-latest"].rules,
+      "react-hooks/exhaustive-deps": "error",
     },
   },
   {

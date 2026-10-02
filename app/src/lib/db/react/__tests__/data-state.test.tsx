@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import { createTestRuntime } from "@/testing/data-runtime"
+import { useDataRuntime } from "../data-runtime"
 import { useCollectionState, useRecordState } from "../data-state-hooks"
 
 const EV = "event:2026casj"
@@ -188,6 +189,38 @@ describe("useRecordState (data-layer §9.2.1)", () => {
     )
     rerender()
     await waitFor(() => expect(t.syncRequests).toHaveLength(1))
+  })
+
+  it("rule 3: asks again for the same id at most once a minute", async () => {
+    const t = createTestRuntime()
+    await t.seedScope(EV, "comment", { bootstrapState: "running" })
+    const { result, rerender } = renderHook(
+      ({ on }: { on: boolean }) =>
+        useRecordState({
+          enabled: on,
+          source: { scope: EV, entity: "comment" },
+          id: ID_OLD,
+          deps: [],
+          query: () => t.db.comments.get(ID_OLD),
+        }),
+      { wrapper: t.wrapper, initialProps: { on: true } }
+    )
+    await waitFor(() =>
+      expect(result.current).toMatchObject({ reason: "not-synced" })
+    )
+    rerender({ on: false })
+    expect(result.current).toEqual({ status: "idle" })
+    rerender({ on: true })
+    await waitFor(() =>
+      expect(result.current).toMatchObject({ reason: "not-synced" })
+    )
+    expect(t.syncRequests).toHaveLength(1)
+  })
+
+  it("useDataRuntime throws outside its provider", () => {
+    expect(() => renderHook(() => useDataRuntime())).toThrow(
+      /outside DataRuntimeContext/
+    )
   })
 
   it("rule 4: an id created after the last pull is not-synced; an old one is not-found", async () => {
