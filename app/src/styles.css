@@ -1,131 +1,352 @@
+/* VScout design tokens (systems/ui-design-system.md §4–§8). shadcn variables below are the
+   ONLY place colors are defined; Konsta reads them through the bridge. Import order matters. */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/oxanium";
+@import "konsta/react/theme.css"; /* after shadcn, before our overrides */
+@import "@fontsource-variable/geist"; /* body (ADR-044) */
+@import "@fontsource-variable/oxanium"; /* headings, numbers */
 
-@custom-variant dark (&:is(.dark *));
+/* Konsta re-declares `dark`; declare ours after it so one definition wins for both libraries. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Konsta's color plugin runs hexToRgb at build time: a hex seed only. Runtime values below. */
+@theme {
+  --color-brand-primary: #0a8f6c;
+
+  /* 4 px grid that does NOT scale with Dynamic Type (§6.2) */
+  --spacing: 4px;
+
+  /* iOS text styles at the default size, rem on a 17 px root (§6.1) */
+  --text-large-title: 2rem;
+  --text-large-title--line-height: calc(41 / 34);
+  --text-title-1: 1.647rem;
+  --text-title-1--line-height: calc(34 / 28);
+  --text-title-2: 1.294rem;
+  --text-title-2--line-height: calc(28 / 22);
+  --text-title-3: 1.176rem;
+  --text-title-3--line-height: calc(25 / 20);
+  --text-headline: 1rem;
+  --text-headline--line-height: calc(22 / 17);
+  --text-body: 1rem;
+  --text-body--line-height: calc(22 / 17);
+  --text-callout: 0.941rem;
+  --text-callout--line-height: calc(21 / 16);
+  --text-subhead: 0.882rem;
+  --text-subhead--line-height: calc(20 / 15);
+  --text-footnote: 0.765rem;
+  --text-footnote--line-height: calc(18 / 13);
+  --text-caption-1: 0.706rem;
+  --text-caption-1--line-height: calc(16 / 12);
+  --text-caption-2: 0.647rem; /* 11 px: never smaller */
+  --text-caption-2--line-height: calc(13 / 11);
+}
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.148 0.004 228.8);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.148 0.004 228.8);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.148 0.004 228.8);
-    --primary: oklch(0.508 0.118 165.612);
-    --primary-foreground: oklch(0.979 0.021 166.113);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.963 0.002 197.1);
-    --muted-foreground: oklch(0.56 0.021 213.5);
-    --accent: oklch(0.963 0.002 197.1);
-    --accent-foreground: oklch(0.218 0.008 223.9);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.925 0.005 214.3);
-    --input: oklch(0.925 0.005 214.3);
-    --ring: oklch(0.723 0.014 214.4);
-    --chart-1: oklch(0.855 0.138 181.071);
-    --chart-2: oklch(0.704 0.14 182.503);
-    --chart-3: oklch(0.6 0.118 184.704);
-    --chart-4: oklch(0.511 0.096 186.391);
-    --chart-5: oklch(0.437 0.078 188.216);
-    --radius: 0.875rem;
-    --sidebar: oklch(0.987 0.002 197.1);
-    --sidebar-foreground: oklch(0.148 0.004 228.8);
-    --sidebar-primary: oklch(0.596 0.145 163.225);
-    --sidebar-primary-foreground: oklch(0.979 0.021 166.113);
-    --sidebar-accent: oklch(0.963 0.002 197.1);
-    --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-    --sidebar-border: oklch(0.925 0.005 214.3);
-    --sidebar-ring: oklch(0.723 0.014 214.4);
+  --background: oklch(0.985 0.002 197.1);
+  --foreground: oklch(0.148 0.004 228.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.148 0.004 228.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.148 0.004 228.8);
+  /* Field Green, tuned for contrast (§5.1) */
+  --primary: oklch(0.52 0.12 165);
+  --primary-foreground: oklch(0.985 0.01 166);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.955 0.003 197.1);
+  --muted-foreground: oklch(0.48 0.021 213.5);
+  --accent: oklch(0.955 0.003 197.1);
+  --accent-foreground: oklch(0.218 0.008 223.9);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.91 0.005 214.3);
+  --input: oklch(0.91 0.005 214.3);
+  --ring: oklch(0.52 0.12 165);
+  --radius: 0.875rem;
+
+  /* iOS systemGroupedBackground analogues (§5) */
+  --surface-grouped: oklch(0.955 0.004 220);
+  --surface-grouped-2: oklch(1 0 0);
+
+  /* status: always paired with an icon and text (§5.2) */
+  --success: oklch(0.52 0.13 155);
+  --success-foreground: oklch(0.985 0.01 155);
+  --warning: oklch(0.6 0.13 75);
+  --warning-foreground: oklch(0.2 0.04 75);
+  --conflict: oklch(0.62 0.17 50);
+  --conflict-foreground: oklch(0.2 0.05 50);
+  --info: oklch(0.52 0.13 245);
+  --info-foreground: oklch(0.985 0.01 245);
+
+  /* alliances: never the destructive red, always labelled (§5.3) */
+  --alliance-red: oklch(0.56 0.2 18);
+  --alliance-red-foreground: oklch(0.985 0.01 18);
+  --alliance-red-muted: oklch(0.95 0.03 18);
+  --alliance-blue: oklch(0.5 0.17 258);
+  --alliance-blue-foreground: oklch(0.985 0.01 258);
+  --alliance-blue-muted: oklch(0.95 0.03 258);
+
+  --chart-1: oklch(0.52 0.12 165);
+  --chart-2: oklch(0.56 0.2 18);
+  --chart-3: oklch(0.5 0.17 258);
+  --chart-4: oklch(0.6 0.13 75);
+  --chart-5: oklch(0.55 0.1 300);
+
+  /* glass (§7) */
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+  --glass-tint: oklch(1 0 0 / 0.72);
+  --glass-tint-solid: oklch(0.99 0.002 220);
+  --glass-edge: oklch(1 0 0 / 0.7);
+  --glass-hairline: oklch(0 0 0 / 0.1);
+  --glass-shadow: 0 8px 32px oklch(0 0 0 / 0.12);
 }
 
 .dark {
-    --background: oklch(0.148 0.004 228.8);
-    --foreground: oklch(0.987 0.002 197.1);
-    --card: oklch(0.218 0.008 223.9);
-    --card-foreground: oklch(0.987 0.002 197.1);
-    --popover: oklch(0.218 0.008 223.9);
-    --popover-foreground: oklch(0.987 0.002 197.1);
-    --primary: oklch(0.432 0.095 166.913);
-    --primary-foreground: oklch(0.979 0.021 166.113);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.275 0.011 216.9);
-    --muted-foreground: oklch(0.723 0.014 214.4);
-    --accent: oklch(0.275 0.011 216.9);
-    --accent-foreground: oklch(0.987 0.002 197.1);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.56 0.021 213.5);
-    --chart-1: oklch(0.855 0.138 181.071);
-    --chart-2: oklch(0.704 0.14 182.503);
-    --chart-3: oklch(0.6 0.118 184.704);
-    --chart-4: oklch(0.511 0.096 186.391);
-    --chart-5: oklch(0.437 0.078 188.216);
-    --sidebar: oklch(0.218 0.008 223.9);
-    --sidebar-foreground: oklch(0.987 0.002 197.1);
-    --sidebar-primary: oklch(0.696 0.17 162.48);
-    --sidebar-primary-foreground: oklch(0.262 0.051 172.552);
-    --sidebar-accent: oklch(0.275 0.011 216.9);
-    --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.56 0.021 213.5);
+  --background: oklch(0.13 0.004 228.8);
+  --foreground: oklch(0.975 0.002 197.1);
+  --card: oklch(0.2 0.008 223.9);
+  --card-foreground: oklch(0.975 0.002 197.1);
+  --popover: oklch(0.23 0.008 223.9);
+  --popover-foreground: oklch(0.975 0.002 197.1);
+  --primary: oklch(0.72 0.15 163);
+  --primary-foreground: oklch(0.2 0.04 170);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.26 0.01 216.9);
+  --muted-foreground: oklch(0.76 0.014 214.4);
+  --accent: oklch(0.26 0.01 216.9);
+  --accent-foreground: oklch(0.975 0.002 197.1);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.15 0.02 22);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.72 0.15 163);
+
+  --surface-grouped: oklch(0.13 0.004 228.8);
+  --surface-grouped-2: oklch(0.2 0.008 223.9);
+
+  --success: oklch(0.72 0.15 155);
+  --success-foreground: oklch(0.18 0.04 155);
+  --warning: oklch(0.8 0.14 80);
+  --warning-foreground: oklch(0.2 0.04 80);
+  --conflict: oklch(0.76 0.16 55);
+  --conflict-foreground: oklch(0.2 0.05 55);
+  --info: oklch(0.72 0.13 245);
+  --info-foreground: oklch(0.18 0.04 245);
+
+  --alliance-red: oklch(0.68 0.19 18);
+  --alliance-red-foreground: oklch(0.16 0.04 18);
+  --alliance-red-muted: oklch(0.3 0.06 18);
+  --alliance-blue: oklch(0.7 0.14 255);
+  --alliance-blue-foreground: oklch(0.16 0.04 255);
+  --alliance-blue-muted: oklch(0.3 0.06 255);
+
+  --chart-1: oklch(0.72 0.15 163);
+  --chart-2: oklch(0.68 0.19 18);
+  --chart-3: oklch(0.7 0.14 255);
+  --chart-4: oklch(0.8 0.14 80);
+  --chart-5: oklch(0.72 0.12 300);
+
+  --glass-tint: oklch(0.24 0.008 224 / 0.82);
+  --glass-tint-solid: oklch(0.22 0.008 224);
+  --glass-edge: oklch(1 0 0 / 0.14);
+  --glass-hairline: oklch(1 0 0 / 0.1);
+  --glass-shadow: 0 8px 32px oklch(0 0 0 / 0.45);
+}
+
+/* Increased contrast (HIG: a significantly more differentiated option, §5) */
+@media (prefers-contrast: more) {
+  :root {
+    --muted-foreground: oklch(0.36 0.02 213.5);
+    --border: oklch(0.7 0.01 214.3);
+  }
+  .dark {
+    --muted-foreground: oklch(0.88 0.01 214.4);
+    --border: oklch(1 0 0 / 35%);
+  }
+}
+
+/* Konsta runtime variables → shadcn (unlayered on purpose: beats the plugin's @layer base) */
+:root,
+.k-color-brand-primary {
+  --k-color-primary: var(--primary);
+  --k-color-ios-primary: var(--primary);
+  --k-color-ios-primary-tint: color-mix(in oklch, var(--primary), white 16%);
+  --k-color-ios-primary-shade: color-mix(in oklch, var(--primary), black 16%);
+  --k-hairline-color: var(--border);
+}
+/* Konsta ships `.dark { background: #000; color: #fff }` unlayered: back to our tokens */
+.dark {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 @theme inline {
-    --font-sans: 'Geist Variable', sans-serif;
-    --font-heading: 'Oxanium Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-sans:
+    "Geist Variable", system-ui, -apple-system, "SF Pro Text", Roboto,
+    "Segoe UI", sans-serif;
+  --font-heading: "Oxanium Variable", system-ui, sans-serif;
+  --font-ios: var(--font-sans); /* Konsta's .k-ios font */
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary); /* shared by shadcn and Konsta */
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface-grouped: var(--surface-grouped);
+  --color-surface-grouped-2: var(--surface-grouped-2);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-conflict: var(--conflict);
+  --color-conflict-foreground: var(--conflict-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-alliance-red: var(--alliance-red);
+  --color-alliance-red-foreground: var(--alliance-red-foreground);
+  --color-alliance-red-muted: var(--alliance-red-muted);
+  --color-alliance-blue: var(--alliance-blue);
+  --color-alliance-blue-foreground: var(--alliance-blue-foreground);
+  --color-alliance-blue-muted: var(--alliance-blue-muted);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Konsta iOS surfaces → our semantics (both keys point at a var that flips under .dark) */
+  --color-ios-light-surface: var(--surface-grouped);
+  --color-ios-dark-surface: var(--surface-grouped);
+  --color-ios-light-surface-1: var(--surface-grouped-2);
+  --color-ios-dark-surface-1: var(--surface-grouped-2);
+  --color-ios-light-surface-2: var(--card);
+  --color-ios-dark-surface-2: var(--card);
+  --color-ios-light-surface-3: var(--popover);
+  --color-ios-dark-surface-3: var(--popover);
+  --color-ios-light-surface-variant: var(--muted);
+  --color-ios-dark-surface-variant: var(--muted);
+  --color-ios-light-glass: var(--glass-tint);
+  --color-ios-dark-glass: var(--glass-tint);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Glass: chrome only, never content (§7). Features never write backdrop-filter themselves. */
+@utility glass {
+  background-color: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-edge),
+    inset 0 0 0 0.5px var(--glass-hairline),
+    var(--glass-shadow);
+}
+
+/* A small visible glyph with a 44 pt hit area (§6.4) */
+@utility hit-44 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  :root,
+  .dark {
+    --glass-tint: var(--glass-tint-solid);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  .dark {
+    --glass-tint: var(--glass-tint-solid);
+    --glass-blur: 0px;
+  }
+}
+/* "Solid surfaces" setting: iOS Reduce Transparency can't be detected (§7.3) */
+:root[data-surfaces="solid"],
+:root[data-surfaces="solid"].dark {
+  --glass-tint: var(--glass-tint-solid);
+  --glass-blur: 0px;
+}
+@media (prefers-contrast: more) {
+  :root,
+  .dark {
+    --glass-tint: var(--glass-tint-solid);
+    --glass-blur: 0px;
+    --glass-hairline: color-mix(in oklch, var(--foreground) 45%, transparent);
+  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    /* 17 px root = iOS Body; WebKit maps -apple-system-body to the Dynamic Type size (§6.2) */
+    font-size: 106.25%;
+    overscroll-behavior-y: none;
+    @apply font-sans;
+  }
+  @supports (font: -apple-system-body) {
+    html {
+      font: -apple-system-body;
+      font-family: var(--font-sans);
     }
+  }
   body {
     @apply bg-background text-foreground;
-    }
-  html {
-    @apply font-sans;
-    }
+    touch-action: manipulation;
+  }
+  :root {
+    color-scheme: light;
+  }
+  :root.dark {
+    color-scheme: dark;
+  }
+  /* Konsta controls draw no focus ring; glass needs a strong one (§14) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

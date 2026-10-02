@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
+import { PREPAINT_SCRIPT } from "@/lib/theme"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -26,7 +27,13 @@ export const Route = createRootRoute({
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      {
+        rel: "icon",
+        href: "/icons/favicon-32.png",
+        type: "image/png",
+        sizes: "32x32",
+      },
       { rel: "apple-touch-icon", href: "/icons/apple-touch-icon-180.png" },
     ],
   }),
@@ -41,8 +48,10 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="k-ios" suppressHydrationWarning>
       <head>
+        {/* sets .dark before first paint from the saved theme (lib/theme.ts) */}
+        <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
         <HeadContent />
         {/* Written here, not in head(): head() dedupes meta by name and would drop one */}
         <meta

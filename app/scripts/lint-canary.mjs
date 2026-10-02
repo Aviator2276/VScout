@@ -20,6 +20,10 @@ const files = {
   [`src/utils/LintCanaryCase.ts`]: `export const c = 1\n`,
   [`src/features/${P}-barrel/index.ts`]: `export const b = 1\n`,
   [`src/lib/${P}-game.ts`]: `import { phases } from "@/games/2026-rebuilt/phases"\nexport const p = phases\n`,
+  [`src/features/matches/${P}-konsta.ts`]: `import { List } from "konsta/react"\nexport const k = List\n`,
+  [`src/features/matches/${P}-lucide.ts`]: `import { Check } from "lucide-react"\nexport const c = Check\n`,
+  [`src/features/matches/${P}-live.ts`]: `import { useLiveQuery } from "dexie-react-hooks"\nexport const q = useLiveQuery\n`,
+  [`src/components/list/${P}-wrapper.ts`]: `import { List } from "konsta/react"\n\nexport const w = List\n`,
 }
 const expected = {
   [`src/features/matches/${P}-cross.ts`]: "import/no-restricted-paths",
@@ -32,8 +36,15 @@ const expected = {
   [`src/utils/LintCanaryCase.ts`]: "check-file/filename-naming-convention",
   [`src/features/${P}-barrel/index.ts`]: "check-file/filename-blocklist",
   [`src/lib/${P}-game.ts`]: "import/no-restricted-paths",
+  [`src/features/matches/${P}-konsta.ts`]: "no-restricted-imports",
+  [`src/features/matches/${P}-lucide.ts`]: "no-restricted-imports",
+  [`src/features/matches/${P}-live.ts`]: "no-restricted-imports",
 }
-const clean = [`src/lib/${P}-control.ts`, `src/features/teams/${P}-target.ts`]
+const clean = [
+  `src/lib/${P}-control.ts`,
+  `src/features/teams/${P}-target.ts`,
+  `src/components/list/${P}-wrapper.ts`,
+]
 
 let failed = false
 try {

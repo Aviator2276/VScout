@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { Logo } from "@/components/icons/logo"
 import { APP_VERSION } from "@/config/version"
 
 export const Route = createFileRoute("/")({ component: Placeholder })
@@ -7,8 +8,11 @@ export const Route = createFileRoute("/")({ component: Placeholder })
 function Placeholder() {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="font-heading text-2xl">VScout</h1>
-      <p className="text-sm text-muted-foreground">Version {APP_VERSION}</p>
+      <Logo size="xl" decorative />
+      <h1 className="font-heading text-large-title">VScout</h1>
+      <p className="text-subhead text-muted-foreground">
+        Version {APP_VERSION}
+      </p>
     </main>
   )
 }

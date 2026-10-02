@@ -1,0 +1,31 @@
+// The single icon import point (ui-design-system §12). Features use these names, never lucide
+// directly, so the set stays consistent and swappable. HIG standard actions map to lucide here.
+export {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleUser,
+  CloudOff,
+  Ellipsis,
+  FileQuestion,
+  Inbox,
+  ListFilter,
+  LoaderCircle,
+  Lock,
+  MousePointerClick,
+  Plus,
+  RefreshCw,
+  Search,
+  SearchX,
+  Share,
+  SquarePen,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+  WifiOff,
+  X,
+} from "lucide-react"
+export type { LucideIcon, LucideProps } from "lucide-react"
