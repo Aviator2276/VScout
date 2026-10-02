@@ -3,19 +3,30 @@
   "version": "2.0.0-alpha.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.5.1",
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "vite build",
+    "build": "vite build && pnpm run build:sw",
     "preview": "vite preview",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\"",
     "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/sw",
     "prepare": "cd .. && husky app/.husky",
     "version:check": "node scripts/bump-version.mjs --check --fetch",
     "version:next": "node scripts/bump-version.mjs --next",
-    "version:bump": "node scripts/bump-version.mjs --bump"
+    "version:bump": "node scripts/bump-version.mjs --bump",
+    "build:sw": "vite build -c vite.sw.config.ts && node scripts/inject-sw-manifest.mjs",
+    "lint:canary": "node scripts/lint-canary.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "stack:up": "docker compose -f dev-stack/docker-compose.yml up -d",
+    "stack:down": "docker compose -f dev-stack/docker-compose.yml down",
+    "mock:api": "node dev-stack/mock-api/serve.mjs",
+    "test:nginx": "sh scripts/nginx-smoke.sh"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

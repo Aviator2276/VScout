@@ -1,0 +1,15 @@
+{
+  "$comment": "Words specific to the 2026 game. Banned outside src/games (ADR-009); the game module re-exports them as bannedTerms.",
+  "terms": [
+    "fuel",
+    "hub",
+    "tower",
+    "trench",
+    "bump",
+    "depot",
+    "outpost",
+    "energized",
+    "supercharged",
+    "traversal"
+  ]
+}

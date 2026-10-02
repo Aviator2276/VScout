@@ -1,0 +1,44 @@
+{
+  "id": "/",
+  "name": "VScout",
+  "short_name": "VScout",
+  "description": "FRC scouting that works offline",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone"],
+  "launch_handler": { "client_mode": "focus-existing" },
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "categories": ["sports", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/monochrome-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Scout", "url": "/scout" },
+    { "name": "Matches", "url": "/matches" }
+  ]
+}

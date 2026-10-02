@@ -14,3 +14,7 @@ todos.json
 
 # typescript
 *.tsbuildinfo
+.sw-build
+playwright-report
+test-results
+coverage
