@@ -55,6 +55,7 @@ export default defineConfig({
         "src/lib/contracts/**": { lines: 90, branches: 90 },
         "src/lib/api/**": { lines: 90, branches: 90 },
         "src/lib/mqtt/**": { lines: 90, branches: 90 },
+        "src/lib/pwa/update-controller.ts": { lines: 90, branches: 90 },
       },
     },
   },

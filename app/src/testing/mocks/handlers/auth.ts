@@ -3,7 +3,8 @@ import { http, HttpResponse } from "msw"
 import { guestLoginRequest, loginRequest } from "@/lib/contracts/auth"
 import { testId, testTime } from "../../factories/ids"
 import { TEST_EVENT, wireSession } from "../../factories/wire"
-import { MOCK_CREDENTIALS, MOCK_GUEST_CODE, mockBackend } from "../mock-backend"
+import { MOCK_GUEST_CODE, mockBackend } from "../mock-backend"
+import { activeGuestCode } from "./admin"
 import { problemResponse } from "./problem"
 
 export const authHandlers = [
@@ -11,18 +12,24 @@ export const authHandlers = [
     const body = loginRequest.safeParse(await request.json())
     if (!body.success) return problemResponse(422, "validation_failed")
     const { username, password } = body.data
-    if (
-      username !== MOCK_CREDENTIALS.username ||
-      password !== MOCK_CREDENTIALS.password
-    )
+    const account = mockBackend.accounts.get(username)
+    if (!account || account.password !== password)
       return problemResponse(401, "invalid_credentials")
-    return HttpResponse.json(wireSession())
+    mockBackend.userId = account.id
+    if (account.role) mockBackend.role = account.role
+    mockBackend.signedIn = true
+    return HttpResponse.json(wireSession({ user: mockBackend.sessionUser() }))
   }),
 
   http.post("*/api/v1/auth/guest", async ({ request }) => {
     const body = guestLoginRequest.safeParse(await request.json())
-    if (!body.success || body.data.code !== MOCK_GUEST_CODE)
+    // an admin-set code wins over the fixed mock one (features/admin.md AD3b)
+    if (
+      !body.success ||
+      body.data.code !== (activeGuestCode() ?? MOCK_GUEST_CODE)
+    )
       return problemResponse(401, "invalid_guest_code")
+    mockBackend.signedIn = true
     return HttpResponse.json(
       wireSession({
         eventKey: TEST_EVENT,
@@ -38,18 +45,24 @@ export const authHandlers = [
   }),
 
   http.post("*/api/v1/auth/refresh", () =>
-    mockBackend.refreshValid
-      ? HttpResponse.json(wireSession({ deviceId: testId(8000) }))
+    mockBackend.refreshValid &&
+    (!mockBackend.requireSignIn || mockBackend.signedIn)
+      ? HttpResponse.json(
+          wireSession({
+            deviceId: testId(8000),
+            user: mockBackend.sessionUser(),
+          })
+        )
       : problemResponse(401, "refresh_invalid")
   ),
 
-  http.post(
-    "*/api/v1/auth/logout",
-    () => new HttpResponse(null, { status: 204 })
-  ),
+  http.post("*/api/v1/auth/logout", () => {
+    mockBackend.signedIn = false
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get("*/api/v1/me", () => {
-    const s = wireSession()
+    const s = wireSession({ user: mockBackend.sessionUser() })
     return HttpResponse.json({
       user: s.user,
       serverTime: testTime(),

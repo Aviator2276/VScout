@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
-// Service worker (ADR-050/051, pwa-offline.md). Phase 0: precache + SPA navigation + update
-// messages. Runtime routes, the offline fallback page and push arrive in later phases.
+// Service worker (ADR-050/051, pwa-offline.md): precache, SPA navigation, update messages and push
+// (push.ts, push-notifications.md §6).
 import {
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
@@ -9,6 +9,7 @@ import {
 import { NavigationRoute, registerRoute } from "workbox-routing"
 import { APP_VERSION } from "../config/version"
 import { isSwMessage } from "./messages"
+import { writeSessionUid } from "./push"
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -29,4 +30,5 @@ self.addEventListener("message", (event) => {
   if (data.type === "SKIP_WAITING") void self.skipWaiting()
   if (data.type === "GET_VERSION")
     event.ports[0]?.postMessage({ type: "VERSION", version: APP_VERSION })
+  if (data.type === "SESSION") event.waitUntil(writeSessionUid(data.uid))
 })

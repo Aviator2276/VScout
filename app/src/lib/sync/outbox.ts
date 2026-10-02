@@ -14,6 +14,7 @@ export interface EnqueueInput {
   kind: OutboxKind
   dependsOn?: Array<string>
   patchKeys?: Array<string>
+  reason?: string
   now: number
 }
 
@@ -62,7 +63,11 @@ export async function enqueue(
       return "coalesced"
     }
     if (open.kind === "update" && input.kind === "delete") {
-      await db.outbox.update(open.seq, { kind: "delete", patchKeys: undefined })
+      await db.outbox.update(open.seq, {
+        kind: "delete",
+        patchKeys: undefined,
+        ...(input.reason ? { reason: input.reason } : {}),
+      })
       return "coalesced"
     }
   }
@@ -77,6 +82,7 @@ export async function enqueue(
     kind: input.kind,
     ...(input.dependsOn ? { dependsOn: input.dependsOn } : {}),
     ...(input.patchKeys ? { patchKeys: input.patchKeys } : {}),
+    ...(input.reason ? { reason: input.reason } : {}),
     state: "queued",
     attempts: 0,
     nextAttemptAt: input.now,

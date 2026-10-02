@@ -14,6 +14,8 @@ import type {
   EventTeamRecord,
   KvRow,
   LogRow,
+  MediaUploadRow,
+  MediaVideoRow,
   MatchRecord,
   MediaAssetRecord,
   MessageRecord,
@@ -63,9 +65,9 @@ export class VScoutDB extends Dexie {
   allianceSims!: Table<LooseRow, string>
   adminAudit!: Table<LooseRow, string>
 
-  mediaVideos!: Table<LooseRow, string>
+  mediaVideos!: Table<MediaVideoRow, string>
   mediaAssets!: Table<MediaAssetRecord, string>
-  mediaUploads!: Table<LooseRow, string>
+  mediaUploads!: Table<MediaUploadRow, string>
 
   outbox!: Table<OutboxOp, number>
   syncCursors!: Table<SyncCursorRow, [string, string]>

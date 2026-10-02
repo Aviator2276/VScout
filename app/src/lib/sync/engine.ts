@@ -17,6 +17,7 @@ import { resetInflightOps } from "./outbox"
 import { pullScope } from "./pull"
 import { flushOutbox } from "./push"
 import type { PushDeps } from "./push"
+import type { ScopeInfoStore } from "./scope-info"
 import { createSyncStatusStore } from "./status-store"
 import type { SyncStatus } from "./status-store"
 
@@ -53,6 +54,8 @@ export interface EngineDeps {
   onAuthLost?: () => void
   onUpgradeRequired?: () => void
   debounceMs?: { sync?: number; push?: number }
+  /** the in-memory syncCursors mirror read by data-state hooks; refreshed after each pull */
+  scopeInfo?: ScopeInfoStore
   /** foreground interval (data-layer §7.2); tests shorten it */
   intervalMs?: { idle: number; pending: number }
 }
@@ -281,6 +284,7 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
             scope,
             entities
           )
+          await deps.scopeInfo?.refresh()
         }
       }
     }

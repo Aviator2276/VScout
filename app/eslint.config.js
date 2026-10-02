@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { tanstackConfig } from "@tanstack/eslint-config"
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript"
 import checkFile from "eslint-plugin-check-file"
+import reactHooks from "eslint-plugin-react-hooks"
 import { createRule, loadGameTerms } from "./eslint-rules/no-game-terms.js"
 
 const gameTerms = loadGameTerms(
@@ -44,6 +45,80 @@ const SHARED_ORDER = [
   "components",
 ]
 
+/**
+ * One list of import bans; each folder override switches on what it may use. ESLint replaces a
+ * rule's options per override, so every override restates the full list through this helper.
+ */
+function restrictedImports({
+  ui = false,
+  icons = false,
+  live = false,
+  dexie = false,
+}) {
+  const paths = [
+    {
+      name: "@tanstack/react-start",
+      importNames: ["createServerFn", "createServerOnlyFn", "createMiddleware"],
+      message: "VScout is a static SPA. There is no server runtime (ADR-001).",
+    },
+    {
+      name: "cn",
+      message: "Import cn from @/lib/utils (it knows the iOS type scale).",
+    },
+    {
+      name: "motion/react",
+      importNames: ["motion"],
+      message:
+        "Use `m` (LazyMotion strict keeps the bundle small, ui-design-system §10.2).",
+    },
+  ]
+  if (!dexie)
+    paths.push({
+      name: "dexie",
+      importNames: ["default"],
+      message: "Use the db from @/lib/db/db.",
+    })
+  if (!icons)
+    paths.push({
+      name: "lucide-react",
+      message: "Import icons from @/components/icons/icon.",
+    })
+  if (!live)
+    paths.push(
+      {
+        name: "dexie-react-hooks",
+        message: "Read data through a feature api/ hook (data-layer §9.1).",
+      },
+      {
+        name: "@/lib/db/db",
+        message: "Components never read Dexie; use a feature api/ hook.",
+      }
+    )
+  const patterns = [
+    {
+      group: ["@tanstack/react-start/server", "@tanstack/react-start/server-*"],
+      message: "No server code (ADR-001).",
+    },
+    {
+      regex: "^@/features/[^/]+(/index)?$",
+      message: "No barrels. Import the file directly.",
+    },
+  ]
+  if (!ui)
+    patterns.push({
+      group: [
+        "konsta",
+        "konsta/*",
+        "@base-ui/react",
+        "@base-ui/react/*",
+        "@/components/ui/*",
+        "@dnd-kit/*",
+      ],
+      message: "Use the wrappers in @/components (ui-design-system §3).",
+    })
+  return { paths, patterns }
+}
+
 const resolver = createTypeScriptImportResolver({ project: "./tsconfig.json" })
 
 export default [
@@ -75,7 +150,28 @@ export default [
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
-      "@typescript-eslint/only-throw-error": "error",
+      // TanStack Router's redirect() and notFound() are thrown by design (routing-auth §5)
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: [
+            {
+              from: "package",
+              package: "@tanstack/router-core",
+              name: ["Redirect", "NotFoundError"],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // rules of hooks + the React Compiler-aware checks (owner approved, 2026-10-01)
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      ...reactHooks.configs["recommended-latest"].rules,
+      "react-hooks/exhaustive-deps": "error",
     },
   },
   {
@@ -141,41 +237,7 @@ export default [
         },
       ],
 
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "@tanstack/react-start",
-              importNames: [
-                "createServerFn",
-                "createServerOnlyFn",
-                "createMiddleware",
-              ],
-              message:
-                "VScout is a static SPA. There is no server runtime (ADR-001).",
-            },
-            {
-              name: "dexie",
-              importNames: ["default"],
-              message: "Use the db from @/lib/db/db.",
-            },
-          ],
-          patterns: [
-            {
-              group: [
-                "@tanstack/react-start/server",
-                "@tanstack/react-start/server-*",
-              ],
-              message: "No server code (ADR-001).",
-            },
-            {
-              regex: "^@/features/[^/]+(/index)?$",
-              message: "No barrels. Import the file directly.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", restrictedImports({})],
 
       "vscout/no-game-terms": "error",
 
@@ -195,9 +257,64 @@ export default [
       ],
     },
   },
+  // Phase 3 gate: no network calls outside lib/ (ADR-063: every request goes through lib/api)
+  {
+    files: [
+      "src/features/**",
+      "src/components/**",
+      "src/routes/**",
+      "src/hooks/**",
+      "src/stores/**",
+      "src/app/**",
+    ],
+    ignores: ["src/**/__tests__/**", "src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        ...["fetch", "XMLHttpRequest", "WebSocket", "EventSource"].map(
+          (name) => ({
+            name,
+            message:
+              "UI code never calls the network. Read Dexie through a feature api/ hook; write through lib/sync (ADR-063).",
+          })
+        ),
+      ],
+    },
+  },
   // games use their own words; lib/db owns the Dexie import
   { files: ["src/games/**"], rules: { "vscout/no-game-terms": "off" } },
-  { files: ["src/lib/db/**"], rules: { "no-restricted-imports": "off" } },
+  // the wrapper layer may use library primitives (ui-design-system §3)
+  {
+    files: ["src/components/**"],
+    rules: {
+      "no-restricted-imports": ["error", restrictedImports({ ui: true })],
+    },
+  },
+  {
+    files: ["src/components/icons/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        restrictedImports({ ui: true, icons: true }),
+      ],
+    },
+  },
+  // only lib/ and feature api/ hooks read Dexie (data-layer §9.1); lib/db owns the Dexie import
+  {
+    files: ["src/lib/**", "src/features/*/api/**", "src/app/**"],
+    rules: {
+      "no-restricted-imports": ["error", restrictedImports({ live: true })],
+    },
+  },
+  {
+    files: ["src/lib/db/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        restrictedImports({ live: true, dexie: true }),
+      ],
+    },
+  },
   // tests may import testing/ and anything else
   {
     files: [
@@ -209,6 +326,7 @@ export default [
     rules: {
       "import/no-restricted-paths": "off",
       "vscout/no-game-terms": "off",
+      "no-restricted-imports": "off",
     },
   },
   {

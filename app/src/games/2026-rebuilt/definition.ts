@@ -1,6 +1,7 @@
 // 2026 REBUILT. The match form content is BETA (owner, 2026-10-01): field ids are append-only,
 // and any form change bumps schemaVersion (game-module.md §6).
 import { defineGame } from "../kit/define-game"
+import fieldImage from "./assets/field.svg?url"
 import { capabilities } from "./capabilities"
 import { autoSection } from "./fields/auto"
 import { endgameSection } from "./fields/endgame"
@@ -97,7 +98,7 @@ export const game = defineGame({
   assets: {
     images: {
       field: {
-        src: "assets/field.svg",
+        src: fieldImage,
         width: 1600,
         height: 800,
         alt: "pre.startZone",

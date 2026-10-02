@@ -309,6 +309,54 @@ async function onRejected(
   })
 }
 
+/**
+ * A robot photo (http-api-contract §5.2): multipart over HTTP only (class "media"). The response
+ * carries the stored file's facts; the record is completed with what this device already knows.
+ */
+async function sendUpload(
+  deps: PushDeps,
+  op: StoredOp,
+  path: string
+): Promise<boolean> {
+  const upload = await deps.db.mediaUploads.get(op.recordId)
+  if (!upload) {
+    await markFailed(deps, op, {
+      message: "The photo is no longer on this device",
+    })
+    return false
+  }
+  const form = new FormData()
+  form.set("id", upload.id)
+  form.set("kind", "robotPhoto")
+  form.set("teamNumber", String(upload.teamNumber))
+  form.set(
+    "file",
+    upload.blob,
+    `${upload.id}.${upload.mime === "image/webp" ? "webp" : "jpg"}`
+  )
+  const res = await deps.api.request({
+    method: "POST",
+    path,
+    class: "media",
+    idempotencyKey: op.opId,
+    body: form,
+  })
+  const now = new Date(deps.now()).toISOString()
+  const server = (res.body ?? {}) as Record<string, unknown>
+  const record = {
+    eventKey: upload.eventKey,
+    teamNumber: upload.teamNumber,
+    kind: "robotPhoto",
+    authorId: deps.session()?.userId ?? upload.userId,
+    createdAt: new Date(upload.createdAt).toISOString(),
+    updatedAt: now,
+    ...server,
+  }
+  const ok = await onSuccess(deps, op, record)
+  if (ok) await deps.db.mediaUploads.update(upload.id, { uploadState: "done" })
+  return ok
+}
+
 export async function flushOutbox(deps: PushDeps): Promise<FlushResult> {
   const user = deps.session()
   const result: FlushResult = { sent: 0, stoppedBy: null, needsRerun: false }
@@ -326,6 +374,11 @@ export async function flushOutbox(deps: PushDeps): Promise<FlushResult> {
     if (!op) continue
     try {
       const req = buildRequest(op)
+      if (op.kind === "upload") {
+        const sent = await sendUpload(deps, op, req.path)
+        if (sent) result.sent++
+        continue
+      }
       const res = await deps.api.request({
         method: req.method,
         path: req.path,

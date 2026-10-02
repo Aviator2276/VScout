@@ -382,6 +382,20 @@ describe("logout", () => {
     expect(await auth.pendingChanges()).toBe(0)
   })
 
+  it("a sign-in made while the wipe is still running waits for it, then works", async () => {
+    const { db, auth } = setup()
+    await auth.login(MOCK_CREDENTIALS.username, MOCK_CREDENTIALS.password)
+    const out = auth.logout({ force: true })
+    // the login screen is already showing; the user signs in again right away
+    const back = auth.login(
+      MOCK_CREDENTIALS.username,
+      MOCK_CREDENTIALS.password
+    )
+    await expect(out).resolves.toEqual({ ok: true })
+    await expect(back).resolves.toMatchObject({ userId: MOCK_USER_ID })
+    expect(await db.session.count()).toBe(1)
+  })
+
   it("wipes even when the logout call fails or the device is offline", async () => {
     server.use(http.post(`${API}/auth/logout`, () => HttpResponse.error()))
     const { db, auth } = setup()

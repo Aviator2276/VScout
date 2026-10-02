@@ -53,13 +53,19 @@ async function writeServerState(
   const table = tableOf(ctx.db, def)
   if (change.op === "delete") {
     await table.delete(def.key(change.id))
+    // my own delete, now confirmed: keep its snapshot for Recently Deleted (ADR-029)
+    const mine = hadTombstone
+      ? await ctx.db.tombstones.get([change.entity, change.id])
+      : undefined
     const tomb: TombstoneRow = {
       entity: change.entity,
       id: change.id,
       rev: change.rev,
-      deletedAt: change.ts,
+      // when I deleted it, not when the server got round to it
+      deletedAt: mine?.deletedAt ?? change.ts,
       eventKey: change.eventKey,
       syncState: "synced",
+      ...(mine?.snapshot !== undefined ? { snapshot: mine.snapshot } : {}),
     }
     await ctx.db.tombstones.put(tomb)
     return

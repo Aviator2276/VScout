@@ -1,6 +1,7 @@
 // The session (routing-auth §5, §7): login, guest login, cache-reset recovery, refresh, expiry
 // warnings and logout with a full wipe. Guards read the cached Dexie session (no network), so
 // navigation works offline. React reads it with useSyncExternalStore (hooks/use-session.ts).
+import { takeResetDeviceId } from "@/lib/pwa/clear-cache"
 import { decodeMe, decodeSession } from "@/lib/api/adapters/session-adapter"
 import type { DecodedSession } from "@/lib/api/adapters/session-adapter"
 import type { ApiClient } from "@/lib/api/api-client"
@@ -92,7 +93,7 @@ export function createAuthClient(deps: AuthDeps) {
     const db = deps.db()
     const existing = await getKv(db, "deviceId")
     if (existing) return existing
-    const id = deps.ids.newId()
+    const id = takeResetDeviceId() ?? deps.ids.newId()
     await setKv(db, "deviceId", id)
     return id
   }
@@ -135,6 +136,26 @@ export function createAuthClient(deps: AuthDeps) {
     if (current && current.userId !== userId) await wipe("switch-user")
   }
 
+  /** set while the database is being deleted and recreated */
+  let wiping: Promise<void> | null = null
+
+  /** Runs `work` as the one sign-out in progress; sign-ins wait for it (afterWipe). */
+  async function exclusive<TResult>(
+    work: () => Promise<TResult>
+  ): Promise<TResult> {
+    const run = work()
+    const done = run.then(
+      () => undefined,
+      () => undefined
+    )
+    wiping = done
+    try {
+      return await run
+    } finally {
+      if (wiping === done) wiping = null
+    }
+  }
+
   async function wipe(reason: string): Promise<void> {
     deps.tokens.clear()
     setCached(null)
@@ -142,6 +163,14 @@ export function createAuthClient(deps: AuthDeps) {
     const db = deps.db()
     await db.delete()
     await db.open()
+  }
+
+  /**
+   * The login screen shows before the wipe finishes (it's where logout navigates); a quick
+   * Sign In must wait for the database to be back instead of failing on a closed one.
+   */
+  async function afterWipe(): Promise<void> {
+    if (wiping) await wiping
   }
 
   function loginError(error: unknown): LoginError {
@@ -162,6 +191,7 @@ export function createAuthClient(deps: AuthDeps) {
     path: "/auth/login" | "/auth/guest",
     body: Record<string, unknown>
   ): Promise<Session> {
+    await afterWipe()
     let decoded: DecodedSession
     try {
       const res = await deps.api.request({
@@ -189,6 +219,7 @@ export function createAuthClient(deps: AuthDeps) {
   }
 
   async function load(): Promise<Session | null> {
+    // no afterWipe here: logout's own navigation to /login runs this while the wipe waits for it
     const row = await deps.db().session.get("current")
     if (row) return toSession(row)
     if (!isOnline()) return null
@@ -256,6 +287,7 @@ export function createAuthClient(deps: AuthDeps) {
   }
 
   return {
+    deviceId,
     /** Guards call this: one Dexie read per page load, no network when a session row exists. */
     ensureLoaded(): Promise<Session | null> {
       if (cached !== undefined) return Promise.resolve(cached)
@@ -290,30 +322,32 @@ export function createAuthClient(deps: AuthDeps) {
     async logout(
       opts: { force?: boolean; reason?: string } = {}
     ): Promise<LogoutResult> {
-      const pending = await pendingChanges()
-      if (pending > 0 && !opts.force)
-        return { ok: false, pendingChanges: pending }
-      const db = deps.db()
-      const id = await getKv(db, "deviceId")
-      try {
-        if (isOnline() && id)
-          await deps.api.request({
-            method: "POST",
-            path: "/auth/logout",
-            class: "auth",
-            body: { deviceId: id },
+      return exclusive(async (): Promise<LogoutResult> => {
+        const pending = await pendingChanges()
+        if (pending > 0 && !opts.force)
+          return { ok: false, pendingChanges: pending }
+        const db = deps.db()
+        const id = await getKv(db, "deviceId")
+        try {
+          if (isOnline() && id)
+            await deps.api.request({
+              method: "POST",
+              path: "/auth/logout",
+              class: "auth",
+              body: { deviceId: id },
+            })
+        } catch (error) {
+          logger.info("auth", "logout call failed; wiping anyway", {
+            error: String(error),
           })
-      } catch (error) {
-        logger.info("auth", "logout call failed; wiping anyway", {
-          error: String(error),
+        }
+        await wipe(opts.reason ?? "logout")
+        deps.channel?.postMessage({
+          type: "logout",
+          reason: opts.reason ?? "logout",
         })
-      }
-      await wipe(opts.reason ?? "logout")
-      deps.channel?.postMessage({
-        type: "logout",
-        reason: opts.reason ?? "logout",
+        return { ok: true }
       })
-      return { ok: true }
     },
     /** Another tab logged out or signed in: drop the cache so guards re-read. */
     invalidate() {
