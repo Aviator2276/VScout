@@ -138,6 +138,7 @@ enough.
   | `matchPush` | "Match coming up" pushes are sent (section 10.3) |
   | `restore` | `POST /{collection}/{id}/restore` exists (section 7.3) |
   | `batchPush` | `POST /sync/push` exists (section 7.4) |
+  | `demoSeed` | Admin demo events exist: `POST /admin/demo-events` (body: a generated bundle of teams, matches, entries, comments, picklists, announcements, messages, in the normal entity shapes, ≤ 5 MB) creates event `demo-<seed>` with `isDemo: true`; `DELETE /admin/demo-events/{eventKey}` deletes it and everything in it. Admin only. Demo events never send push. Without this capability the app runs demos on the device only |
 - If `X-Client-Version < minClientVersion`, every endpoint except `/auth/*` and `/meta` returns
   `426 upgrade_required` with `minVersion`.
 - The same `minClientVersion` is published on MQTT `vscout/sys/status` (section 9).
@@ -187,7 +188,7 @@ acceptable fallback; it's your call.
 |---|---|---|
 | `POST /auth/login` `{ username, password, deviceId, deviceName }` | none | `200 { accessToken, accessExpiresAt, refreshExpiresAt, user: { id, username, displayName, role, teamNumber } }` + `Set-Cookie` refresh. `401 invalid_credentials`. `429` after repeated failures |
 | `POST /auth/guest` `{ code, deviceId, deviceName }` | none | Guest session for the event the guest code belongs to (section 3.4). Same response shape as login with `role: 'guest'`, plus `eventKey`. `401 invalid_guest_code`; `429` when rate-limited |
-| `POST /auth/refresh` (empty body + cookie) | cookie | Same shape as login, plus a new cookie. `401 refresh_invalid` → the app sends the user to the login screen |
+| `POST /auth/refresh` (empty body + cookie) | cookie | Same shape as login plus `deviceId` (the device this cookie's token family belongs to; the app re-learns it after clearing its cache), and a new cookie. `401 refresh_invalid` → the app sends the user to the login screen |
 | `POST /auth/logout` `{ deviceId }` | bearer | Revokes this device's refresh family, clears the cookie, **deletes this device's push subscription**. `204` |
 | `GET /me` | bearer | `{ user, permissions?: string[], serverTime, refreshExpiresAt }`. Called at boot to pick up role changes |
 | `POST /me/password` `{ currentPassword, newPassword }` | bearer | Online only |

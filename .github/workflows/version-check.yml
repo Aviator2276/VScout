@@ -1,6 +1,5 @@
 # ADR-068: every PR into main must raise app/package.json "version" above main's.
-# Make this a required status check on main, with "Require branches to be up to date before
-# merging" (or a merge queue), so two PRs that both bump from the same base can't both merge.
+# PV-2: no branch protection needed (one dev branch PRs into main); this check still fails an un-bumped PR.
 name: Version check
 
 on:
