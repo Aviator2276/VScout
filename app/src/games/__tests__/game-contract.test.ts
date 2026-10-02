@@ -291,9 +291,17 @@ describe.each(games.map((g) => [g.id, g] as const))(
     })
 
     it("has asset files under the size budget", () => {
+      // src is a Vite asset URL (`import x from "./assets/a.svg?url"`): a root path in tests,
+      // a data: URI when Vite inlines a small file
       for (const [key, img] of Object.entries(game.assets.images)) {
-        const url = new URL(`../${game.id}/${img.src}`, import.meta.url)
-        expect(statSync(url).size, key).toBeLessThan(150 * 1024)
+        const size = img.src.startsWith("data:")
+          ? img.src.length
+          : statSync(
+              img.src.startsWith("/")
+                ? new URL(`../../..${img.src}`, import.meta.url)
+                : new URL(`../${game.id}/${img.src}`, import.meta.url)
+            ).size
+        expect(size, key).toBeLessThan(150 * 1024)
       }
     })
 

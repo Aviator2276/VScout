@@ -1,6 +1,6 @@
 // Mock HTTP API on http://localhost:8787 answering from the same MSW handlers the tests use
 // (src/testing/mocks/handlers). Vite loads the TypeScript so the @/ alias works.
-// Phase 1 adds the MQTT RPC side (same handlers) and seeds from the demo generator (lib/demo).
+// Sign in as alex / "correct horse 42" or the guest code K7M2QX (src/testing/mocks/mock-backend.ts).
 import { createServer as createHttpServer } from "node:http"
 import { createServer as createViteServer } from "vite"
 import { getResponse } from "msw"
@@ -13,6 +13,12 @@ const vite = await createViteServer({
   server: { middlewareMode: true, hmr: false },
   appType: "custom",
 })
+
+// demo events, so a local sign-in has something to pick (same module instance as the handlers)
+const { seedDevData } = await vite.ssrLoadModule(
+  "/src/testing/mocks/seed-dev.ts"
+)
+seedDevData()
 
 async function loadHandlers() {
   const mod = await vite.ssrLoadModule(

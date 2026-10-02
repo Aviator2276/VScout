@@ -1,37 +1,39 @@
 import { describe, expect, it } from "vitest"
-import { readEnv } from "../env"
+import { DEV_DEFAULTS, readEnv } from "../env"
+
+const local = { protocol: "http:", host: "localhost:3000" }
 
 describe("readEnv", () => {
-  it("defaults to the same origin", () => {
+  it("production defaults to the same origin", () => {
     expect(
       readEnv({}, { protocol: "https:", host: "scout.example.org" })
     ).toEqual({
       apiUrl: "/api/v1",
       mqttUrl: "wss://scout.example.org/mqtt",
     })
-    expect(
-      readEnv(
-        { VITE_API_URL: "  " },
-        { protocol: "http:", host: "localhost:3000" }
-      )
-    ).toEqual({
+    expect(readEnv({ VITE_API_URL: "  " }, local)).toEqual({
       apiUrl: "/api/v1",
       mqttUrl: "ws://localhost:3000/mqtt",
     })
   })
 
-  it("uses configured URLs", () => {
+  it("pnpm dev talks to the local mock API and broker", () => {
+    expect(readEnv({ DEV: true }, local)).toEqual(DEV_DEFAULTS)
+  })
+
+  it("configured URLs win", () => {
     expect(
       readEnv(
         {
-          VITE_API_URL: "http://localhost:8787/api/v1",
-          VITE_MQTT_URL: "ws://localhost:9001",
+          DEV: true,
+          VITE_API_URL: "https://api.example.org/api/v1",
+          VITE_MQTT_URL: "wss://mq.example.org",
         },
-        { protocol: "http:", host: "localhost:3000" }
+        local
       )
     ).toEqual({
-      apiUrl: "http://localhost:8787/api/v1",
-      mqttUrl: "ws://localhost:9001",
+      apiUrl: "https://api.example.org/api/v1",
+      mqttUrl: "wss://mq.example.org",
     })
   })
 })

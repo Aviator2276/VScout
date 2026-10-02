@@ -28,6 +28,9 @@ export const mockBackend = {
   /** the change log; a cursor is the index after the last returned entry */
   log: [] as Array<LogEntry>,
   refreshValid: true,
+  /** dev server: refresh succeeds only after a login (a stand-in for the HttpOnly cookie) */
+  requireSignIn: false,
+  signedIn: false,
   /** the signed-in caller (tokens aren't checked; the role is) */
   role: "scouter" as "admin" | "scouter" | "guest",
   userId: MOCK_USER_ID,
@@ -45,6 +48,8 @@ export const mockBackend = {
   reset() {
     this.log = []
     this.refreshValid = true
+    this.requireSignIn = false
+    this.signedIn = false
     this.role = "scouter"
     this.userId = MOCK_USER_ID
     this.expiredTokens = new Set()

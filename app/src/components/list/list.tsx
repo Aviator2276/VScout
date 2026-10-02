@@ -1,7 +1,7 @@
 // iOS inset-grouped lists (Konsta draws them; ui-design-system §2). Compound: <List.Section>,
 // <List.Row>, <List.Toggle>. Rows that navigate use the link component from LinkContext, which the
 // app shell sets to the router's <Link>, so this file doesn't depend on the router.
-import { BlockFooter, BlockTitle, List as KList, ListItem } from "konsta/react"
+import { List as KList, ListItem } from "konsta/react"
 import { createContext, use } from "react"
 import type { ReactNode } from "react"
 import { Switch } from "@/components/controls/switch"
@@ -39,25 +39,20 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <section>
+    <section className="mt-6 first:mt-2">
       {title ? (
-        <BlockTitle
-          colors={{ textIos: "text-muted-foreground" }}
-          className="text-footnote uppercase"
-        >
+        <h2 className="mb-1.5 px-4 text-footnote text-muted-foreground uppercase">
           {title}
-        </BlockTitle>
+        </h2>
       ) : null}
-      <KList strong inset dividers className="my-0">
+      {/* the page already has its side padding: the card lines up with the large title */}
+      <KList strong inset dividers className="mx-0! my-0">
         {children}
       </KList>
       {footer ? (
-        <BlockFooter
-          colors={{ textIos: "text-muted-foreground" }}
-          className="text-footnote"
-        >
+        <p className="mt-1.5 px-4 text-footnote text-muted-foreground">
           {footer}
-        </BlockFooter>
+        </p>
       ) : null}
     </section>
   )

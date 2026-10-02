@@ -18,6 +18,8 @@ export interface SegmentedProps<TValue extends string> {
   onValueChange: (value: TValue) => void
   /** form = 56 pt targets for gloves */
   size?: "default" | "form"
+  /** ids of help or error text */
+  describedBy?: string | undefined
 }
 
 export function Segmented<TValue extends string>({
@@ -26,6 +28,7 @@ export function Segmented<TValue extends string>({
   value,
   onValueChange,
   size = "default",
+  describedBy,
 }: SegmentedProps<TValue>) {
   const name = useId()
   const height = size === "form" ? "min-h-14" : "min-h-11"
@@ -34,7 +37,12 @@ export function Segmented<TValue extends string>({
     if (next) onValueChange(next.value)
   }
   return (
-    <div role="radiogroup" aria-label={label} id={name}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      aria-describedby={describedBy}
+      id={name}
+    >
       <KSegmented strong rounded className={height}>
         {options.map((o, i) => {
           const checked = o.value === value

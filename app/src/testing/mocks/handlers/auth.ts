@@ -16,6 +16,7 @@ export const authHandlers = [
       password !== MOCK_CREDENTIALS.password
     )
       return problemResponse(401, "invalid_credentials")
+    mockBackend.signedIn = true
     return HttpResponse.json(wireSession())
   }),
 
@@ -23,6 +24,7 @@ export const authHandlers = [
     const body = guestLoginRequest.safeParse(await request.json())
     if (!body.success || body.data.code !== MOCK_GUEST_CODE)
       return problemResponse(401, "invalid_guest_code")
+    mockBackend.signedIn = true
     return HttpResponse.json(
       wireSession({
         eventKey: TEST_EVENT,
@@ -38,15 +40,16 @@ export const authHandlers = [
   }),
 
   http.post("*/api/v1/auth/refresh", () =>
-    mockBackend.refreshValid
+    mockBackend.refreshValid &&
+    (!mockBackend.requireSignIn || mockBackend.signedIn)
       ? HttpResponse.json(wireSession({ deviceId: testId(8000) }))
       : problemResponse(401, "refresh_invalid")
   ),
 
-  http.post(
-    "*/api/v1/auth/logout",
-    () => new HttpResponse(null, { status: 204 })
-  ),
+  http.post("*/api/v1/auth/logout", () => {
+    mockBackend.signedIn = false
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get("*/api/v1/me", () => {
     const s = wireSession()
