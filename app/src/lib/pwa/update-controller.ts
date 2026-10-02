@@ -41,8 +41,8 @@ export type CheckResult = "offline" | "failed" | "up-to-date" | "available"
 export interface UpdatePortHandlers {
   onInstalling: () => void
   onWaiting: (wasWaitingBeforeRegister: boolean) => void
-  /** a new SW took control of this page */
-  onControlling: () => void
+  /** a SW took control of this page; isUpdate false = the first install claiming it */
+  onControlling: (isUpdate: boolean) => void
   onActivated: (isUpdate: boolean) => void
 }
 
@@ -219,7 +219,13 @@ export function createUpdateController(d: UpdateDeps) {
             apply()
         })
       },
-      onControlling: () => {
+      onControlling: (isUpdate) => {
+        // the first install claiming an uncontrolled page changes nothing the user sees; a reload
+        // here would drop an offline user onto the browser's error page
+        if (!isUpdate && state.getSnapshot().status !== "applying") {
+          patch({ offlineReady: true })
+          return
+        }
         if (applyTimer) clearTimeout(applyTimer)
         applyTimer = null
         if (state.getSnapshot().status === "applying") {

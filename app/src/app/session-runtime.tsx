@@ -8,7 +8,10 @@ import { useToast } from "@/components/overlays/toaster"
 import { DataRuntimeContext } from "@/lib/db/react/data-runtime"
 import { getTabMemory } from "@/stores/tab-memory"
 import type { AppRuntime } from "./runtime"
+import { SessionHelpSettings } from "./help-runtime"
 import { SessionBanners } from "./session-banners"
+import { useAppearance } from "./use-appearance"
+import { usePushMessages } from "./use-push-messages"
 
 const ROLE_LABEL = { admin: "Admin", scouter: "Scouter", guest: "Guest" }
 
@@ -23,6 +26,7 @@ export function SessionRuntime({
   const toast = useToast()
 
   useEffect(() => app.acquireSession(), [app])
+  usePushMessages(app)
 
   useEffect(
     () =>
@@ -50,9 +54,16 @@ export function SessionRuntime({
 
   return (
     <DataRuntimeContext value={app.dataRuntime}>
+      <SessionEffects />
       <ShellBannersContext value={<SessionBanners auth={app.auth} />}>
         {children}
       </ShellBannersContext>
     </DataRuntimeContext>
   )
+}
+
+/** Effects that read Dexie: they live inside the data runtime. */
+function SessionEffects() {
+  useAppearance()
+  return <SessionHelpSettings />
 }

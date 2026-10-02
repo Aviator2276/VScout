@@ -7,6 +7,7 @@ export const GALLERY_PAGES = [
   "states",
   "overlays",
   "form",
+  "screens",
   "mqtt",
 ] as const
 

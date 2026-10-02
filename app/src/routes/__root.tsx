@@ -8,13 +8,19 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
+import { z } from "zod"
 import { AppProviders } from "@/app/app-providers"
+import { HelpRuntime } from "@/app/help-runtime"
 import { UpdateRuntime } from "@/app/update-runtime"
 import type { RouterContext } from "@/app/router-context"
 import { RouteNotFound } from "@/components/errors/route-not-found"
 import { PREPAINT_SCRIPT } from "@/lib/theme"
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // the Help panel on any page (routing-auth §2.4): glossary, guides, term:<id>, guide:<id>
+  validateSearch: z.object({
+    help: z.string().max(80).optional().catch(undefined),
+  }),
   head: () => ({
     // Static only: the root route is prerendered in Node at build time (routing-auth §1).
     meta: [
@@ -57,7 +63,9 @@ function Root() {
   return (
     <AppProviders>
       <UpdateRuntime app={app}>
-        <Outlet />
+        <HelpRuntime>
+          <Outlet />
+        </HelpRuntime>
       </UpdateRuntime>
     </AppProviders>
   )

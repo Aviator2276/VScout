@@ -11,7 +11,7 @@ import {
   wireUserSettings,
 } from "@/testing/factories/wire"
 import { applyChanges } from "../apply-envelope"
-import { createRecord, updateRecord } from "../mutate"
+import { createRecord, deleteRecord, updateRecord } from "../mutate"
 
 const settle = () => new Promise((r) => setTimeout(r, 30))
 
@@ -111,6 +111,24 @@ describe("applyEnvelope: local edits", () => {
       rev: 1,
       syncState: "synced",
     })
+  })
+
+  it("the echo of my delete keeps the tombstone's snapshot for Recently Deleted (ADR-029)", async () => {
+    const db = createTestDb()
+    const { deps, applyCtx } = testDeps(db)
+    const c = wireComment({ rev: 1, authorId: TEST_USER, body: "keep me" })
+    await applyChanges([change("comment", c)], applyCtx)
+    await deleteRecord(deps, "comment", c.id)
+    const op = await db.outbox.toCollection().first()
+    expect(
+      await applyChanges(
+        [change("comment", { ...c, rev: 2 }, { op: "delete", opId: op?.opId })],
+        applyCtx
+      )
+    ).toEqual(["echo-ack"])
+    const tomb = await db.tombstones.get(["comment", c.id])
+    expect(tomb).toMatchObject({ rev: 2, syncState: "synced" })
+    expect(tomb?.snapshot).toMatchObject({ body: "keep me" })
   })
 
   it("keeps later local edits when an earlier op is echoed (rebase rev only)", async () => {

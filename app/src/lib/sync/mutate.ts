@@ -153,7 +153,8 @@ export async function updateRecord<TEntity extends OwnedEntity>(
   deps: MutateDeps,
   entity: TEntity,
   id: string,
-  patch: (current: Rec<TEntity>) => Rec<TEntity>
+  patch: (current: Rec<TEntity>) => Rec<TEntity>,
+  opts: { dependsOn?: Array<string> } = {}
 ): Promise<Rec<TEntity>> {
   const userId = requireUser(deps)
   const { db } = deps
@@ -200,6 +201,7 @@ export async function updateRecord<TEntity extends OwnedEntity>(
       recordId: id,
       eventKey: next.eventKey,
       kind,
+      ...(opts.dependsOn?.length ? { dependsOn: opts.dependsOn } : {}),
       now,
     })
     result = next
@@ -211,7 +213,8 @@ export async function updateRecord<TEntity extends OwnedEntity>(
 export async function deleteRecord<TEntity extends OwnedEntity>(
   deps: MutateDeps,
   entity: TEntity,
-  id: string
+  id: string,
+  opts: { reason?: string } = {}
 ): Promise<void> {
   const userId = requireUser(deps)
   const { db } = deps
@@ -228,6 +231,7 @@ export async function deleteRecord<TEntity extends OwnedEntity>(
       recordId: id,
       eventKey: current.eventKey,
       kind: "delete",
+      ...(opts.reason ? { reason: opts.reason } : {}),
       now,
     })
     await table.delete(id)

@@ -25,6 +25,7 @@ const files = {
   [`src/features/matches/${P}-live.ts`]: `import { useLiveQuery } from "dexie-react-hooks"\nexport const q = useLiveQuery\n`,
   [`src/hooks/${P}-hooks.ts`]: `import { useState } from "react"\n\nexport function useBad(flag: boolean): number {\n  if (flag) return 0\n  const [n] = useState(1)\n  return n\n}\n`,
   [`src/components/list/${P}-wrapper.ts`]: `import { List } from "konsta/react"\n\nexport const w = List\n`,
+  [`src/features/matches/${P}-fetch.ts`]: `export const load = () => fetch("/api/matches")\n`,
 }
 const expected = {
   [`src/features/matches/${P}-cross.ts`]: "import/no-restricted-paths",
@@ -41,6 +42,7 @@ const expected = {
   [`src/features/matches/${P}-lucide.ts`]: "no-restricted-imports",
   [`src/features/matches/${P}-live.ts`]: "no-restricted-imports",
   [`src/hooks/${P}-hooks.ts`]: "react-hooks/rules-of-hooks",
+  [`src/features/matches/${P}-fetch.ts`]: "no-restricted-globals",
 }
 const clean = [
   `src/lib/${P}-control.ts`,

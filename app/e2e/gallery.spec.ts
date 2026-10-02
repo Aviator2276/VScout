@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test"
 import type { Page } from "@playwright/test"
 import { connect } from "node:net"
 
-const PAGES = ["components", "states", "overlays", "form"] as const
+const PAGES = ["components", "states", "overlays", "form", "screens"] as const
 
 async function open(page: Page, query: string) {
   await page.goto(`/dev/gallery?${query}`)
@@ -49,6 +49,8 @@ async function smallTargets(page: Page, scope: string, min: number) {
         `${root} :is(${sel})`
       )) {
         if (el.closest("[aria-hidden=true], [inert]")) continue
+        // inline targets in a sentence are exempt (WCAG 2.5.8): glossary words
+        if (el.hasAttribute("data-inline-target")) continue
         const style = getComputedStyle(el)
         if (style.visibility === "hidden" || style.display === "none") continue
         // a native input inside a label: the label is what you tap (switches)
@@ -152,8 +154,10 @@ test("every overlay is labelled and passes axe while open", async ({
 test("touch targets: 44 pt everywhere, 56 pt in the scouting form", async ({
   page,
 }) => {
-  await open(page, "show=components")
-  expect(await smallTargets(page, "main", 44)).toEqual([])
+  for (const show of ["components", "screens"]) {
+    await open(page, `show=${show}`)
+    expect(await smallTargets(page, "main", 44), show).toEqual([])
+  }
   await open(page, "show=form")
   // the stage bar and form fields; the level switch above the form is ordinary UI
   expect(await smallTargets(page, "[role=tabpanel]", 56)).toEqual([])

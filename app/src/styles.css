@@ -368,3 +368,14 @@
     animation-delay: 0s !important;
   }
 }
+
+/* Home edit mode (features/home.md H3): widgets wobble like the iOS Home Screen. Reduced motion
+   gets a dashed outline instead (the grid adds motion-reduce classes). */
+@keyframes jiggle {
+  from {
+    transform: rotate(-1.2deg);
+  }
+  to {
+    transform: rotate(1.2deg);
+  }
+}

@@ -4,6 +4,7 @@ import { guestLoginRequest, loginRequest } from "@/lib/contracts/auth"
 import { testId, testTime } from "../../factories/ids"
 import { TEST_EVENT, wireSession } from "../../factories/wire"
 import { MOCK_CREDENTIALS, MOCK_GUEST_CODE, mockBackend } from "../mock-backend"
+import { activeGuestCode } from "./admin"
 import { problemResponse } from "./problem"
 
 export const authHandlers = [
@@ -22,7 +23,11 @@ export const authHandlers = [
 
   http.post("*/api/v1/auth/guest", async ({ request }) => {
     const body = guestLoginRequest.safeParse(await request.json())
-    if (!body.success || body.data.code !== MOCK_GUEST_CODE)
+    // an admin-set code wins over the fixed mock one (features/admin.md AD3b)
+    if (
+      !body.success ||
+      body.data.code !== (activeGuestCode() ?? MOCK_GUEST_CODE)
+    )
       return problemResponse(401, "invalid_guest_code")
     mockBackend.signedIn = true
     return HttpResponse.json(

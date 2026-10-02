@@ -179,6 +179,40 @@ export interface DomainRecords {
 
 // ---------- local tables (data-layer §4.1) ----------
 
+/** A robot photo taken on this device, waiting for (or done with) its upload (ADR-036). */
+/** A match video on this device (data-layer §7.10). The bytes live in OPFS at `opfsPath`. */
+export interface MediaVideoRow {
+  /** `${matchKey}:${sourceId}` */
+  id: string
+  eventKey: string
+  matchKey: string
+  sourceId: string
+  url: string
+  mime: string
+  quality?: string
+  bytes?: number
+  downloadState: "none" | "queued" | "downloading" | "done" | "error"
+  bytesDownloaded: number
+  opfsPath?: string
+  lastOpenedAt?: number
+  error?: string
+  createdAt: number
+}
+
+export interface MediaUploadRow {
+  /** = the mediaAsset id (UUIDv7) */
+  id: string
+  userId: string
+  eventKey: string
+  teamNumber: number
+  /** the pit entry (or its draft) that references it */
+  ownerRecordId: string
+  blob: Blob
+  mime: string
+  uploadState: "pending" | "done" | "failed"
+  createdAt: number
+}
+
 export interface SessionRow {
   id: "current"
   userId: string
@@ -233,6 +267,8 @@ export interface OutboxOp {
   baseRev?: number
   /** userSettings merge patches: the top-level keys this op changes (per-key LWW) */
   patchKeys?: Array<string>
+  /** an admin moderating someone else's record says why (features/admin.md AD5) */
+  reason?: string
   attempts: number
   nextAttemptAt: number
   lastError?: { status?: number; code?: string; message: string; at: number }

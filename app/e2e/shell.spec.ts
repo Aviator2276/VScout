@@ -110,6 +110,7 @@ test("sign out and back in, with no console errors", async ({ page }) => {
   ).toBeVisible()
   await page.getByRole("button", { name: "Settings" }).click()
 
+  await page.locator('a[href="/settings/account"]').click()
   await page.getByRole("button", { name: "Sign Out" }).click()
   await expect(page.getByRole("heading", { name: "VScout" })).toBeVisible()
   await expect(page).toHaveURL(/\/login/)

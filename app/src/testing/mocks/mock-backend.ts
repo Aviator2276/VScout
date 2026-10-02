@@ -38,9 +38,19 @@ export const mockBackend = {
   expiredTokens: new Set<string>(),
   records: new Map<string, MockRecord>(),
   tombstones: new Map<string, number>(),
+  /** deleted records, for restore (ADR-029) */
+  trash: new Map<string, MockRecord>(),
+  /** moderation history (GET /events/{ek}/admin/audit) */
+  audit: [] as Array<Record<string, unknown>>,
+  /** admin-managed accounts (GET/POST/PATCH /admin/users) */
+  users: new Map<string, MockRecord>(),
+  /** guest codes in use by other events (409 guest_code_taken) */
+  takenGuestCodes: new Set<string>(),
   idempotency: new Map<string, StoredResponse>(),
   /** apply the next write, then drop its response (simulates a timeout after the server committed) */
   loseNextResponse: false,
+  /** push subscriptions by deviceId (push-contract §2.2) */
+  pushSubscriptions: new Map<string, Record<string, unknown>>(),
   /** how many writes were actually applied (not replayed) */
   applied: 0,
   tick: 0,
@@ -55,7 +65,25 @@ export const mockBackend = {
     this.expiredTokens = new Set()
     this.records = new Map()
     this.tombstones = new Map()
+    this.trash = new Map()
+    this.audit = []
+    this.users = new Map([
+      [
+        MOCK_USER_ID,
+        {
+          id: MOCK_USER_ID,
+          rev: 1,
+          updatedAt: "2026-03-20T15:00:00.000Z",
+          username: "alex",
+          displayName: "Alex",
+          role: "admin",
+          active: true,
+        },
+      ],
+    ])
+    this.takenGuestCodes = new Set()
     this.idempotency = new Map()
+    this.pushSubscriptions = new Map()
     this.loseNextResponse = false
     this.applied = 0
     this.tick = 0

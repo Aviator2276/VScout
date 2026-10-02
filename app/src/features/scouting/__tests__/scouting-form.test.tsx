@@ -9,7 +9,10 @@ import { formOf } from "@/games/kit/fields"
 import { t } from "@/games/kit/labels"
 import type { GameDefinition, ScouterLevel } from "@/games/types"
 import { seqIds } from "@/testing/db"
-import { ScoutingFormView } from "../components/scouting-form-view"
+import {
+  SUBMIT_GUARD_MS,
+  ScoutingFormView,
+} from "../components/scouting-form-view"
 import { useScoutingForm } from "../hooks/use-scouting-form"
 import type { EntryValues } from "../utils/form-values"
 
@@ -60,6 +63,9 @@ function Harness({
 const L = (key: string) => t(game, key)
 const next = () => userEvent.click(screen.getByRole("button", { name: "Next" }))
 
+/** Submit ignores taps in the first moments after Review opens (SUBMIT_GUARD_MS). */
+const afterGuard = () => new Promise((r) => setTimeout(r, SUBMIT_GUARD_MS + 50))
+
 describe("stage pager (ui-patterns §2.1)", () => {
   it("steps through stages, lists what's missing on Review, and submits clean data", async () => {
     const onSubmit = vi.fn()
@@ -109,6 +115,7 @@ describe("stage pager (ui-patterns §2.1)", () => {
     expect(
       screen.getByRole("heading", { name: "Ready to submit" })
     ).toBeInTheDocument()
+    await afterGuard()
     await userEvent.click(screen.getByRole("button", { name: "Submit" }))
     expect(onSubmit).toHaveBeenCalledWith({
       data: { "pre.noShow": false, "auto.effectiveness": 4 },
@@ -193,6 +200,10 @@ describe("descriptor rules", () => {
       screen.getByRole("button", { name: L("post.tag.fast") })
     )
     await userEvent.click(screen.getByRole("button", { name: "Review" }))
+    // a tap right after Review is the second half of a double tap, not a submit
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }))
+    expect(onSubmit).not.toHaveBeenCalled()
+    await afterGuard()
     await userEvent.click(screen.getByRole("button", { name: "Submit" }))
     expect(onSubmit).toHaveBeenCalledWith({
       data: { "pre.noShow": false, "teleop.gizmos": 0, "post.notes": "Quick" },

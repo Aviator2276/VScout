@@ -14,6 +14,8 @@ export interface LoginScreenProps {
   endedReason?: string | undefined
   onSignIn: (username: string, password: string) => Promise<void>
   onJoinAsGuest: (code: string) => Promise<void>
+  /** "Need help?" opens the guides (glossary-help.md §4), offline too */
+  onHelp?: () => void
 }
 
 export function LoginScreen(p: LoginScreenProps) {
@@ -49,6 +51,15 @@ export function LoginScreen(p: LoginScreenProps) {
           onOpenChange={p.onGuestOpenChange}
           onJoin={p.onJoinAsGuest}
         />
+      ) : null}
+      {p.onHelp ? (
+        <button
+          type="button"
+          onClick={p.onHelp}
+          className="mx-auto min-h-11 text-body text-primary"
+        >
+          Need help?
+        </button>
       ) : null}
     </main>
   )

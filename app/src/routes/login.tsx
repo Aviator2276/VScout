@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router"
 import { useEffect, useSyncExternalStore } from "react"
+import { useGlossary } from "@/components/glossary/glossary-provider"
 import { LoginScreen } from "@/features/auth/components/login-screen"
 import { loginSearch } from "@/features/auth/types/login-search"
 import { useOnline } from "@/hooks/use-online"
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/login")({
 function LoginRoute() {
   const { app } = Route.useRouteContext()
   const runtime = app()
+  const glossary = useGlossary()
   const search = Route.useSearch()
   const { username } = Route.useLoaderData()
   const navigate = Route.useNavigate()
@@ -61,6 +63,7 @@ function LoginRoute() {
         await runtime.auth.login(u, p)
         await done()
       }}
+      onHelp={() => glossary?.open("guides")}
       onJoinAsGuest={async (code) => {
         await runtime.auth.loginAsGuest(code)
         await done()

@@ -1,23 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useMemo } from "react"
+import { z } from "zod"
+import { renderHomeWidget } from "@/app/home-widgets"
 import { TabRootActions } from "@/app/tab-root-actions"
-import { House } from "@/components/icons/icon"
-import { ComingSoon } from "@/components/layout/coming-soon"
 import { StackPage } from "@/components/layout/stack-page"
+import { HomeView } from "@/features/home-widgets/components/home-view"
+import { uuidIds } from "@/lib/ids"
 
 export const Route = createFileRoute("/_authed/_event/_tabs/")({
+  validateSearch: z.object({
+    edit: z.boolean().optional().catch(undefined),
+    sheet: z
+      .enum(["add-widget", "edit-widget", "layout"])
+      .optional()
+      .catch(undefined),
+    id: z.string().max(64).optional().catch(undefined),
+  }),
   component: Home,
 })
 
-// Home widgets (features/home.md) arrive in Phase 6.
 function Home() {
-  const { event } = Route.useRouteContext()
+  const { event, session } = Route.useRouteContext()
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const render = useMemo(() => renderHomeWidget(event.key), [event.key])
   return (
-    <StackPage title="Home" trailing={<TabRootActions profile />}>
-      <p className="text-subhead text-muted-foreground">{event.name}</p>
-      <ComingSoon
-        icon={House}
-        title="Your Home is on its way"
-        description="Widgets for your next match, watched teams and announcements arrive in a later build."
+    <StackPage
+      title="Home"
+      trailing={search.edit ? undefined : <TabRootActions profile />}
+    >
+      <p className="mb-3 text-footnote text-muted-foreground">{event.name}</p>
+      <HomeView
+        role={session.role}
+        editing={search.edit === true}
+        onEditingChange={(edit) =>
+          void navigate({
+            search: (p) => ({ ...p, edit: edit || undefined }),
+            replace: true,
+          })
+        }
+        sheet={search.sheet}
+        sheetId={search.id}
+        onSheet={(sheet, id) =>
+          void navigate({
+            search: (p) => ({ ...p, sheet, id }),
+            replace: sheet === undefined,
+          })
+        }
+        renderWidget={render}
+        newId={uuidIds.newId}
       />
     </StackPage>
   )

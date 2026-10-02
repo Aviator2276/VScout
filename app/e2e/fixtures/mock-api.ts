@@ -18,9 +18,103 @@ const EVENT = {
   timezone: "America/Los_Angeles",
 }
 
-const iso = (offsetMs = 0) => new Date(Date.now() + offsetMs).toISOString()
+export const iso = (offsetMs = 0) =>
+  new Date(Date.now() + offsetMs).toISOString()
 
-function session() {
+// ---------- event data: 40 teams, 80 quals (32 played, Q33 on the field) ----------
+
+const NAMES: Record<number, string> = {
+  254: "The Cheesy Poofs",
+  1678: "Citrus Circuits",
+  2276: "Demo Robotics",
+  971: "Spartan Robotics",
+}
+export const TEAMS = [
+  254,
+  1678,
+  2276,
+  971,
+  ...Array.from({ length: 36 }, (_, i) => 3000 + i * 7),
+]
+export const MATCH_COUNT = 80
+export const PLAYED = 32
+
+const change = (
+  entity: string,
+  id: string,
+  eventKey: string | null,
+  data: Record<string, unknown>
+) => ({ v: 1, entity, op: "upsert", id, rev: 1, eventKey, ts: iso(), data })
+
+export function buildData(): Record<string, Array<unknown>> {
+  const meta = { rev: 1, updatedAt: "2026-03-01T00:00:00.000Z" }
+  const teams = TEAMS.map((n) =>
+    change("team", String(n), null, {
+      ...meta,
+      id: String(n),
+      teamNumber: n,
+      nickname: NAMES[n] ?? `Team ${n} Robotics`,
+    })
+  )
+  const eventTeams = TEAMS.map((n, i) =>
+    change("eventTeam", `${EVENT.id}_${n}`, EVENT.id, {
+      ...meta,
+      id: `${EVENT.id}_${n}`,
+      eventKey: EVENT.id,
+      teamNumber: n,
+      // the last two haven't played a ranked match yet
+      rank: i < TEAMS.length - 2 ? i + 1 : null,
+    })
+  )
+  const start = Date.now() - (PLAYED + 1) * 7 * 60_000
+  const matches = Array.from({ length: MATCH_COUNT }, (_, i) => {
+    const n = i + 1
+    const pick = (k: number) => TEAMS[(i * 6 + k) % TEAMS.length] ?? 254
+    const played = n <= PLAYED
+    const key = `${EVENT.id}_qm${n}`
+    return change("match", key, EVENT.id, {
+      ...meta,
+      id: key,
+      eventKey: EVENT.id,
+      compLevel: "qm",
+      setNumber: 1,
+      matchNumber: n,
+      scheduledTime: new Date(start + n * 7 * 60_000).toISOString(),
+      alliances: {
+        red: {
+          teamNumbers: [pick(0), pick(1), pick(2)],
+          score: played ? 60 + n : null,
+        },
+        blue: {
+          teamNumbers: [pick(3), pick(4), pick(5)],
+          score: played ? 50 + (n % 20) : null,
+        },
+      },
+      status: played ? "played" : n === PLAYED + 1 ? "onField" : "scheduled",
+      winningAlliance: played
+        ? 60 + n > 50 + (n % 20)
+          ? "red"
+          : "blue"
+        : null,
+    })
+  })
+  return {
+    "global|event": [change("event", EVENT.id, null, EVENT)],
+    "global|team": teams,
+    "global|teamSettings": [
+      change("teamSettings", "team", null, {
+        ...meta,
+        id: "team",
+        teamNumber: 2276,
+      }),
+    ],
+    [`event:${EVENT.id}|eventTeam`]: eventTeams,
+    [`event:${EVENT.id}|match`]: matches,
+  }
+}
+const DATA = buildData()
+
+export function session() {
   return {
     accessToken: "e2e-access-token",
     accessExpiresAt: iso(15 * 60_000),
@@ -96,26 +190,17 @@ export async function mockApi(page: Page) {
       const cursors = JSON.parse(
         url.searchParams.get("cursors") ?? "{}"
       ) as Record<string, string>
-      const global = url.searchParams.get("scope") === "global"
-      const changes =
-        global && entities.includes("event") && !cursors.event
-          ? [
-              {
-                v: 1,
-                entity: "event",
-                op: "upsert",
-                id: EVENT.id,
-                rev: 1,
-                eventKey: null,
-                ts: iso(),
-                data: EVENT,
-              },
-            ]
-          : []
+      const scope = url.searchParams.get("scope") ?? ""
+      const changes = entities.flatMap((e) =>
+        cursors[e] ? [] : (DATA[`${scope}|${e}`] ?? [])
+      )
       return json({
         changes,
         cursors: Object.fromEntries(
-          entities.map((e) => [e, cursors[e] ?? (changes.length ? "1" : "0")])
+          entities.map((e) => [
+            e,
+            cursors[e] ?? (DATA[`${scope}|${e}`]?.length ? "1" : "0"),
+          ])
         ),
         hasMore: false,
         serverTime: iso(),

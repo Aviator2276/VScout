@@ -154,7 +154,7 @@ describe("applying at a safe moment (pwa-offline §7)", () => {
     ).toBe(true)
     expect(t.port.skips).toBe(1)
     expect(t.c.state.getSnapshot().status).toBe("applying")
-    t.port.handlers?.onControlling()
+    t.port.handlers?.onControlling(true)
     expect(t.reloads).toEqual(["/teams?sort=epa"])
     expect(t.session.getItem("vscout.updatedFrom")).toBe("2.0.0-alpha.0")
   })
@@ -208,11 +208,19 @@ describe("applying at a safe moment (pwa-offline §7)", () => {
   it("another tab's update reloads this one when safe, otherwise shows a banner", async () => {
     const t = setup()
     await t.c.start()
-    t.port.handlers?.onControlling()
+    t.port.handlers?.onControlling(true)
     expect(t.reloads).toEqual([undefined])
     t.setPath("/scouting/pit/1")
-    t.port.handlers?.onControlling()
+    t.port.handlers?.onControlling(true)
     expect(t.c.state.getSnapshot().updatedElsewhere).toBe(true)
+  })
+
+  it("ignores the first install taking control: no reload (an offline reload is an error page)", async () => {
+    const t = setup()
+    await t.c.start()
+    t.port.handlers?.onControlling(false)
+    expect(t.reloads).toEqual([])
+    expect(t.c.state.getSnapshot().offlineReady).toBe(true)
   })
 
   it("reports the version it updated from, once", () => {

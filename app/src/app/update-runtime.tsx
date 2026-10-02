@@ -159,3 +159,17 @@ function forcedCopy(
   if (!online) return "offline"
   return "not-available"
 }
+
+/** The update controller and its state for Settings → Storage (null in dev and the prerender). */
+export function useUpdateState(): {
+  controller: UpdateController | null
+  state: UpdateState
+} {
+  const c = useController()
+  const state = useSyncExternalStore(
+    c?.state.subscribe ?? noop,
+    c?.state.getSnapshot ?? (() => IDLE_STATE),
+    () => IDLE_STATE
+  )
+  return { controller: c, state }
+}

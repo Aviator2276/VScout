@@ -2,7 +2,7 @@
 // Previous / Next at the bottom, and Review at the end listing what's missing. Stages never block:
 // a scouter can't stop watching the match to fix an answer.
 import { useStore } from "@tanstack/react-form"
-import { useId, useMemo, useState } from "react"
+import { useId, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/controls/button"
 import { StageStepper } from "@/components/controls/stage-stepper"
 import type { StepStatus } from "@/components/controls/stage-stepper"
@@ -17,6 +17,9 @@ import type { FormEnv } from "./form-context"
 import { FormSection } from "./form-section"
 
 export const REVIEW = "review"
+
+/** Submit ignores taps this soon after Review opened: a double tap on Review isn't a submit. */
+export const SUBMIT_GUARD_MS = 400
 
 export interface ScoutingFormViewProps {
   env: FormEnv
@@ -55,7 +58,10 @@ export function ScoutingFormView({
   const index = sections.findIndex((s) => s.id === stage)
   const current = sections[index]
 
+  // a quick second tap on Review must not also submit (gloves, stage nav reuses the spot)
+  const reviewOpenedAt = useRef(0)
   const go = (next: string) => {
+    if (next === REVIEW) reviewOpenedAt.current = performance.now()
     setVisited((v) => new Set([...v, next]))
     onStageChange(next)
     window.scrollTo({ top: 0 })
@@ -132,6 +138,7 @@ export function ScoutingFormView({
           ) : null}
           {current ? (
             <Button
+              key="next"
               size="large"
               className="flex-1"
               onClick={() => go(sections[index + 1]?.id ?? REVIEW)}
@@ -140,10 +147,18 @@ export function ScoutingFormView({
             </Button>
           ) : (
             <Button
+              key="submit"
               size="large"
               className="flex-1"
               disabled={issues.length > 0 || submitting}
-              onClick={() => void form.handleSubmit()}
+              onClick={() => {
+                if (
+                  performance.now() - reviewOpenedAt.current <
+                  SUBMIT_GUARD_MS
+                )
+                  return
+                void form.handleSubmit()
+              }}
             >
               {submitting ? "Saving…" : submitLabel}
             </Button>

@@ -257,6 +257,30 @@ export default [
       ],
     },
   },
+  // Phase 3 gate: no network calls outside lib/ (ADR-063: every request goes through lib/api)
+  {
+    files: [
+      "src/features/**",
+      "src/components/**",
+      "src/routes/**",
+      "src/hooks/**",
+      "src/stores/**",
+      "src/app/**",
+    ],
+    ignores: ["src/**/__tests__/**", "src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        ...["fetch", "XMLHttpRequest", "WebSocket", "EventSource"].map(
+          (name) => ({
+            name,
+            message:
+              "UI code never calls the network. Read Dexie through a feature api/ hook; write through lib/sync (ADR-063).",
+          })
+        ),
+      ],
+    },
+  },
   // games use their own words; lib/db owns the Dexie import
   { files: ["src/games/**"], rules: { "vscout/no-game-terms": "off" } },
   // the wrapper layer may use library primitives (ui-design-system §3)

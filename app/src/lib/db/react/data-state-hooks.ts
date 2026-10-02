@@ -265,3 +265,18 @@ function useRequestWhenNotSynced(
     requestSync()
   }, [notSynced, id, requestSync])
 }
+
+/**
+ * For values that always have a sensible default (preferences, our team number): the live value,
+ * or `fallback` while loading or after a failed read (logged). Not for data a screen depends on:
+ * those use the DataState hooks above.
+ */
+export function useLiveOr<TValue>(
+  query: () => Promise<TValue>,
+  deps: DependencyList,
+  fallback: TValue
+): TValue {
+  const result = useLive(query, deps)
+  useLogError(result)
+  return result?.kind === "ok" ? result.value : fallback
+}

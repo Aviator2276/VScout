@@ -18,7 +18,9 @@ export function workboxPort(url = "/sw.js"): UpdatePort {
       wb.addEventListener("waiting", (e) =>
         h.onWaiting(e.wasWaitingBeforeRegister === true)
       )
-      wb.addEventListener("controlling", () => h.onControlling())
+      wb.addEventListener("controlling", (e) =>
+        h.onControlling(e.isUpdate === true)
+      )
       wb.addEventListener("activated", (e) =>
         h.onActivated(e.isUpdate === true)
       )

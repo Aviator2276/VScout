@@ -37,6 +37,8 @@ export function buildBody(
   op: OutboxOp,
   record: Record<string, unknown> | undefined
 ): unknown {
+  // uploads seal only the media id; the blob stays in mediaUploads
+  if (op.kind === "upload") return { mediaId: op.recordId }
   if (op.kind === "delete" || !record) return null
   if (op.entity === "userSettings") {
     const doc = toWireBody(record)
@@ -49,6 +51,11 @@ export function buildBody(
     }
   }
   if (op.kind === "create") return toWireBody(record)
+  if (op.entity === "eventSettings") {
+    // guest access is changed online only (features/admin.md AD3b), never by a queued write
+    const { guestAccess: _guest, ...rest } = toWireBody(record)
+    return { baseRev: record.rev, record: rest }
+  }
   return { baseRev: record.rev, record: toWireBody(record) }
 }
 
@@ -75,9 +82,13 @@ export function buildRequest(op: OutboxOp): OpRequest {
       return {
         method: "DELETE",
         path: `/${collection}/${op.recordId}`,
-        query: { baseRev: String(op.baseRev ?? 0) },
+        query: {
+          baseRev: String(op.baseRev ?? 0),
+          ...(op.reason ? { reason: op.reason } : {}),
+        },
       }
     case "upload":
-      throw new Error("photo uploads arrive in Phase 4 (media)")
+      // the multipart body is built from mediaUploads at send time (push.ts)
+      return { method: "POST", path: `/events/${op.eventKey ?? ""}/media` }
   }
 }

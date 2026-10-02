@@ -160,3 +160,54 @@ export function requirePermission(
 ): void {
   if (!can(session, permission)) throw new ForbiddenError(permission)
 }
+
+type WriteAction = "create" | "update" | "delete"
+
+/**
+ * The outbox write check (mutate's `authorize`): maps an entity write to its permission. UX only,
+ * like everything here. Entities without a rule here are refused.
+ */
+export function canWrite(
+  session: Who | null,
+  action: WriteAction,
+  entity: string,
+  record: unknown
+): boolean {
+  const r = record as Owned & Record<string, unknown>
+  switch (entity) {
+    case "scoutEntry":
+    case "pitScouting":
+    case "postScouting":
+    case "allianceRank":
+    case "mediaAsset":
+      return action === "create"
+        ? can(session, "scouting:create")
+        : can(session, `scouting:${action}`, r)
+    case "comment":
+      return action === "create"
+        ? can(session, "comment:create")
+        : can(session, `comment:${action}`, r)
+    case "picklist":
+    case "picklistEntry":
+      return action === "create"
+        ? can(session, "picklist:create")
+        : can(session, `picklist:${action}`, r)
+    case "message":
+      if (r.kind === "announcement")
+        return can(
+          session,
+          action === "create" ? "announcement:create" : "announcement:manage"
+        )
+      return action === "create"
+        ? can(session, "message:send")
+        : can(session, "message:delete", r)
+    case "reaction":
+      return action === "create"
+        ? can(session, "reaction:create", {
+            targetType: r.targetType === "message" ? "message" : "announcement",
+          })
+        : can(session, "reaction:delete", { ...r, inDm: r.inDm === true })
+    default:
+      return false
+  }
+}

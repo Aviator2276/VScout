@@ -46,15 +46,23 @@ export function createHttpTransport(opts: HttpTransportOptions): ApiTransport {
       const timer = setTimeout(() => controller.abort(), timeoutMs)
       let res: Response
       try {
+        // multipart uploads (robot photos, http-api-contract §5.2): the browser sets the boundary
+        const multipart =
+          typeof FormData !== "undefined" && req.body instanceof FormData
         res = await doFetch(buildUrl(opts.baseUrl, req.path, req.query), {
           method: req.method,
           headers: {
             ...req.headers,
-            ...(req.body === undefined
+            ...(req.body === undefined || multipart
               ? {}
               : { "Content-Type": "application/json" }),
           },
-          body: req.body === undefined ? undefined : JSON.stringify(req.body),
+          body:
+            req.body === undefined
+              ? undefined
+              : multipart
+                ? (req.body as FormData)
+                : JSON.stringify(req.body),
           credentials: "include", // the refresh cookie (ADR-035)
           signal: controller.signal,
         })

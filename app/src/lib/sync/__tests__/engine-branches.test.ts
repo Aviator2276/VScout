@@ -171,9 +171,12 @@ describe("request builders", () => {
         op({ entity: "eventSettings", recordId: "2026casj", kind: "update" })
       )
     ).toMatchObject({ path: "/events/2026casj/settings" })
-    expect(() =>
+    expect(
       buildRequest(op({ kind: "upload", entity: "mediaAsset" }))
-    ).toThrow("Phase 4")
+    ).toMatchObject({
+      method: "POST",
+      path: expect.stringMatching(/\/media$/) as string,
+    })
     expect(() => buildRequest(op({ entity: "match" }))).toThrow(
       "no write endpoint"
     )

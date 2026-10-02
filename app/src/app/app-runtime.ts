@@ -34,6 +34,25 @@ export function getAppRuntime(): AppRuntime {
     ...(locks ? { locks } : {}),
     ...(authChannel ? { authChannel } : {}),
     deviceName: () => describeDevice(navigator.userAgent),
+    ...("serviceWorker" in navigator
+      ? {
+          push: {
+            registration: () =>
+              navigator.serviceWorker.getRegistration().then((r) => r ?? null),
+            permission: () =>
+              typeof Notification === "undefined"
+                ? null
+                : Notification.permission,
+            requestPermission: () => Notification.requestPermission(),
+            ua: navigator.userAgent,
+            platform: navigator.platform,
+            maxTouchPoints: navigator.maxTouchPoints,
+            standalone: () =>
+              matchMedia("(display-mode: standalone)").matches ||
+              (navigator as { standalone?: boolean }).standalone === true,
+          },
+        }
+      : {}),
     ...("storage" in navigator && "persist" in navigator.storage
       ? { persistStorage: () => navigator.storage.persist() }
       : {}),

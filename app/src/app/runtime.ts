@@ -7,6 +7,21 @@ import { createApiClient } from "@/lib/api/api-client"
 import type { ApiClient } from "@/lib/api/api-client"
 import { createCapabilitiesStore } from "@/lib/api/capabilities"
 import type { CapabilitiesStore } from "@/lib/api/capabilities"
+import {
+  createUser,
+  fetchOptional,
+  patchUser,
+  refreshAudit,
+  refreshUsers,
+  revokeSessions,
+  saveGuestAccess,
+} from "@/lib/sync/admin-actions"
+import { patchEventSettings, setTeamNumber } from "@/lib/sync/admin-writes"
+import {
+  browserVideoWorker,
+  createVideoManager,
+  opfsFiles,
+} from "@/lib/media/videos"
 import { createHttpTransport } from "@/lib/api/transport/http-transport"
 import { createMqttRpcTransport } from "@/lib/api/transport/mqtt-rpc-transport"
 import { TransportHealth } from "@/lib/api/transport/select-transport"
@@ -19,6 +34,7 @@ import { createTokenStore } from "@/lib/auth/token-store"
 import type { Session } from "@/lib/auth/types"
 import { systemClock } from "@/lib/clock"
 import type { Clock } from "@/lib/clock"
+import { migrateDrafts } from "@/lib/db/drafts"
 import { getKv, setKv } from "@/lib/db/kv"
 import type { DataRuntime } from "@/lib/db/react/data-runtime"
 import type { VScoutDB } from "@/lib/db/schema"
@@ -35,6 +51,7 @@ import { createMqttConnection } from "@/lib/mqtt/mqtt-client"
 import type { MqttConnection, MqttStatus } from "@/lib/mqtt/mqtt-client"
 import { createRpcChannel } from "@/lib/mqtt/rpc-channel"
 import type { RpcChannel } from "@/lib/mqtt/rpc-channel"
+import type { PresenceEntry } from "@/lib/mqtt/presence-store"
 import type { MqttTransportFactory } from "@/lib/mqtt/transport"
 import { createSyncEngine } from "@/lib/sync/engine"
 import type { SyncEngine } from "@/lib/sync/engine"
@@ -43,6 +60,16 @@ import type { SyncLockManager } from "@/lib/sync/lock"
 import { createScopeInfoStore } from "@/lib/sync/scope-info"
 import type { ScopeInfoStore } from "@/lib/sync/scope-info"
 import { attachSyncTriggers } from "@/lib/sync/triggers"
+import { createPushClient } from "@/lib/push/push-client"
+import type { PushClient, PushEnv } from "@/lib/push/push-client"
+import type { MutateDeps } from "@/lib/sync/mutate"
+import {
+  changePassword,
+  refreshPitMap,
+  restoreRecord,
+  sendBoardAction,
+} from "@/lib/sync/live-actions"
+import { canWrite } from "@/lib/authorization"
 
 type Targets = Pick<Window, "addEventListener" | "removeEventListener">
 type DocTargets = Pick<
@@ -51,6 +78,8 @@ type DocTargets = Pick<
 >
 
 export interface RuntimeOptions {
+  /** the browser's push APIs (absent in tests and the prerender) */
+  push?: PushEnv
   db: VScoutDB
   apiUrl: string
   mqttUrl: string
@@ -125,6 +154,8 @@ export function createAppRuntime(o: RuntimeOptions) {
   const scopeInfo: ScopeInfoStore = createScopeInfoStore(() => db)
   const activeEventKey = createStore<string | null>(null)
   const mqttStatus = createStore<MqttStatus | null>(null)
+  /** who's online (MQTT presence, memory only), mirrored from the live connection */
+  const presence = createStore<ReadonlyMap<string, PresenceEntry>>(new Map())
   /** from /meta: the oldest client version the backend accepts (pwa-offline §8) */
   const minClientVersion = createStore<string | null>(null)
   /** listeners may return a promise: the logout wipe waits for it (leave the signed-in pages first) */
@@ -337,6 +368,9 @@ export function createAppRuntime(o: RuntimeOptions) {
       onReload: () => void setKv(db, "needsAppUpdate", true),
     })
     mqtt = conn
+    const offPresence = conn.presence.presence.subscribe(() =>
+      presence.set(conn.presence.presence.getSnapshot())
+    )
     const unsubscribe = conn.status.subscribe(() =>
       mqttStatus.set(conn.status.getSnapshot())
     )
@@ -356,6 +390,8 @@ export function createAppRuntime(o: RuntimeOptions) {
     return () => {
       detach()
       unsubscribe()
+      offPresence()
+      presence.set(new Map())
       leadership.release()
     }
   }
@@ -369,6 +405,10 @@ export function createAppRuntime(o: RuntimeOptions) {
     transportMode = settings.transport
     await loadActiveEvent()
     await scopeInfo.refresh()
+    // drafts saved under an older form version resume migrated (scouting-forms criterion 11)
+    await migrateDrafts(db, o.games).catch((error: unknown) =>
+      logger.warn("app", "draft migration failed", { error: String(error) })
+    )
     if (o.isOnline()) await auth.refreshIfNeeded()
     void loadMeta()
     await engine.start()
@@ -377,6 +417,7 @@ export function createAppRuntime(o: RuntimeOptions) {
       document: o.document,
     })
     const disconnect = connectMqtt(await deviceId())
+    void push.reconcile()
     return async () => {
       detachTriggers()
       disconnect()
@@ -432,6 +473,50 @@ export function createAppRuntime(o: RuntimeOptions) {
     }
   }
 
+  const writer: MutateDeps = {
+    db,
+    clock,
+    ids,
+    games: o.games,
+    session: () => auth.getSession(),
+    authorize: (action, entity, record) =>
+      canWrite(auth.getSession(), action, entity, record),
+    onWrite: () => engine.requestSync("write"),
+  }
+
+  const push: PushClient = createPushClient({
+    api,
+    db: () => db,
+    deviceId,
+    now: clock.now,
+    appVersion: o.appVersion,
+    env: o.push ?? null,
+  })
+
+  /** Sign Out (routing-auth §7.5): stop push to this device first, while still signed in. */
+  async function signOut(opts: { force?: boolean } = {}) {
+    const pending = await auth.pendingChanges()
+    if (pending > 0 && !opts.force)
+      return { ok: false as const, pendingChanges: pending }
+    await push.disable().catch(() => undefined)
+    return auth.logout({ force: true })
+  }
+
+  const liveDeps = () => ({
+    api,
+    db,
+    games: o.games,
+    now: clock.now,
+    newId: ids.newId,
+  })
+  const videos = createVideoManager({
+    db,
+    api,
+    now: clock.now,
+    worker: browserVideoWorker(),
+    files: opfsFiles,
+  })
+
   const dataRuntime: DataRuntime = {
     db,
     scopeInfo,
@@ -449,6 +534,40 @@ export function createAppRuntime(o: RuntimeOptions) {
     requestSync: () => engine.requestSync("manual"),
     clockSkewMs: () => 0,
     syncStatus: engine.status,
+    viewer: () => auth.getSession(),
+    writer,
+    live: {
+      boardAction: (eventKey, baseRev, action) =>
+        sendBoardAction(
+          { api, db, games: o.games, now: clock.now, newId: ids.newId },
+          eventKey,
+          baseRev,
+          action
+        ),
+      changePassword: (current, next) => changePassword({ api }, current, next),
+      restore: (entity, id) =>
+        restoreRecord(
+          { api, db, games: o.games, now: clock.now, newId: ids.newId },
+          entity,
+          id
+        ),
+      refreshPitMap: (eventKey) =>
+        refreshPitMap({ api, db, now: clock.now }, eventKey),
+    },
+    videos,
+    admin: {
+      saveGuestAccess: (eventKey, next) =>
+        saveGuestAccess(liveDeps(), eventKey, next),
+      refreshUsers: () => refreshUsers(liveDeps()),
+      createUser: (input) => createUser(liveDeps(), input),
+      patchUser: (userId, patch) => patchUser(liveDeps(), userId, patch),
+      revokeSessions: (userId) => revokeSessions(liveDeps(), userId),
+      refreshAudit: (eventKey) => refreshAudit(liveDeps(), eventKey),
+      fetchOptional: (path, schema) => fetchOptional({ api }, path, schema),
+      patchEventSettings: (eventKey, patch) =>
+        patchEventSettings(writer, eventKey, patch),
+      setTeamNumber: (n) => setTeamNumber(writer, n),
+    },
   }
 
   return {
@@ -459,6 +578,7 @@ export function createAppRuntime(o: RuntimeOptions) {
     capabilities,
     activeEventKey: activeEventKey as ExternalStore<string | null>,
     mqttStatus: mqttStatus as ExternalStore<MqttStatus | null>,
+    presence: presence as ExternalStore<ReadonlyMap<string, PresenceEntry>>,
     minClientVersion: minClientVersion as ExternalStore<string | null>,
     dataRuntime,
     isOnline: o.isOnline,
@@ -467,6 +587,12 @@ export function createAppRuntime(o: RuntimeOptions) {
     setActiveEvent,
     acquireSession,
     afterSignIn,
+    push,
+    signOut,
+    /** Settings → Storage: transport health, this device's id, stop sync before a cache reset */
+    transportHealth: () => health.snapshot(),
+    deviceId: () => auth.deviceId(),
+    quiesce: stopTransports,
     /** settled when queued session steps finish (tests) */
     whenSettled: () => chain,
     onSessionEnded(

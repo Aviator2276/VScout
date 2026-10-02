@@ -9,6 +9,7 @@ import { FormPage } from "./form-page"
 import type { GallerySearch } from "./gallery-search"
 import { MqttProbePage } from "./mqtt-probe-page"
 import { OverlaysPage } from "./overlays-page"
+import { ScreensPage } from "./screens-page"
 import { StatesPage } from "./states-page"
 
 const PAGE_LABELS: Record<GallerySearch["show"], string> = {
@@ -16,6 +17,7 @@ const PAGE_LABELS: Record<GallerySearch["show"], string> = {
   states: "States",
   overlays: "Overlays",
   form: "Form",
+  screens: "Screens",
   mqtt: "MQTT",
 }
 
@@ -89,6 +91,7 @@ export function GalleryPage({
       {search.show === "states" ? <StatesPage /> : null}
       {search.show === "overlays" ? <OverlaysPage /> : null}
       {search.show === "form" ? <FormPage /> : null}
+      {search.show === "screens" ? <ScreensPage /> : null}
       {search.show === "mqtt" ? <MqttProbePage /> : null}
     </StackPage>
   )

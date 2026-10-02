@@ -124,6 +124,21 @@ export const wireScoutEntry = (o: Partial<WireRecord<"scoutEntry">> = {}) =>
     o
   )
 
+export const wirePitScouting = (o: Partial<WireRecord<"pitScouting">> = {}) =>
+  build(
+    "pitScouting",
+    {
+      ...ownedMeta(),
+      gameId: TEST_GAME,
+      schemaVersion: 1,
+      data: { "pit.gizmoGrabber": "claw" },
+      teamNumber: 254,
+      robot: { drivetrain: "swerve" },
+      photos: [],
+    },
+    o
+  )
+
 export const wirePostScouting = (o: Partial<WireRecord<"postScouting">> = {}) =>
   build(
     "postScouting",

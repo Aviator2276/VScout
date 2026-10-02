@@ -5,6 +5,13 @@ import type { LinkRenderProps } from "@/components/list/list"
 
 export function RouterAnchor({ href, className, children }: LinkRenderProps) {
   const router = useRouter()
+  // other sites open in a new tab (an installed PWA would otherwise leave the app)
+  if (/^https?:\/\//.test(href))
+    return (
+      <a href={href} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    )
   const click = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
       return
