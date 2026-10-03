@@ -4,6 +4,8 @@
 // the caller through lib/api/adapters (ADR-071).
 import type { Clock } from "@/lib/clock"
 import { logger } from "@/lib/logger"
+import { approxBytes, describeRequest } from "@/lib/network/describe-request"
+import type { NetworkTelemetry } from "@/lib/network/network-telemetry"
 import { decodeProblem } from "./adapters/problem-adapter"
 import { ApiError, OfflineError, parseRetryAfter } from "./errors"
 import { TIMEOUTS, TransportError } from "./transport/api-transport"
@@ -32,7 +34,12 @@ export interface RequestOptions {
   /** auth endpoints carry no bearer token and never trigger a refresh */
   anonymous?: boolean
   headers?: Record<string, string>
+  /** measured but not listed under Recent in the Sync sheet (the ping probe) */
+  quiet?: boolean
 }
+
+/** Requests this small in both directions are latency samples (ping). */
+const PING_BYTES = 2_048
 
 export interface ApiClientDeps {
   transports: Record<TransportId, ApiTransport>
@@ -53,6 +60,8 @@ export interface ApiClientDeps {
     latencyMs: number
     cls: RequestClass
   }) => void
+  /** the Sync Status notch's telemetry (ADR-079) */
+  telemetry?: Pick<NetworkTelemetry, "begin" | "ping">
 }
 
 export interface ApiClient {
@@ -91,13 +100,31 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
       now,
     })
     const failures: Array<string> = []
+    const bytesOut = approxBytes(opts.body)
     for (const id of order) {
       const transport = deps.transports[id]
+      const end = deps.telemetry?.begin({
+        dir: opts.body === undefined ? "down" : "up",
+        via: id,
+        label: describeRequest(opts.method, opts.path),
+        ...(opts.quiet ? { quiet: true } : {}),
+      })
       try {
         const res = await transport.send(
           buildRequest(opts),
           (deps.timeouts ?? TIMEOUTS)[opts.class][id]
         )
+        if (end) {
+          const bytesIn = approxBytes(res.body)
+          end({
+            ok: res.status < 400,
+            bytesOut,
+            bytesIn,
+            reached: true,
+          })
+          if (bytesOut < PING_BYTES && bytesIn < PING_BYTES)
+            deps.telemetry?.ping(res.latencyMs)
+        }
         deps.health.recordSuccess(id, res.latencyMs)
         deps.onResponse?.({
           transport: id,
@@ -107,6 +134,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
         })
         return res
       } catch (error) {
+        end?.({ ok: false, bytesOut, bytesIn: 0, reached: false })
         if (!(error instanceof TransportError)) throw error
         deps.health.recordFailure(id, deps.clock.now())
         failures.push(`${id}:${error.kind}`)

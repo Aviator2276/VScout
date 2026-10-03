@@ -41,6 +41,7 @@ describe("entityName", () => {
   it("names known entities and passes unknown ones through", () => {
     expect(entityName("scoutEntry")).toBe("match scouting")
     expect(entityName("picklistEntry")).toBe("picklist entry")
+    expect(entityName("mediaAsset")).toBe("photo")
     expect(entityName("somethingNew")).toBe("somethingNew")
   })
 })

@@ -58,7 +58,9 @@ test("sign in → pick an event → tabs, then offline", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Teams" })
   ).toBeVisible()
-  await expect(page.getByText(/You're offline/)).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: /^Sync status: offline/ })
+  ).toBeVisible()
 
   // a cold start offline needs the service worker; Playwright's WebKit can't run it (pwa-offline §13.2)
   if (browserName === "chromium") {
@@ -71,7 +73,9 @@ test("sign in → pick an event → tabs, then offline", async ({
     await expect(
       page.getByRole("heading", { level: 1, name: "Teams" })
     ).toBeVisible()
-    await expect(page.getByText(/You're offline/)).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: /^Sync status: offline/ })
+    ).toBeVisible()
   }
 })
 

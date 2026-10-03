@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw"
 import { beforeEach, describe, expect, it } from "vitest"
 import { createRpcChannel } from "@/lib/mqtt/rpc-channel"
+import { createNetworkTelemetry } from "@/lib/network/network-telemetry"
 import { seqIds } from "@/testing/db"
 import { testId } from "@/testing/factories/ids"
 import { wireEnvelope, wireMatch } from "@/testing/factories/wire"
@@ -274,6 +275,45 @@ describe("api client", () => {
         anonymous: true,
       })
     ).rejects.toBeInstanceOf(OfflineError)
+  })
+
+  it("reports every attempt to the telemetry: direction, bytes, outcome, ping (ADR-079)", async () => {
+    server.use(
+      http.get(`${API}/meta`, ({ request }) =>
+        request.headers.get("x-test-transport") === "mqtt"
+          ? HttpResponse.json({ apiVersion: 1 })
+          : HttpResponse.error()
+      )
+    )
+    const { deps } = setup()
+    const network = createNetworkTelemetry(() => Date.now())
+    const client = createApiClient({ ...deps, telemetry: network })
+    // HTTP fails at the transport level, then RPC answers: two attempts
+    await client.request({
+      method: "GET",
+      path: "/meta",
+      class: "bootstrap",
+      anonymous: true,
+      quiet: true,
+    })
+    const s = network.getSnapshot()
+    expect(s.outcomes).toEqual([false, true])
+    expect(s.transfers).toEqual([])
+    expect(s.pingMs).not.toBeNull()
+    expect(s.activeDown).toBe(0)
+    // a body goes up and is listed
+    await client
+      .request({
+        method: "POST",
+        path: "/comments",
+        class: "write",
+        body: { body: "hi" },
+      })
+      .catch(() => undefined)
+    expect(network.getSnapshot().transfers[0]).toMatchObject({
+      dir: "up",
+      label: "Save comments",
+    })
   })
 
   it("sends nothing over MQTT when the backend lacks mqttRpc", async () => {

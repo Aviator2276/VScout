@@ -13,6 +13,8 @@ const noop = () => () => undefined
 
 export function useSyncSummary(): SyncSummaryInput & {
   lastSuccessAt: number | undefined
+  /** the engine paused until the user signs in again */
+  signInNeeded: boolean
 } {
   const { db, syncStatus } = useDataRuntime()
   const online = useOnline()
@@ -39,5 +41,6 @@ export function useSyncSummary(): SyncSummaryInput & {
       status.phase === "bootstrapping",
     ...counts,
     lastSuccessAt: status.lastSuccessAt,
+    signInNeeded: status.phase === "paused-auth",
   }
 }

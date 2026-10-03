@@ -1,5 +1,6 @@
 // What the data-state hooks need from the running app: the db, the sync status mirror and whether
 // the engine can sync right now. Provided once by the app shell (src/app), mocked in tests.
+import type { NetworkTelemetry } from "@/lib/network/network-telemetry"
 import { createContext, use, useSyncExternalStore } from "react"
 import type { VScoutDB } from "@/lib/db/schema"
 import type { ScopeInfoStore } from "@/lib/sync/scope-info"
@@ -86,6 +87,8 @@ export interface DataRuntime {
   clockSkewMs?: () => number
   /** the engine's phase and last success, for the sync pill */
   syncStatus?: ExternalStore<SyncStatus>
+  /** transfers, speeds and ping for the Sync Status notch (ADR-079) */
+  network?: NetworkTelemetry
   /** the signed-in user; a stable object until the session changes (re-read on subscribeSync) */
   viewer?: () => Viewer | null
   /** feature writes go through lib/sync/mutate with these deps */

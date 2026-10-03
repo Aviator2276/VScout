@@ -4,6 +4,9 @@ import { useRouter } from "@tanstack/react-router"
 import { useEffect } from "react"
 import type { ReactNode } from "react"
 import { ShellBannersContext } from "@/components/layout/shell-banners"
+import { ShellNotchContext } from "@/components/layout/shell-notch"
+import { SyncNotch } from "@/features/sync-status/components/sync-notch"
+import { SyncSheet } from "@/features/sync-status/components/sync-sheet"
 import { useToast } from "@/components/overlays/toaster"
 import { DataRuntimeContext } from "@/lib/db/react/data-runtime"
 import { getTabMemory } from "@/stores/tab-memory"
@@ -58,13 +61,19 @@ export function SessionRuntime({
     <DataRuntimeContext value={app.dataRuntime}>
       <SessionEffects />
       <ShellBannersContext value={<SessionBanners />}>
-        <NotificationCenterRuntime app={app}>
-          <FeedbackProvider>{children}</FeedbackProvider>
-        </NotificationCenterRuntime>
+        <ShellNotchContext value={renderNotch}>
+          <NotificationCenterRuntime app={app}>
+            <FeedbackProvider>{children}</FeedbackProvider>
+          </NotificationCenterRuntime>
+        </ShellNotchContext>
       </ShellBannersContext>
+      <SyncSheet onNavigate={(href) => void router.navigate({ href })} />
     </DataRuntimeContext>
   )
 }
+
+/** Every signed-in StackPage shows the Sync Status notch (features/sync-status.md). */
+const renderNotch = (attached: boolean) => <SyncNotch attached={attached} />
 
 /** Effects that read Dexie: they live inside the data runtime. */
 function SessionEffects() {

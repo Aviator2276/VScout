@@ -4,6 +4,8 @@
 // module load: the shell prerender runs in Node (routing-auth §1).
 import { decodeMeta } from "@/lib/api/adapters/meta-adapter"
 import { createApiClient } from "@/lib/api/api-client"
+import { attachNetworkMonitor } from "@/lib/network/network-monitor"
+import { createNetworkTelemetry } from "@/lib/network/network-telemetry"
 import type { ApiClient } from "@/lib/api/api-client"
 import { createCapabilitiesStore } from "@/lib/api/capabilities"
 import type { CapabilitiesStore } from "@/lib/api/capabilities"
@@ -154,6 +156,8 @@ export function createAppRuntime(o: RuntimeOptions) {
   const db = o.db
   const tokens = createTokenStore()
   const health = new TransportHealth()
+  /** what's moving and how fast, for the Sync Status notch (ADR-079) */
+  const network = createNetworkTelemetry(() => clock.now())
   const capabilities: CapabilitiesStore = createCapabilitiesStore()
   const scopeInfo: ScopeInfoStore = createScopeInfoStore(() => db)
   const activeEventKey = createStore<string | null>(null)
@@ -202,6 +206,7 @@ export function createAppRuntime(o: RuntimeOptions) {
     clientVersion: o.appVersion,
     accessToken: () => tokens.get(),
     refresh: () => authRef?.refresh() ?? Promise.resolve(false),
+    telemetry: network,
   })
 
   const refresher = createRefresher({
@@ -372,6 +377,7 @@ export function createAppRuntime(o: RuntimeOptions) {
         else void auth.refresh()
       },
       onReload: () => void setKv(db, "needsAppUpdate", true),
+      onTraffic: (bytes) => network.live(bytes),
     })
     mqtt = conn
     const offPresence = conn.presence.presence.subscribe(() =>
@@ -471,8 +477,24 @@ export function createAppRuntime(o: RuntimeOptions) {
     })
     const disconnect = connectMqtt(await deviceId())
     const detachStream = attachChangeStream()
+    const detachNetwork = attachNetworkMonitor({
+      telemetry: network,
+      isOnline: o.isOnline,
+      isVisible: () => o.document.visibilityState === "visible",
+      probe: () =>
+        api.request({
+          method: "GET",
+          path: "/meta",
+          class: "delta",
+          anonymous: true,
+          quiet: true,
+        }),
+      now: () => clock.now(),
+      window: o.window,
+    })
     void push.reconcile()
     return async () => {
+      detachNetwork()
       detachTriggers()
       detachStream()
       disconnect()
@@ -589,6 +611,7 @@ export function createAppRuntime(o: RuntimeOptions) {
     requestSync: () => engine.requestSync("manual"),
     clockSkewMs: () => 0,
     syncStatus: engine.status,
+    network,
     viewer: () => auth.getSession(),
     writer,
     live: {

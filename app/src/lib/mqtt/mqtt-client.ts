@@ -61,6 +61,8 @@ export interface MqttDeps {
   onInbox?: (m: InboxMessage) => void
   onAdminAlert?: (a: AdminAlert) => void
   onReload?: (minClientVersion: string) => void
+  /** bytes pushed to this device (live changes, presence); RPC responses are counted by lib/api */
+  onTraffic?: (bytes: number) => void
   now?: () => number
   random?: () => number
   lanes?: LaneOptions
@@ -160,7 +162,11 @@ export function createMqttConnection(deps: MqttDeps): MqttConnection {
     t.on("connectFailed", (code) => handle({ type: "CONNACK_FAILED", code }))
     t.on("close", () => handle({ type: "CLOSED" }))
     t.on("disconnect", (code) => handle({ type: "DISCONNECT", code }))
-    t.on("message", (topic, payload, props) => router(topic, payload, props))
+    t.on("message", (topic, payload, props) => {
+      if (deps.onTraffic && !topic.startsWith("vscout/rpc/"))
+        deps.onTraffic(payload.length)
+      router(topic, payload, props)
+    })
     transport = t
     return t
   }
