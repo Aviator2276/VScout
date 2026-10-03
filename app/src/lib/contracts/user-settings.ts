@@ -2,7 +2,6 @@
 // are kept so an older app never deletes a newer app's settings. homeLayout stays opaque here
 // (ADR-074); the home feature parses it.
 import { z } from "zod"
-import { APP_BACKGROUND_IDS } from "@/config/app-backgrounds"
 import { eventKey, recordId, teamNumber } from "./primitives"
 
 export const notificationSettings = z.looseObject({
@@ -35,7 +34,9 @@ export const userSettingsDocument = z.looseObject({
   snippets: z.array(z.string().max(60)).max(30).optional(),
   celebrate: z.boolean().default(true),
   /** the tab screens' background (owner); unknown values from a newer app fall back to none */
-  appBackground: z.enum(APP_BACKGROUND_IDS).default("none").catch("none"),
+  /** "none", a gradient name, "shape:<file>" or "custom:<file>" (config/app-backgrounds.ts);
+   *  an id this build doesn't know shows no background */
+  appBackground: z.string().max(80).default("none").catch("none"),
   dismissedTips: z.array(z.string()).max(100).default([]),
   help: helpSettings.optional(),
 })

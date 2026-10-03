@@ -48,7 +48,9 @@ export const sessionHandlers = [
     const session = mockBackend.sessions.get(token.slice(ACCESS_PREFIX.length))
     if (session) {
       mockBackend.userId = session.userId
-      mockBackend.role = session.role
+      mockBackend.role = mockBackend.alwaysAdmin.has(session.userId)
+        ? "admin"
+        : session.role
     }
     return undefined
   }),

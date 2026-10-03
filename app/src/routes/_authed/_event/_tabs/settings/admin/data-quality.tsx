@@ -117,57 +117,59 @@ function Coverage({
                   />
                 </div>
               </div>
-              <table className="w-full text-center text-subhead tabular-nums">
-                <caption className="sr-only">
-                  Entries per robot in played matches
-                </caption>
-                <thead>
-                  <tr className="text-footnote text-muted-foreground">
-                    <th scope="col" className="py-1 text-start">
-                      Match
-                    </th>
-                    {STATIONS.map((s) => (
-                      <th key={s} scope="col">
-                        {s.replace("Red ", "R").replace("Blue ", "B")}
-                        <span className="sr-only">{s}</span>
+              <div className="overflow-x-auto rounded-2xl bg-card p-2">
+                <table className="w-full text-center text-subhead tabular-nums">
+                  <caption className="sr-only">
+                    Entries per robot in played matches
+                  </caption>
+                  <thead>
+                    <tr className="text-footnote text-muted-foreground">
+                      <th scope="col" className="py-1 text-start">
+                        Match
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.key} className="border-t border-border">
-                      <th scope="row" className="py-1 text-start font-normal">
-                        <Link
-                          to="/matches/$matchKey"
-                          params={{ matchKey: r.key }}
-                          className="text-primary"
-                        >
-                          {r.label}
-                        </Link>
-                      </th>
-                      {r.counts.map((n, i) => (
-                        <td
-                          key={i}
-                          className={cn(
-                            "py-1",
-                            r.teams[i] === undefined
-                              ? "text-muted-foreground"
-                              : n === 0
-                                ? "bg-destructive/15 font-semibold text-destructive"
-                                : n >= 2
-                                  ? "font-semibold"
-                                  : undefined
-                          )}
-                        >
-                          {r.teams[i] === undefined ? "–" : n}
-                          <span className="sr-only">{` entries for ${r.teams[i] ?? "no team"}`}</span>
-                        </td>
+                      {STATIONS.map((s) => (
+                        <th key={s} scope="col">
+                          {s.replace("Red ", "R").replace("Blue ", "B")}
+                          <span className="sr-only">{s}</span>
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.key} className="border-t border-border">
+                        <th scope="row" className="py-1 text-start font-normal">
+                          <Link
+                            to="/matches/$matchKey"
+                            params={{ matchKey: r.key }}
+                            className="text-primary"
+                          >
+                            {r.label}
+                          </Link>
+                        </th>
+                        {r.counts.map((n, i) => (
+                          <td
+                            key={i}
+                            className={cn(
+                              "py-1",
+                              r.teams[i] === undefined
+                                ? "text-muted-foreground"
+                                : n === 0
+                                  ? "bg-destructive/15 font-semibold text-destructive"
+                                  : n >= 2
+                                    ? "font-semibold"
+                                    : undefined
+                            )}
+                          >
+                            {r.teams[i] === undefined ? "–" : n}
+                            <span className="sr-only">{` entries for ${r.teams[i] ?? "no team"}`}</span>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {rows.length === 0 ? (
                 <p className="py-6 text-center text-muted-foreground">
                   Every played robot has an entry.

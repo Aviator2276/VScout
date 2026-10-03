@@ -168,7 +168,7 @@ export function SwipeRow({
             close()
           }
         }}
-        className="relative touch-pan-y bg-background"
+        className="relative touch-pan-y bg-card"
       >
         {children}
       </m.div>

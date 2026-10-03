@@ -108,6 +108,8 @@ export const mockBackend = {
   loseNextResponse: false,
   /** push subscriptions by deviceId (push-contract §2.2) */
   pushSubscriptions: new Map<string, Record<string, unknown>>(),
+  /** dev server: accounts that are always admins (alex, admin), whatever a session says */
+  alwaysAdmin: new Set<string>(),
   /** demo events (AD7a): eventKey → what each one made */
   demoEvents: new Map<string, Array<MadeRecord>>(),
   /** how many writes were actually applied (not replayed) */
@@ -160,6 +162,7 @@ export const mockBackend = {
     this.idempotency = new Map()
     this.pushSubscriptions = new Map()
     this.demoEvents = new Map()
+    this.alwaysAdmin = new Set()
     this.loseNextResponse = false
     this.applied = 0
     this.tick = 0

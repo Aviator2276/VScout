@@ -370,7 +370,12 @@ function MatchList({
   }, [autoScroll, target])
 
   const listItems = useMemo(
-    () => items.map((it) => ({ ...it, sticky: it.kind === "header" })),
+    () =>
+      items.map((it) => ({
+        ...it,
+        sticky: it.kind === "header",
+        plain: it.kind === "now",
+      })),
     [items]
   )
 
@@ -430,7 +435,7 @@ function MatchList({
               <span className="h-px flex-1 bg-primary/40" />
             </div>
           ) : (
-            <div className="flex h-8 items-center bg-background/95 px-1 text-footnote text-muted-foreground uppercase backdrop-blur">
+            <div className="flex h-8 items-center px-3 text-footnote text-muted-foreground uppercase">
               {it.title}
             </div>
           )

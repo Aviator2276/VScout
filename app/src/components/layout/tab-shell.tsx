@@ -12,6 +12,7 @@ import {
   MessageCircle,
   UsersRound,
 } from "@/components/icons/icon"
+import { appBackground } from "@/config/app-backgrounds"
 import { usePrefs } from "@/hooks/use-prefs"
 import { useTabBarHidden } from "@/hooks/use-tab-bar"
 import { scrollStep, tabBarStore } from "@/stores/tab-bar"
@@ -22,6 +23,7 @@ import {
   tabForPath,
 } from "@/stores/tab-memory"
 import type { TabId } from "@/stores/tab-memory"
+import { AppBackdrop } from "./app-backdrop"
 import { navigateBack } from "./navigate-back"
 import { canStartSwipe, swipeAction } from "./swipe-nav"
 import { TabBar } from "./tab-bar"
@@ -140,17 +142,18 @@ export function TabShell({
     }
   }, [pathname])
 
-  // The chosen background shows behind the tab screens only (owner), never on pushed pages.
-  const background = usePrefs().appBackground
+  // The chosen background shows behind the tab screens only (owner); on pushed pages it fades to
+  // the plain background (AppBackdrop) instead of the page covering it.
+  const background = appBackground(usePrefs().appBackground)
   const onRoot = isTabRoot(pathname)
   useEffect(() => {
     const root = document.documentElement
-    if (onRoot && background !== "none") root.dataset.appBg = background
+    if (background.style) root.dataset.appBg = background.id
     else delete root.dataset.appBg
     return () => {
       delete root.dataset.appBg
     }
-  }, [onRoot, background])
+  }, [background])
 
   // Bottom-fixed controls (composer, Record Pick, toasts) sit on --tabbar-offset (styles.css).
   useEffect(() => {
@@ -226,6 +229,7 @@ export function TabShell({
 
   return (
     <>
+      <AppBackdrop background={background} visible={onRoot} />
       {children}
       <TabBar
         items={TABS.map((t) => ({

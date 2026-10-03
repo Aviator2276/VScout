@@ -212,6 +212,13 @@ export const adminHandlers = [
       if (mockBackend.role !== "admin") return problem(403, "role_required")
       const user = mockBackend.users.get(String(params.id))
       if (!user) return problem(404, "not_found")
+      // the dev server's built-in admins stay admins (owner)
+      if (
+        mockBackend.alwaysAdmin.has(user.id) &&
+        ((body.role !== undefined && body.role !== "admin") ||
+          body.active === false)
+      )
+        return problem(409, "last_admin")
       const admins = [...mockBackend.users.values()].filter(
         (u) => u.role === "admin" && u.active !== false
       )

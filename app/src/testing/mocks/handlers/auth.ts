@@ -92,7 +92,9 @@ export const authHandlers = [
       const session = sessionFromCookie(request)
       if (!session) return problemResponse(401, "refresh_invalid")
       mockBackend.userId = session.userId
-      mockBackend.role = session.role
+      mockBackend.role = mockBackend.alwaysAdmin.has(session.userId)
+        ? "admin"
+        : session.role
       return HttpResponse.json(
         wireSession({
           deviceId: testId(8000),

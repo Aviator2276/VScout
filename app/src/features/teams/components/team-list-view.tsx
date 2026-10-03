@@ -355,7 +355,7 @@ export function TeamListView({
                     />
                   </SwipeRow>
                 ) : (
-                  <div className="flex h-8 items-center bg-background/95 px-1 text-footnote text-muted-foreground uppercase backdrop-blur">
+                  <div className="flex h-8 items-center px-3 text-footnote text-muted-foreground uppercase">
                     {it.title}
                   </div>
                 )

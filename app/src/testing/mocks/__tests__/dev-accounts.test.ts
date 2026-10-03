@@ -37,4 +37,30 @@ describe("dev mock accounts (pnpm mock:api)", () => {
   it("an unknown user is refused", async () => {
     expect((await login("nobody")).status).toBe(401)
   })
+
+  it("alex and admin stay admins: restarts restore them, demotion is refused (owner)", async () => {
+    expect((await login("admin")).body.user?.role).toBe("admin")
+    // a saved state where alex was demoted, with a scouter session on a device
+    const alex = [...mockBackend.users.values()].find(
+      (u) => u.username === "alex"
+    )
+    if (!alex) throw new Error("no alex")
+    mockBackend.users.set(alex.id, { ...alex, role: "scouter" })
+    mockBackend.sessions.set("old", { userId: alex.id, role: "scouter" })
+    seedDevData()
+    expect(mockBackend.users.get(alex.id)?.role).toBe("admin")
+    expect(mockBackend.sessions.get("old")?.role).toBe("admin")
+
+    const { body } = await login("alex")
+    expect(body.user?.role).toBe("admin")
+    const res = await fetch(`${API}/admin/users/${alex.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "demote-1",
+      },
+      body: JSON.stringify({ role: "scouter" }),
+    })
+    expect(res.status).toBe(409)
+  })
 })

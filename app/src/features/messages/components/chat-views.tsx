@@ -506,13 +506,16 @@ export function NewDmSheet({
               : `No one matches ‘${q.trim()}’`}
           </p>
         ) : (
-          <ul aria-label="People" className="flex flex-col">
+          <ul
+            aria-label="People"
+            className="flex flex-col overflow-hidden rounded-2xl bg-card"
+          >
             {list.map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
                   onClick={() => onPick(p.id)}
-                  className="flex min-h-12 w-full items-center border-b border-border/60 px-1 text-left text-body"
+                  className="flex min-h-12 w-full items-center border-b border-border/60 px-3 text-left text-body in-[li:last-child]:border-b-0"
                 >
                   {p.name}
                 </button>

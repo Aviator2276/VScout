@@ -294,7 +294,10 @@ export function AddTeamsSheet({
               : `No team matches ‘${q.trim()}’`}
           </p>
         ) : (
-          <ul aria-label="Teams" className="flex flex-col">
+          <ul
+            aria-label="Teams"
+            className="flex flex-col overflow-hidden rounded-2xl bg-card"
+          >
             {list.map((t) => {
               const on = chosen.includes(t.teamNumber)
               return (
@@ -303,7 +306,7 @@ export function AddTeamsSheet({
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggle(t.teamNumber)}
-                    className="flex min-h-12 w-full items-center gap-3 border-b border-border/60 px-1 text-left"
+                    className="flex min-h-12 w-full items-center gap-3 border-b border-border/60 px-3 text-left in-[li:last-child]:border-b-0"
                   >
                     <span className="w-14 font-heading text-headline tabular-nums">
                       {t.teamNumber}

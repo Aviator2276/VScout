@@ -123,7 +123,9 @@ export function session() {
       id: USER_ID,
       username: CREDENTIALS.username,
       displayName: "Alex",
-      role: "admin",
+      // e2e only: specs that need an admin call seedBackend("admin"); the dev mock's alex is
+      // always an admin (src/testing/mocks/seed-dev.ts)
+      role: "scouter",
       teamNumber: 2276,
     },
   }

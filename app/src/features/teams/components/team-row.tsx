@@ -70,7 +70,7 @@ export const TeamRow = memo(function TeamRowImpl({
       role="listitem"
       aria-setsize={setSize}
       aria-posinset={position}
-      className="relative flex min-h-16 items-center gap-2 border-b border-border/60 bg-background py-2 pe-1 active:bg-muted"
+      className="relative flex min-h-16 items-center gap-2 border-b border-border/60 bg-card py-2 ps-3 pe-1 active:bg-muted"
     >
       <span
         className={cn(

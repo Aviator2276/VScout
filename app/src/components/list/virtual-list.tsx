@@ -1,6 +1,7 @@
 // A long list that scrolls with the page (ui-design-system §8, ui-patterns §3: virtualize over 50
 // rows). Rows and section headers are one flat array; the current section header stays pinned
-// under the nav bar. Only the visible window (+ overscan) is in the DOM.
+// under the nav bar. Only the visible window (+ overscan) is in the DOM. Rows between headers sit on
+// one rounded card (rows use bg-card and a bottom hairline; the card's last row drops it).
 import {
   defaultRangeExtractor,
   useWindowVirtualizer,
@@ -16,11 +17,14 @@ import {
   useState,
 } from "react"
 import type { ReactNode, Ref } from "react"
+import { cn } from "@/lib/utils"
 
 export interface VirtualItem {
   id: string
   /** headers pin while their section is on screen */
   sticky?: boolean
+  /** not a row: sits outside the rounded cards and splits them (a "Now" divider) */
+  plain?: boolean
 }
 
 /** Scroll commands the screen can issue (Jump to Now). */
@@ -123,12 +127,26 @@ export function VirtualList<TItem extends VirtualItem>({
         const item = items[v.index]
         if (!item) return null
         const pinned = item.sticky && activeSticky === v.index
+        // rows between headers form one rounded card, like an iOS inset-grouped list (owner)
+        const prev = items[v.index - 1]
+        const next = items[v.index + 1]
+        const isRow = (it: TItem | undefined) =>
+          it !== undefined && it.sticky !== true && it.plain !== true
+        const groupStart = isRow(item) && !isRow(prev)
+        const groupEnd = isRow(item) && !isRow(next)
         return (
           <div
             key={v.key}
             data-index={v.index}
             ref={virtualizer.measureElement}
-            className={pinned ? "z-10" : undefined}
+            data-group-end={groupEnd || undefined}
+            className={cn(
+              // a pinned header floats over the rows on glass, not a solid band
+              pinned && "z-10 rounded-xl glass-bar",
+              isRow(item) && "overflow-hidden bg-card",
+              groupStart && "rounded-t-2xl",
+              groupEnd && "mb-3 rounded-b-2xl shadow-xs"
+            )}
             style={
               pinned
                 ? { position: "sticky", top: STICKY_TOP }

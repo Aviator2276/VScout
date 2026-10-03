@@ -26,7 +26,11 @@ const EVENTS = [
   },
 ]
 
-/** Local accounts: alex is the team's admin; sam shows the scouter view. Same password. */
+/**
+ * Local accounts, same password: alex is the team's admin, sam shows the scouter view, and admin is
+ * a spare that is always an admin. Admin accounts here stay admins (owner): every start restores
+ * their role, each request acts as admin, and the mock refuses to demote them.
+ */
 const DEV_ACCOUNTS = [
   {
     id: MOCK_USER_ID,
@@ -40,6 +44,12 @@ const DEV_ACCOUNTS = [
     displayName: "Sam Chen",
     role: "scouter",
   },
+  {
+    id: "01900000-0000-7000-8000-000000009002",
+    username: "admin",
+    displayName: "Dev Admin",
+    role: "admin",
+  },
 ] as const
 
 export function seedDevData(): void {
@@ -48,17 +58,21 @@ export function seedDevData(): void {
   mockBackend.requireSignIn = true
   mockBackend.perDeviceSessions = true
   mockBackend.realClock = true
-  // a restored state (FX-61) already has everything
-  if (mockBackend.log.length > 0) return
   for (const a of DEV_ACCOUNTS) {
+    if (a.role === "admin") mockBackend.alwaysAdmin.add(a.id)
+    const user = mockBackend.users.get(a.id)
+    // a restored state keeps its users; a dev account only comes back if it's missing or demoted
+    const fresh = !user || user.role !== a.role || user.active === false
     mockBackend.accounts.set(a.username, {
       ...a,
       password: MOCK_CREDENTIALS.password,
     })
+    if (!fresh) continue
+    const rev = (user?.rev ?? 0) + 1
     mockBackend.users.set(a.id, {
       id: a.id,
-      rev: 1,
-      updatedAt: "2026-03-20T15:00:00.000Z",
+      rev,
+      updatedAt: mockBackend.now(),
       username: a.username,
       displayName: a.displayName,
       role: a.role,
@@ -71,6 +85,7 @@ export function seedDevData(): void {
         "user",
         wireUser({
           id: a.id,
+          rev,
           username: a.username,
           displayName: a.displayName,
           role: a.role,
@@ -78,6 +93,12 @@ export function seedDevData(): void {
       )
     )
   }
+  // sessions signed in before a role fix act as the account's real role
+  for (const [sid, s] of mockBackend.sessions)
+    if (mockBackend.alwaysAdmin.has(s.userId))
+      mockBackend.sessions.set(sid, { ...s, role: "admin" })
+  // a restored state (FX-61) already has the events
+  if (mockBackend.log.some((e) => e.entity === "event")) return
   for (const e of EVENTS)
     mockBackend.append(
       "global",

@@ -167,7 +167,7 @@ export const MatchRow = memo(function MatchRowImpl({
       aria-setsize={setSize}
       aria-posinset={position}
       // wraps at the largest text sizes so nothing scrolls sideways (AX3, ui-design-system §6.2)
-      className="relative flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 bg-background py-2 ps-3 pe-1 active:bg-muted"
+      className="relative flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 bg-card py-2 ps-3 pe-1 active:bg-muted"
     >
       {/* alliance stripe: red top half, blue bottom half */}
       <span

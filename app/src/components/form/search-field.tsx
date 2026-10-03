@@ -66,7 +66,7 @@ export function SearchField({
           ) : null}
         </div>
         {actions ? (
-          <div className="flex max-w-40 shrink-0 items-center overflow-hidden ps-1 transition-[max-width,opacity,translate] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-focus-within/search:max-w-0 group-focus-within/search:translate-x-6 group-focus-within/search:opacity-0 motion-reduce:transition-none">
+          <div className="flex max-w-40 shrink-0 items-center overflow-hidden ps-1 transition-[max-width,opacity,translate] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-has-[input:focus]/search:max-w-0 group-has-[input:focus]/search:translate-x-6 group-has-[input:focus]/search:opacity-0 motion-reduce:transition-none">
             {actions}
           </div>
         ) : null}

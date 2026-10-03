@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 860" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="h" width="56" height="97" patternUnits="userSpaceOnUse" patternTransform="scale(0.8)">
+      <path d="M28 0 L56 16 V48 L28 64 L0 48 V16Z M28 64 V97 M0 113 V97 L28 81" fill="none" stroke="#5b7bd5" stroke-width="1.6"/>
+    </pattern>
+    <linearGradient id="g" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#dfe8ff"/><stop offset="1" stop-color="#f6f0ff"/>
+    </linearGradient>
+    <radialGradient id="m" cx="0.2" cy="0.1" r="1"><stop offset="0" stop-color="#fff"/><stop offset="0.7" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <mask id="k"><rect width="400" height="860" fill="url(#m)"/></mask>
+  </defs>
+  <rect width="400" height="860" fill="url(#g)"/>
+  <rect width="400" height="860" fill="url(#h)" opacity="0.35" mask="url(#k)"/>
+</svg>

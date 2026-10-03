@@ -331,7 +331,13 @@ Guests have no settings document: `GET`/`PATCH /me/settings` → `403 role_requi
 - `PATCH /me/settings` `{ baseRev, patch }`. `patch` is a JSON merge patch of top-level keys.
   `200` + full record (rev+1).
 - **MUST store and return unknown keys unchanged**, so an older app version never deletes keys a newer one wrote.
+  Keys the app writes today include `appBackground` (a free string such as `"aurora"`,
+  `"shape:bubbles"` or `"custom:team-photo"`; don't validate it against a list) and `homeLayout`,
+  whose placed widgets may carry `color` and `config` objects. Treat both as opaque JSON.
 - `409 rev_conflict` + `current` on a `baseRev` mismatch. The app re-applies its keys and retries.
+  **`current` MUST be the complete record** (`id`, `rev`, `updatedAt`, `userId`, every stored key), even
+  for a user whose document was never written: create it on first access rather than answering with
+  a partial placeholder. A partial `current` made "Keep Mine" loop forever in the app (NC-3).
 - Published only on the user's private MQTT topic (section 9.5).
 
 ### 5.5 Live alliance selection board
@@ -1034,6 +1040,26 @@ Rules:
 - [ ] Push: SSRF guard, upsert/move by device, 410 deletes, replayed writes don't double-notify, the payload matches section 10.5.
 - [ ] `426 upgrade_required` and the retained `sys/status` agree on `minClientVersion`.
 - [ ] A deploy leaves the previous build's assets in place.
+- [ ] Everything in section 14a: per-device sessions, real server times, the last-admin guard, a complete
+      `userSettings` `current` on 409, unknown settings keys kept, and the optional SSE stream and demo
+      events if you advertise them.
+
+## 14a. Added in the 2026-10-03 fixes round (the app and the mock API already use these)
+
+The mock API (`app/src/testing/mocks`, run with `make dev`) implements every item below, so you can
+compare behavior against it.
+
+| What | Where | Required? |
+|---|---|---|
+| Live changes over HTTP: `GET /sync/stream` (Server-Sent Events), `capabilities.changeStream` | section 6.2a | Optional. Without it, messages reach HTTP-only clients on the next sync (up to a minute) |
+| Demo events: `POST /admin/demo-events`, `DELETE /admin/demo-events/{eventKey}`, `capabilities.demoSeed` | section 6.2b | Optional. Without it, Settings → Admin → Demo Data says the server can't make them |
+| 👎 reaction | section 5.8 | MUST accept it |
+| `userSettings`: complete `current` on 409; opaque `appBackground` and `homeLayout` widget `color`/`config` | section 5.4 | MUST |
+| Real time everywhere: `serverTime` in `/meta`, `/me`, `/sync/changes`, and `createdAt`/`updatedAt` on records are the server's real clock (UTC ISO 8601) | sections 6, 7 | MUST. Wrong times show as "12:00" on every message and announcements "197 days ago" |
+| Sessions are per device: each device's HttpOnly refresh cookie is its own session, and every request acts as the user its access token belongs to. Signing in as one user on device B never changes device A | section 3.2 | MUST |
+| Never demote or deactivate the last active admin: `409 last_admin` on `PATCH /admin/users/{id}` | section 3.3 | MUST |
+| DMs and announcements notify: a new DM pushes to the other participant (`directMessages` preference), an announcement to everyone (`announcements` preference); urgent announcements use `priority: "urgent"` | section 10 | MUST (push) |
+| Announcements carry `priority: "normal" \| "urgent"`; the app shows urgent ones first and in the in-app banner | section 5.7 | MUST |
 
 ## 15. Open decisions for the backend author
 

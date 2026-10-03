@@ -212,11 +212,14 @@ export function RecordSheet({
               Every team has been picked or declined
             </p>
           ) : (
-            <ul aria-label="Available teams" className="flex flex-col">
+            <ul
+              aria-label="Available teams"
+              className="flex flex-col overflow-hidden rounded-2xl bg-card"
+            >
               {list.map((c) => (
                 <li
                   key={c.teamNumber}
-                  className="flex min-h-12 items-center gap-2 border-b border-border/60"
+                  className="flex min-h-12 items-center gap-2 border-b border-border/60 px-3 last:border-b-0"
                 >
                   <button
                     type="button"
@@ -295,11 +298,14 @@ export function HistorySheet({
             No picks recorded yet
           </p>
         ) : (
-          <ul aria-label="History" className="flex flex-col">
+          <ul
+            aria-label="History"
+            className="flex flex-col overflow-hidden rounded-2xl bg-card"
+          >
             {items.map((h) => (
               <li
                 key={h.id}
-                className="flex min-h-12 items-center gap-2 border-b border-border/60"
+                className="flex min-h-12 items-center gap-2 border-b border-border/60 px-3 last:border-b-0"
               >
                 <span className="flex-1 text-subhead">{h.text}</span>
                 <span className="text-footnote text-muted-foreground">

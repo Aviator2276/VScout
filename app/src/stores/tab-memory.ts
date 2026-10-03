@@ -267,8 +267,10 @@ export function navTransitionTypes(
   const b = trimSlash(to.pathname)
   if (a === b) return false
   if ([a, b].some((p) => NO_TRANSITION.has(p.split("/")[1] ?? ""))) return false
-  const tabDirection = (from: TabId, to: TabId) =>
-    TAB_ORDER.indexOf(to) > TAB_ORDER.indexOf(from) ? "tab-forward" : "tab-back"
+  const tabDirection = (left: TabId, entered: TabId) =>
+    TAB_ORDER.indexOf(entered) > TAB_ORDER.indexOf(left)
+      ? "tab-forward"
+      : "tab-back"
   // the shell may already have remembered the new page (it loaded first)
   const switched = memory.switchedTo(b)
   if (switched) return [tabDirection(switched.from, switched.to)]
