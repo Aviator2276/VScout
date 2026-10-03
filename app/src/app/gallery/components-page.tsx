@@ -261,7 +261,7 @@ export function ComponentsPage({ now }: { now: number }) {
                     direction="down"
                     mode={n.down}
                     loopSeconds={0.6}
-                    color="#64D2FF"
+                    color="var(--notch-down)"
                   />
                   <ConnectionGlyph shown={n.center} />
                   <TransmitGlyph
@@ -269,7 +269,7 @@ export function ComponentsPage({ now }: { now: number }) {
                     mode={n.up}
                     loopSeconds={1.2}
                     waiting={n.waiting ?? false}
-                    color="#C7A2FF"
+                    color="var(--notch-up)"
                   />
                 </StatusNotch>
               </div>

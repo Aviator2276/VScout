@@ -54,15 +54,16 @@ export function StackPage({
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 pt-safe">
         {/* transparent at rest so a tab background shows; once content scrolls under it the glass
-            bar slides down from above (ADR-079), and the Sync Status notch rides its bottom edge */}
+            bar slides down 33 pt as it fades in (ADR-079), and the Sync Status notch rides its bottom edge */}
         <div
           aria-hidden
           className={cn(
-            "absolute inset-0 glass-bar transition-[translate,opacity] motion-reduce:translate-y-0",
+            "absolute inset-0 glass-bar transition-[translate,opacity]",
             BAR_EASE,
+            // the same 33 pt as the notch, so its bottom edge carries the notch on every frame
             collapsed
               ? "translate-y-0 opacity-100"
-              : "-translate-y-full opacity-0"
+              : "-translate-y-[33px] opacity-0"
           )}
         />
         <div className="relative mx-auto grid min-h-11 w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-safe-4">

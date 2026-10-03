@@ -18,9 +18,8 @@ const BARS = [
   { x: 18, h: 17 },
 ] as const
 const BASE = 20.5
-const LIT = "rgb(255 255 255)"
-const DIM = "rgb(255 255 255 / 0.28)"
-const AMBER = "#FFB340"
+/** unlit bars: the pill's foreground (--notch-fg) at low opacity */
+const DIM = 0.25
 
 function Bars({
   quality,
@@ -45,19 +44,21 @@ function Bars({
             width={3}
             rx={1.5}
             initial={false}
+            fill="var(--notch-fg)"
             animate={{
               height: h,
               y: BASE - h,
-              // sweeping bars are white and pulse; dropped stubs fade away under the airplane
-              fill: lit || sweeping ? LIT : DIM,
+              // sweeping bars pulse; dropped stubs fade away under the airplane
               opacity:
                 sweeping && !reduced
-                  ? [0.25, 0.9, 0.25]
+                  ? [0.2, 0.9, 0.2]
                   : sweeping
                     ? 0.5
                     : dropped
                       ? 0
-                      : 1,
+                      : lit
+                        ? 1
+                        : DIM,
             }}
             transition={{
               height: {
@@ -68,7 +69,6 @@ function Bars({
                 ...springs.smooth,
                 delay: dropped ? (3 - i) * 0.07 : i * 0.05,
               },
-              fill: { duration: 0.25, delay: i * 0.06 },
               opacity:
                 sweeping && !reduced
                   ? {
@@ -122,8 +122,8 @@ export function ConnectionGlyph({
             <TriangleAlert
               size={size - 1}
               strokeWidth={2.5}
-              color={AMBER}
-              fill="rgb(255 179 64 / 0.18)"
+              color="var(--notch-amber)"
+              fill="color-mix(in srgb, var(--notch-amber) 18%, transparent)"
             />
           </m.span>
         ) : (
@@ -151,7 +151,8 @@ export function ConnectionGlyph({
                       ? { opacity: 0 }
                       : { opacity: 0, x: -16, y: 7, rotate: -35, scale: 0.6 }
                   }
-                  animate={{ opacity: 1, x: 0, y: -1, rotate: 0, scale: 1 }}
+                  // lucide's plane sits a hair right of its box: nudge it back to center
+                  animate={{ opacity: 1, x: -1, y: -1, rotate: 0, scale: 1 }}
                   exit={
                     reduced
                       ? { opacity: 0 }
@@ -165,8 +166,8 @@ export function ConnectionGlyph({
                   <Plane
                     size={size - 4}
                     strokeWidth={2.25}
-                    color="rgb(255 255 255 / 0.9)"
-                    fill="rgb(255 255 255 / 0.9)"
+                    color="var(--notch-fg)"
+                    fill="var(--notch-fg)"
                   />
                 </m.span>
               ) : null}

@@ -173,11 +173,12 @@ const snap = (o: Partial<NetworkSnapshot> = {}): NetworkSnapshot => ({
 
 describe("notch state (criteria 3–8)", () => {
   it("quality from ping, one bar less after failures (criterion 5)", () => {
-    expect([80, 200, 500, 900].map((p) => qualityFrom(true, p, []))).toEqual([
-      4, 3, 2, 1,
-    ])
+    expect(
+      [200, 249, 250, 499, 500, 799, 800].map((p) => qualityFrom(true, p, []))
+    ).toEqual([4, 4, 3, 3, 2, 2, 1])
     expect(qualityFrom(true, 80, [true, false, true, false])).toBe(3)
     expect(qualityFrom(true, 900, [false, false])).toBe(1)
+    expect(qualityFrom(true, 300, [false, false])).toBe(2)
     expect(qualityFrom(true, null, [])).toBe(3)
     expect(qualityFrom(false, 10, [])).toBe(0)
   })

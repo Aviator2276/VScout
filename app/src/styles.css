@@ -281,6 +281,25 @@
   color: var(--foreground);
 }
 
+/* Sync Status notch (features/sync-status.md, ADR-079): a white pill in light, black in dark. Link
+   colors are a light blue (down) and a light purple (up), toned for the pill they sit on. */
+:root {
+  --notch-bg: #ffffff;
+  --notch-fg: #1c1c1e;
+  --notch-gray: #8e8e93;
+  --notch-down: #0a9fd8;
+  --notch-up: #8b5cf6;
+  --notch-amber: #e08700;
+}
+.dark {
+  --notch-bg: #000000;
+  --notch-fg: #ffffff;
+  --notch-gray: #8e8e93;
+  --notch-down: #64d2ff;
+  --notch-up: #c7a2ff;
+  --notch-amber: #ffb340;
+}
+
 @theme inline {
   --font-sans:
     "Geist Variable", system-ui, -apple-system, "SF Pro Text", Roboto,

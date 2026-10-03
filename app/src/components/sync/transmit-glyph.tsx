@@ -55,7 +55,8 @@ export function TransmitGlyph({
   const clipId = `bits-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
   const down = direction === "down"
   const streaming = mode === "active" && !reduced
-  const stroke = mode === "off" ? "rgb(255 255 255 / 0.35)" : color
+  // off is a solid gray, not a faded color (owner)
+  const stroke = mode === "off" ? "var(--notch-gray)" : color
   // bits travel with the arrow: down for the downlink, up for the uplink
   const from = down ? 0 : PERIOD
   const to = down ? PERIOD : 0
@@ -88,7 +89,6 @@ export function TransmitGlyph({
               }
             : springs.snappy
         }
-        style={{ opacity: mode === "idle" ? 0.7 : 1 }}
       >
         {down ? (
           <>

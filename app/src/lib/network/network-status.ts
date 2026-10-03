@@ -44,11 +44,11 @@ export function qualityFrom(
   const base =
     pingMs === null
       ? 3
-      : pingMs < 100
+      : pingMs < 250
         ? 4
-        : pingMs < 250
+        : pingMs < 500
           ? 3
-          : pingMs < 600
+          : pingMs < 800
             ? 2
             : 1
   const failures = outcomes.filter((ok) => !ok).length
