@@ -118,6 +118,49 @@ describe.each(["http", "mqtt"] as const)("sync engine over %s", (transport) => {
     })
   })
 
+  it("keep mine survives full syncs when the other edit is in the change log", async () => {
+    const { db, engine, mutateDeps, clock } = setupEngine({ transport })
+    const c = await createRecord(mutateDeps, "comment", comment("v1"))
+    await engine.syncNow("write")
+    const key = mockBackend.key("comment", c.id)
+    const server1 = mockBackend.records.get(key)
+    if (!server1) throw new Error("not on server")
+    // another device edits it: the server stores rev 2 and logs the change, like a real backend
+    const edited = { ...server1, rev: 2, body: "other device" }
+    mockBackend.records.set(key, edited)
+    mockBackend.append("event:2026casj", "comment", {
+      v: 1,
+      entity: "comment",
+      op: "upsert",
+      id: c.id,
+      rev: 2,
+      eventKey: "2026casj",
+      ts: mockBackend.now(),
+      data: edited,
+    })
+    await updateRecord(mutateDeps, "comment", c.id, (r) => ({
+      ...r,
+      body: "mine",
+    }))
+    await engine.syncNow("write")
+    const conflict = await db.conflicts.where("status").equals("open").first()
+    expect(conflict).toBeDefined()
+
+    await resolveConflict(
+      { db, now: clock.now, newId: () => "k2-op", session: mutateDeps.session },
+      conflict?.id ?? "",
+      "keep-mine"
+    )
+    await engine.syncNow("write")
+    await engine.syncNow("online")
+    expect(mockBackend.records.get(key)).toMatchObject({ body: "mine" })
+    expect(await db.comments.get(c.id)).toMatchObject({
+      body: "mine",
+      syncState: "synced",
+    })
+    expect(await db.conflicts.where("status").equals("open").count()).toBe(0)
+  })
+
   it("422 rejects one record and the others still sync", async () => {
     const { db, engine, mutateDeps } = setupEngine({ transport })
     const good = await createRecord(mutateDeps, "comment", comment("ok"))

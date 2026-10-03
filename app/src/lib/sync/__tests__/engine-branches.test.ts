@@ -2,11 +2,12 @@ import { HttpResponse, http } from "msw"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { change } from "@/testing/changes"
 import { API, setupEngine } from "@/testing/engine"
-import { wireComment } from "@/testing/factories/wire"
+import { wireComment, wireEnvelope, wireMatch } from "@/testing/factories/wire"
 import { MOCK_USER_ID, mockBackend } from "@/testing/mocks/mock-backend"
 import { server } from "@/testing/mocks/server"
 import { applyChanges } from "../apply-envelope"
 import { retryDelay } from "../backoff"
+import { resolveConflict } from "../conflicts"
 import { createRecord, deleteRecord, updateRecord } from "../mutate"
 import { buildBody, buildRequest, toWireBody } from "../requests"
 import { attachSyncTriggers } from "../triggers"
@@ -88,6 +89,53 @@ describe("push: every response class", () => {
     expect(await s.db.conflicts.toArray()).toMatchObject([
       { kind: "duplicate", remote: { teamNumber: 254 } },
     ])
+  })
+
+  it("duplicate + keep mine: my answers end up on the server's record after full syncs", async () => {
+    const s = setupEngine()
+    const entry = {
+      eventKey: "2026casj",
+      matchKey: "2026casj_qm1",
+      teamNumber: 254,
+      station: "red1" as const,
+      scouterLevel: "experienced" as const,
+      tags: [],
+      gameId: "2099-test-game",
+      schemaVersion: 2,
+      data: { "pre.noShow": false },
+    }
+    await createRecord(s.mutateDeps, "scoutEntry", entry)
+    await s.engine.syncNow("write")
+    const mine = await createRecord(s.mutateDeps, "scoutEntry", {
+      ...entry,
+      data: { "pre.noShow": true },
+    })
+    await s.engine.syncNow("write")
+    const conflict = await s.db.conflicts.where("status").equals("open").first()
+    expect(conflict?.kind).toBe("duplicate")
+    await resolveConflict(
+      {
+        db: s.db,
+        now: s.clock.now,
+        newId: () => "dup-op",
+        session: s.mutateDeps.session,
+      },
+      conflict?.id ?? "",
+      "keep-mine"
+    )
+    await s.engine.syncNow("write")
+    await s.engine.syncNow("online")
+    const remoteId = (conflict?.remote as { id: string }).id
+    expect(
+      mockBackend.records.get(mockBackend.key("scoutEntry", remoteId))
+    ).toMatchObject({
+      data: { "pre.noShow": true },
+    })
+    const local = await s.db.scoutEntries.toArray()
+    expect(local.map((e) => [e.id, e.data, e.syncState])).toEqual([
+      [remoteId, { "pre.noShow": true }, "synced"],
+    ])
+    expect(mine.id).not.toBe(remoteId)
   })
 
   it("stops on 429 and backs off", async () => {
@@ -233,6 +281,22 @@ describe("engine lifecycle", () => {
     await vi.waitFor(async () => expect(await s.db.outbox.count()).toBe(0))
     expect(mockBackend.applied).toBe(2)
     s.engine.stop()
+  })
+
+  it("a narrower request right after a full one doesn't drop the full sync", async () => {
+    const s = setupEngine()
+    await s.engine.syncNow("boot")
+    mockBackend.append(
+      "event:2026casj",
+      "match",
+      wireEnvelope("match", wireMatch({ matchNumber: 7 }))
+    )
+    // e.g. coming back online, then an MQTT hint about one entity within the debounce
+    s.engine.requestSync("online")
+    s.engine.requestSync("mqtt-control", { entities: ["teamSettings"] })
+    await vi.waitFor(async () =>
+      expect(await s.db.matches.get("2026casj_qm7")).toBeDefined()
+    )
   })
 
   it("skips a visible sync right after a successful one unless forced", async () => {

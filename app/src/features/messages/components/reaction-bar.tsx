@@ -12,10 +12,13 @@ export function ReactionBar({
   reactions,
   onToggle,
   disabled,
+  canAdd = true,
 }: {
   reactions: ReadonlyArray<ReactionCount>
   onToggle: (emoji: Emoji, mineId: string | null) => void
   disabled?: boolean
+  /** messages add reactions from their action sheet (FX-21); announcements keep the + button */
+  canAdd?: boolean
 }) {
   const [picking, setPicking] = useState(false)
   const toggle = (emoji: Emoji, mineId: string | null) => {
@@ -52,7 +55,7 @@ export function ReactionBar({
           <span aria-hidden>{r.count}</span>
         </button>
       ))}
-      {picking ? (
+      {!canAdd ? null : picking ? (
         unused.map((e) => (
           <button
             key={e}

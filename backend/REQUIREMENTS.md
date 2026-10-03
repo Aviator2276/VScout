@@ -363,7 +363,7 @@ published on `vscout/global/data/teamSettings`.
 `{ id, eventKey, targetType: 'message' | 'announcement', targetId, emoji, authorId }`.
 - `targetType: 'announcement'` targets a message with `kind: 'announcement'`; `targetType: 'message'`
   targets a chat message in the event channel **or a DM**. A mismatch → `422`.
-- `emoji` is one of `👍 ❤️ 🎉 😂 😮 👀`; anything else → `422 validation_failed`.
+- `emoji` is one of `👍 👎 ❤️ 🎉 😂 😮 👀` (👎 added 2026-10-03); anything else → `422 validation_failed`.
 - Unique per (target, author, emoji): a duplicate → `409 duplicate` + `current`. Clients toggle:
   create to add, delete to remove. No update.
 - Admins and scouters may react to any message or announcement they can read (DMs only as a

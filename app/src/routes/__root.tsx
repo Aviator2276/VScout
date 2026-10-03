@@ -97,7 +97,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         {children}
         {import.meta.env.DEV && (
           <TanStackDevtools
-            config={{ position: "bottom-right" }}
+            config={{ position: "middle-left" }}
             plugins={[
               {
                 name: "Tanstack Router",

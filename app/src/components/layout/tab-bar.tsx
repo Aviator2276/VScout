@@ -1,9 +1,13 @@
-// The tab bar (ui-patterns §1, HIG Tab bars, FX-12): a glass bar anchored to the bottom edge with
-// the home indicator inside it, labelled tabs, and one smaller round center button (Messages).
-// Links, so long-press and middle-click work; a plain tap is handled by `onSelect`. It slides down
-// out of view while `hidden` (immersive pages, scrolling down), and leaves the a11y tree then.
+// The floating glass tab bar (ui-patterns §1, HIG Tab bars): a rounded liquid-glass pill above the
+// home indicator with four labelled tabs and the smaller round Messages button in the middle
+// (FX-12). The selection is a frosted light lens (iOS 26) that glides between tabs and keeps the
+// label readable whatever scrolls behind the glass; a press shrinks the tab a
+// little; the whole bar slides down and fades out while `hidden` (immersive pages, scrolling down)
+// and leaves the a11y tree. Links, so long-press and middle-click work; a tap goes to `onSelect`.
+import { m } from "motion/react"
 import type { MouseEvent } from "react"
 import type { LucideIcon } from "@/components/icons/icon"
+import { springs } from "@/components/motion/springs"
 import { haptic } from "@/lib/haptics"
 import { cn } from "@/lib/utils"
 
@@ -56,11 +60,12 @@ export function TabBar<TId extends string>({
       aria-hidden={hidden || undefined}
       inert={hidden}
       className={cn(
-        "px-safe fixed inset-x-0 bottom-0 z-20 rounded-none border-t border-border/60 glass pb-[max(var(--k-safe-area-bottom),0.5rem)] transition-transform duration-300 ease-out [view-transition-name:app-tabbar] motion-reduce:transition-none",
-        hidden && "translate-y-full"
+        "pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-safe-4 pb-safe-4 transition-[translate,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] [view-transition-name:app-tabbar] motion-reduce:transition-none",
+        hidden &&
+          "translate-y-[calc(100%+var(--k-safe-area-bottom,0px))] opacity-0"
       )}
     >
-      <ul className="mx-auto flex max-w-xl items-stretch">
+      <ul className="pointer-events-auto flex w-full max-w-md items-center rounded-full glass p-1 shadow-lg">
         {items.map((item) => {
           const selected = item.id === active
           const Icon = item.icon
@@ -79,13 +84,13 @@ export function TabBar<TId extends string>({
                 >
                   <span
                     className={cn(
-                      "relative flex size-10 items-center justify-center rounded-full transition-colors group-active:scale-95",
+                      "relative flex size-10 items-center justify-center rounded-full shadow-sm transition-[scale,background-color,color] duration-200 group-active:scale-90",
                       selected
                         ? "bg-primary text-primary-foreground"
-                        : "bg-primary/12 text-primary"
+                        : "bg-primary/15 text-primary"
                     )}
                   >
-                    <Icon aria-hidden size={22} />
+                    <Icon aria-hidden size={21} />
                     {badge > 0 ? (
                       <Badge count={badge} className="-top-1 -right-1.5" />
                     ) : null}
@@ -101,24 +106,34 @@ export function TabBar<TId extends string>({
                 aria-label={badge > 0 ? name : undefined}
                 aria-current={selected ? "page" : undefined}
                 className={cn(
-                  "relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-caption-2 font-medium active:bg-muted/60",
+                  "group relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-full text-caption-2 font-medium transition-colors",
                   selected
-                    ? "font-semibold text-primary"
+                    ? "font-semibold text-primary dark:text-foreground"
                     : "text-muted-foreground"
                 )}
               >
-                <span className="relative">
-                  <Icon
+                {selected ? (
+                  <m.span
                     aria-hidden
-                    size={24}
-                    fill={selected ? "currentColor" : "none"}
-                    fillOpacity={selected ? 0.2 : 0}
+                    layoutId="tab-bar-lens"
+                    transition={springs.smooth}
+                    className="absolute inset-0 rounded-full bg-white/75 shadow-sm ring-1 ring-black/5 dark:bg-white/15 dark:ring-white/10"
                   />
-                  {badge > 0 ? (
-                    <Badge count={badge} className="-top-1 -right-2.5" />
-                  ) : null}
+                ) : null}
+                <span className="relative flex flex-col items-center gap-0.5 transition-[scale] duration-150 group-active:scale-90">
+                  <span className="relative">
+                    <Icon
+                      aria-hidden
+                      size={24}
+                      fill={selected ? "currentColor" : "none"}
+                      fillOpacity={selected ? 0.2 : 0}
+                    />
+                    {badge > 0 ? (
+                      <Badge count={badge} className="-top-1 -right-2.5" />
+                    ) : null}
+                  </span>
+                  {item.label}
                 </span>
-                {item.label}
               </a>
             </li>
           )

@@ -35,10 +35,12 @@ const SIZE = {
     desc: "text-subhead",
   },
   inline: {
-    wrap: "flex-row gap-2 px-3 py-2 text-left",
+    // In a narrow Home widget (the "widget" container, < 16rem) the glyph stacks above a short,
+    // centered, balanced label (HIG Widgets); beside it, words broke one per line (FX-6 follow-up)
+    wrap: "flex-row gap-2 px-3 py-2 text-left @max-[16rem]/widget:flex-col @max-[16rem]/widget:gap-1.5 @max-[16rem]/widget:px-1 @max-[16rem]/widget:text-center",
     icon: 20,
-    title: "text-subhead",
-    desc: "text-footnote",
+    title: "text-subhead @max-[16rem]/widget:text-footnote",
+    desc: "text-footnote @max-[16rem]/widget:text-caption-1",
   },
 } as const
 
@@ -80,15 +82,23 @@ function StateMessage({
       />
       <div
         className={cn(
-          "flex flex-col gap-1",
-          inline ? "items-start" : "items-center"
+          "flex min-w-0 flex-col gap-1",
+          inline
+            ? "items-start @max-[16rem]/widget:items-center"
+            : "items-center"
         )}
       >
-        <p className={cn("font-medium text-foreground", s.title)}>{title}</p>
-        {description ? <p className={s.desc}>{description}</p> : null}
+        <p className={cn("font-medium text-balance text-foreground", s.title)}>
+          {title}
+        </p>
+        {description ? (
+          <p className={cn("text-balance", s.desc)}>{description}</p>
+        ) : null}
       </div>
       {action ? (
-        <div className={inline ? "ms-auto" : "mt-2"}>{action}</div>
+        <div className={inline ? "ms-auto @max-[16rem]/widget:ms-0" : "mt-2"}>
+          {action}
+        </div>
       ) : null}
     </div>
   )

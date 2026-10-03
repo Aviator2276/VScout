@@ -176,6 +176,7 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
   let running: Promise<RunResult> | null = null
   let rerun: PendingRun | null = null
   let syncTimer: ReturnType<typeof setTimeout> | null = null
+  let pendingSync: PendingRun | null = null
   let pushTimer: ReturnType<typeof setTimeout> | null = null
   let intervalTimer: ReturnType<typeof setTimeout> | null = null
   let started = false
@@ -405,10 +406,23 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
         now() - lastSuccessAt < VISIBLE_THROTTLE_MS
       )
         return
+      // requests inside the debounce merge (the broadest wins): a full sync followed by an
+      // entity hint must not shrink to the hint
+      pendingSync = mergeRequests(pendingSync, {
+        reason,
+        pushOnly: false,
+        ...(opts.entities ? { entities: opts.entities } : {}),
+      })
       if (syncTimer) clearTimeout(syncTimer)
       syncTimer = setTimeout(() => {
         syncTimer = null
-        void syncNow(reason, opts)
+        const next = pendingSync
+        pendingSync = null
+        if (next)
+          void syncNow(next.reason, {
+            ...(opts.force ? { force: true } : {}),
+            ...(next.entities ? { entities: next.entities } : {}),
+          })
       }, deps.debounceMs?.sync ?? 250)
     },
     requestPush(reason) {

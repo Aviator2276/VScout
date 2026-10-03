@@ -33,7 +33,10 @@ export function WidgetCard({
             : title}
         </h2>
       )}
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      {/* a size container: content (DataView's inline states) adapts to the widget's width */}
+      <div className="@container/widget min-h-0 flex-1 overflow-hidden">
+        {children}
+      </div>
     </section>
   )
 }

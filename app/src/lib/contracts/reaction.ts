@@ -2,7 +2,16 @@
 import { z } from "zod"
 import { recordId, wireOwnedMeta } from "./primitives"
 
-export const REACTION_EMOJI = ["👍", "❤️", "🎉", "😂", "😮", "👀"] as const
+// 👎 added 2026-10-03 (owner, FX-20): the backend's allow-list must match
+export const REACTION_EMOJI = [
+  "👍",
+  "👎",
+  "❤️",
+  "🎉",
+  "😂",
+  "😮",
+  "👀",
+] as const
 export const reactionEmoji = z.enum(REACTION_EMOJI)
 
 export const wireReaction = z.looseObject({

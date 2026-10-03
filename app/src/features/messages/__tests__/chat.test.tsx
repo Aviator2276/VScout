@@ -14,6 +14,8 @@ import {
   useMarkRead,
   useThread,
 } from "../api/get-messages"
+import { REACTION_EMOJI } from "@/lib/contracts/reaction"
+import type { ChatMessage } from "../api/get-messages"
 import { ThreadView } from "../components/chat-views"
 
 const SAM = "01900000-0000-7000-8000-000000000042"
@@ -164,5 +166,97 @@ describe("messages (scout-tab.md D)", () => {
       screen.getByRole("button", { name: "Not sent. Tap to retry." })
     )
     expect(onRetry).toHaveBeenCalledWith("m1")
+  })
+
+  describe("message actions and the composer (FX-20…FX-22)", () => {
+    const msg = (o: Partial<ChatMessage> = {}): ChatMessage => ({
+      id: "m1",
+      body: "Q14 queue moved",
+      authorId: SAM,
+      authorName: "Sam",
+      mine: false,
+      createdAt: 1,
+      syncState: "synced",
+      reactions: [],
+      ...o,
+    })
+    function renderThread(data: Array<ChatMessage>) {
+      const props = {
+        onSend: vi.fn(() => Promise.resolve()),
+        onRetry: vi.fn(),
+        onDelete: vi.fn(),
+        onReact: vi.fn(),
+      }
+      render(
+        <App theme="ios">
+          <ThreadView {...props} state={{ status: "success", data }} />
+        </App>
+      )
+      return props
+    }
+
+    it("no inline trash or add-reaction buttons under messages", () => {
+      renderThread([msg({ mine: true, authorId: TEST_USER })])
+      expect(
+        screen.queryByRole("button", { name: "Delete message" })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "Add Reaction" })
+      ).not.toBeInTheDocument()
+    })
+
+    it("the ⋯ button opens actions: react (👎 included), see who reacted, delete mine", async () => {
+      const props = renderThread([
+        msg({
+          id: "m1",
+          mine: true,
+          authorId: TEST_USER,
+          reactions: [
+            { emoji: "👍", count: 2, mineId: null, names: ["Sam", "Kim"] },
+          ],
+        }),
+      ])
+      await userEvent.click(
+        screen.getByRole("button", { name: "Message actions: Q14 queue moved" })
+      )
+      expect(await screen.findByText("Sam, Kim")).toBeInTheDocument()
+      await userEvent.click(
+        screen.getByRole("button", { name: "React with 👎" })
+      )
+      expect(props.onReact).toHaveBeenCalledWith("m1", "👎", null)
+      await userEvent.click(
+        screen.getByRole("button", { name: "Message actions: Q14 queue moved" })
+      )
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Delete Message" })
+      )
+      expect(props.onDelete).toHaveBeenCalledWith("m1")
+    })
+
+    it("someone else's message can't be deleted", async () => {
+      renderThread([msg()])
+      await userEvent.click(
+        screen.getByRole("button", { name: "Message actions: Q14 queue moved" })
+      )
+      expect(
+        await screen.findByRole("button", { name: "Copy Text" })
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "Delete Message" })
+      ).not.toBeInTheDocument()
+    })
+
+    it("the composer is a growing text area (new lines allowed)", async () => {
+      const props = renderThread([])
+      const box = screen.getByLabelText("Message", { selector: "textarea" })
+      await userEvent.type(box, "line one{Shift>}{Enter}{/Shift}line two")
+      expect((box as HTMLTextAreaElement).value).toBe("line one\nline two")
+      await userEvent.click(screen.getByRole("button", { name: "Send" }))
+      expect(props.onSend).toHaveBeenCalledWith("line one\nline two")
+    })
+  })
+
+  it("👎 is an allowed reaction (contract)", () => {
+    expect(REACTION_EMOJI).toContain("👎")
   })
 })

@@ -86,7 +86,6 @@ export const TeamRow = memo(function TeamRowImpl({
       <span
         aria-hidden
         className="w-12 shrink-0 rounded-md bg-muted py-0.5 text-center font-heading text-subhead tabular-nums"
-        style={{ viewTransitionName: `team-${team.teamNumber}` }}
       >
         {team.teamNumber}
       </span>

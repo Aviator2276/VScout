@@ -14,7 +14,7 @@ export function AnnouncementsWidget({ eventKey, h }: WidgetProps) {
   return (
     <WidgetCard title="Announcements" href="/messages/announcements">
       <DataView state={state} size="inline">
-        <DataView.Empty icon={Megaphone} title="No announcements yet" />
+        <DataView.Empty icon={Megaphone} title="No announcements" />
         <DataView.Error title="Couldn’t load announcements." />
         <DataView.Success>
           {(list: ReadonlyArray<AnnouncementView>) => {

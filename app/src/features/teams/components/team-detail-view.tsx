@@ -75,10 +75,7 @@ export function TeamDetailView({
         {(team: TeamDetail) => (
           <div className="flex flex-col gap-4">
             <header className="flex items-center gap-3">
-              <span
-                className="rounded-xl bg-muted px-3 py-1 font-heading text-title-2 tabular-nums"
-                style={{ viewTransitionName: `team-${team.teamNumber}` }}
-              >
+              <span className="rounded-xl bg-muted px-3 py-1 font-heading text-title-2 tabular-nums">
                 {team.teamNumber}
               </span>
               <div className="min-w-0">

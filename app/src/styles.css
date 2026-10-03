@@ -201,9 +201,8 @@
   --tabbar-safe: var(--k-safe-area-bottom, 0px);
 }
 :root[data-tabbar="shown"] {
-  --tabbar-offset: calc(
-    max(var(--k-safe-area-bottom, 0px), 0.5rem) + 3rem + 1px
-  );
+  /* the floating pill: 3.5rem tall, 1rem above the home indicator */
+  --tabbar-offset: calc(var(--k-safe-area-bottom, 0px) + 4.5rem);
   --tabbar-safe: 0px;
 }
 

@@ -1,19 +1,23 @@
 // Messages (scout-tab.md D1, D2): the conversation list with the event channel pinned, and a thread
 // with day separators, my messages trailing, pending (clock) and failed ("Not sent. Tap to retry.")
 // states, reactions, and a composer above the keyboard. Bodies render through GlossaryText.
-import { use, useState } from "react"
+import { use, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Button } from "@/components/controls/button"
 import { DataView } from "@/components/data-view/data-view"
 import { SkeletonRows } from "@/components/data-view/skeleton-rows"
 import { SearchField } from "@/components/form/search-field"
 import { GlossaryText } from "@/components/glossary/glossary-text"
 import {
+  Ellipsis,
   Lock,
   LoaderCircle,
   MessageSquare,
-  Trash2,
 } from "@/components/icons/icon"
 import { ListLinkContext } from "@/components/list/list"
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset"
+import { useLongPress } from "@/hooks/use-long-press"
+import { REACTION_EMOJI } from "@/lib/contracts/reaction"
+import { haptic } from "@/lib/haptics"
 import { Sheet } from "@/components/overlays/sheet"
 import type { DataState } from "@/lib/db/react/data-state"
 import { cn } from "@/lib/utils"
@@ -123,10 +127,15 @@ export function ThreadView({
   onDelete: (id: string) => void
   onReact: (id: string, emoji: Emoji, mineId: string | null) => void
 }) {
-  const [text, setText] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [acting, setActing] = useState<ChatMessage | null>(null)
+  const keyboard = useKeyboardInset()
+  const [composerHeight, setComposerHeight] = useState(96)
   return (
-    <div className="flex flex-col gap-3 pb-28">
+    <div
+      className="flex flex-col gap-3"
+      // the list ends above the composer (which grows and rides the keyboard)
+      style={{ paddingBottom: composerHeight + keyboard + 16 }}
+    >
       <DataView state={state} size="page">
         <DataView.Loading label="Loading messages…">
           <SkeletonRows rows={5} rowClassName="h-12" />
@@ -148,10 +157,6 @@ export function ThreadView({
                 const newDay =
                   !prev ||
                   day.format(prev.createdAt) !== day.format(m.createdAt)
-                const sameAuthor =
-                  prev && !newDay && prev.authorId === m.authorId
-                const failed =
-                  m.syncState === "rejected" || m.syncState === "conflict"
                 return (
                   <li key={m.id} className="flex flex-col">
                     {newDay ? (
@@ -159,57 +164,15 @@ export function ThreadView({
                         {day.format(m.createdAt)}
                       </p>
                     ) : null}
-                    <div
-                      className={cn(
-                        "flex max-w-[85%] flex-col gap-1",
-                        m.mine ? "items-end self-end" : "self-start"
-                      )}
-                    >
-                      {sameAuthor ? null : (
-                        <span className="px-1 text-caption-1 text-muted-foreground">
-                          {m.authorName} · {time.format(m.createdAt)}
-                        </span>
-                      )}
-                      <div
-                        className={cn(
-                          "rounded-2xl px-3 py-2 text-body break-words",
-                          m.mine
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-card shadow-xs"
-                        )}
-                      >
-                        <GlossaryText>{m.body}</GlossaryText>
-                      </div>
-                      {m.syncState === "pending" ? (
-                        <span className="flex items-center gap-1 text-caption-1 text-muted-foreground">
-                          <LoaderCircle aria-hidden size={12} /> Sending…
-                        </span>
-                      ) : failed ? (
-                        <button
-                          type="button"
-                          onClick={() => onRetry(m.id)}
-                          className="min-h-9 text-caption-1 text-destructive"
-                        >
-                          Not sent. Tap to retry.
-                        </button>
-                      ) : null}
-                      <div className="flex items-center gap-1">
-                        <ReactionBar
-                          reactions={m.reactions}
-                          onToggle={(e, mine) => onReact(m.id, e, mine)}
-                        />
-                        {m.mine ? (
-                          <button
-                            type="button"
-                            aria-label="Delete message"
-                            onClick={() => onDelete(m.id)}
-                            className="hit-44 inline-flex size-9 items-center justify-center text-muted-foreground"
-                          >
-                            <Trash2 aria-hidden size={14} />
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
+                    <MessageBubble
+                      message={m}
+                      showAuthor={
+                        !prev || newDay || prev.authorId !== m.authorId
+                      }
+                      onActions={() => setActing(m)}
+                      onRetry={() => onRetry(m.id)}
+                      onReact={(e, mine) => onReact(m.id, e, mine)}
+                    />
                   </li>
                 )
               })}
@@ -218,46 +181,285 @@ export function ThreadView({
         </DataView.Success>
       </DataView>
       {state.status === "missing" ? null : (
-        // above the tab bar when it shows, on the home indicator when it doesn't (FX-11)
-        <form
-          className="fixed inset-x-0 bottom-(--tabbar-offset) z-20 flex items-end gap-2 glass pt-2 px-safe-4 pb-[calc(var(--tabbar-safe)+0.5rem)] transition-[bottom] duration-300"
-          onSubmit={(e) => {
-            e.preventDefault()
-            const body = text.trim()
-            if (!body) return
-            setText("")
-            onSend(body).catch(() => {
-              setText(body)
-              setError("Couldn’t save your message. Try again.")
-            })
-          }}
-        >
-          <label className="sr-only" htmlFor="composer">
-            Message
-          </label>
-          <textarea
-            id="composer"
-            rows={1}
-            value={text}
-            maxLength={4000}
-            onChange={(e) => {
-              setText(e.target.value)
-              setError(null)
-            }}
-            placeholder="Message"
-            className="min-h-11 flex-1 resize-none rounded-2xl bg-muted px-3 py-2.5 text-body outline-none"
-          />
-          <Button type="submit" disabled={!text.trim()}>
-            Send
-          </Button>
-          {error ? (
-            <p role="alert" className="sr-only">
-              {error}
-            </p>
-          ) : null}
-        </form>
+        <Composer
+          onSend={onSend}
+          keyboard={keyboard}
+          onHeight={setComposerHeight}
+        />
       )}
+      <MessageActionsSheet
+        message={acting}
+        onClose={() => setActing(null)}
+        onReact={(e, mine) => acting && onReact(acting.id, e, mine)}
+        onDelete={() => acting && onDelete(acting.id)}
+      />
     </div>
+  )
+}
+
+/** One message: long-press the bubble (or tap ⋯) for its actions (FX-21). */
+function MessageBubble({
+  message: m,
+  showAuthor,
+  onActions,
+  onRetry,
+  onReact,
+}: {
+  message: ChatMessage
+  showAuthor: boolean
+  onActions: () => void
+  onRetry: () => void
+  onReact: (emoji: Emoji, mineId: string | null) => void
+}) {
+  const { pressing, handlers } = useLongPress(() => {
+    haptic("selection")
+    onActions()
+  })
+  const failed = m.syncState === "rejected" || m.syncState === "conflict"
+  return (
+    <div
+      className={cn(
+        "flex max-w-[85%] flex-col gap-1",
+        m.mine ? "items-end self-end" : "self-start"
+      )}
+    >
+      {showAuthor ? (
+        <span className="px-1 text-caption-1 text-muted-foreground">
+          {m.authorName} · {time.format(m.createdAt)}
+        </span>
+      ) : null}
+      <div
+        className={cn(
+          "flex items-center gap-1",
+          m.mine ? "flex-row-reverse" : "flex-row"
+        )}
+      >
+        <div
+          {...handlers}
+          // the system callout would compete with our long press
+          onContextMenu={(e) => {
+            e.preventDefault()
+            onActions()
+          }}
+          className={cn(
+            "rounded-2xl px-3 py-2 text-body break-words transition-[scale] duration-150 [-webkit-touch-callout:none]",
+            pressing && "scale-[0.97]",
+            m.mine ? "bg-primary text-primary-foreground" : "bg-card shadow-xs"
+          )}
+        >
+          <GlossaryText>{m.body}</GlossaryText>
+        </div>
+        <button
+          type="button"
+          aria-label={`Message actions: ${m.body.slice(0, 40)}`}
+          onClick={onActions}
+          className="hit-44 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 active:bg-muted"
+        >
+          <Ellipsis aria-hidden size={16} />
+        </button>
+      </div>
+      {m.syncState === "pending" ? (
+        <span className="flex items-center gap-1 text-caption-1 text-muted-foreground">
+          <LoaderCircle aria-hidden size={12} /> Sending…
+        </span>
+      ) : failed ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="min-h-9 text-caption-1 text-destructive"
+        >
+          Not sent. Tap to retry.
+        </button>
+      ) : null}
+      {m.reactions.length > 0 ? (
+        <ReactionBar
+          reactions={m.reactions}
+          onToggle={onReact}
+          canAdd={false}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+/** Reactions (who reacted, too), copy and delete for one message (FX-20, FX-21). */
+function MessageActionsSheet({
+  message,
+  onClose,
+  onReact,
+  onDelete,
+}: {
+  message: ChatMessage | null
+  onClose: () => void
+  onReact: (emoji: Emoji, mineId: string | null) => void
+  onDelete: () => void
+}) {
+  const mineFor = (e: Emoji) =>
+    message?.reactions.find((r) => r.emoji === e)?.mineId ?? null
+  return (
+    <Sheet open={message !== null} onOpenChange={(o) => !o && onClose()}>
+      {message ? (
+        <Sheet.Content title="Message" description={message.authorName}>
+          <div
+            role="group"
+            aria-label="React"
+            className="flex justify-between gap-1 rounded-full bg-card p-1.5"
+          >
+            {REACTION_EMOJI.map((e) => {
+              const mine = mineFor(e)
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  aria-label={`React with ${e}`}
+                  aria-pressed={mine !== null}
+                  onClick={() => {
+                    haptic("selection")
+                    onReact(e, mine)
+                    onClose()
+                  }}
+                  className={cn(
+                    "flex size-11 items-center justify-center rounded-full text-title-3 transition-[scale] active:scale-90",
+                    mine !== null && "bg-primary/15"
+                  )}
+                >
+                  {e}
+                </button>
+              )
+            })}
+          </div>
+          {message.reactions.length > 0 ? (
+            <section aria-label="Who reacted" className="mt-4">
+              <h3 className="mb-1.5 px-4 text-footnote text-muted-foreground uppercase">
+                Who reacted
+              </h3>
+              <ul className="flex flex-col divide-y divide-border rounded-2xl bg-card">
+                {message.reactions.map((r) => (
+                  <li
+                    key={r.emoji}
+                    className="flex items-center gap-3 px-4 py-2.5"
+                  >
+                    <span aria-hidden className="text-title-3">
+                      {r.emoji}
+                    </span>
+                    <span className="sr-only">{r.emoji}</span>
+                    <span className="text-body">{r.names.join(", ")}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          <div className="mt-4 flex flex-col overflow-hidden rounded-2xl bg-card">
+            <button
+              type="button"
+              onClick={() => {
+                // no clipboard on insecure origins (the LAN dev URL)
+                if ("clipboard" in navigator)
+                  void navigator.clipboard.writeText(message.body)
+                onClose()
+              }}
+              className="min-h-11 px-4 text-start text-body active:bg-muted"
+            >
+              Copy Text
+            </button>
+            {message.mine ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete()
+                  onClose()
+                }}
+                className="min-h-11 border-t border-border px-4 text-start text-body text-destructive active:bg-muted"
+              >
+                Delete Message
+              </button>
+            ) : null}
+          </div>
+        </Sheet.Content>
+      ) : null}
+    </Sheet>
+  )
+}
+
+const COMPOSER_MAX_PX = 144
+
+/**
+ * The composer (FX-22): a text area that grows with new lines (up to about six, then it scrolls),
+ * fixed above the tab bar or the home indicator, and lifted above the on-screen keyboard.
+ */
+function Composer({
+  onSend,
+  keyboard,
+  onHeight,
+}: {
+  onSend: (body: string) => Promise<unknown>
+  keyboard: number
+  onHeight: (px: number) => void
+}) {
+  const [text, setText] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const area = useRef<HTMLTextAreaElement>(null)
+  const form = useRef<HTMLFormElement>(null)
+
+  // grow to fit the text, then scroll
+  useLayoutEffect(() => {
+    const el = area.current
+    if (!el) return
+    el.style.height = "auto"
+    el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_PX)}px`
+  }, [text])
+
+  useEffect(() => {
+    const el = form.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(() => onHeight(el.offsetHeight))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [onHeight])
+
+  return (
+    <form
+      ref={form}
+      className="fixed inset-x-0 bottom-(--tabbar-offset) z-20 flex items-end gap-2 glass pt-2 px-safe-4 pb-[calc(var(--tabbar-safe)+0.5rem)] transition-[bottom] duration-200"
+      // with the keyboard up, sit right on top of it (the home indicator is under the keyboard)
+      style={keyboard > 0 ? { bottom: keyboard, paddingBottom: 8 } : undefined}
+      onSubmit={(e) => {
+        e.preventDefault()
+        const body = text.trim()
+        if (!body) return
+        setText("")
+        onSend(body).catch(() => {
+          setText(body)
+          setError("Couldn’t save your message. Try again.")
+        })
+      }}
+    >
+      <label className="sr-only" htmlFor="composer">
+        Message
+      </label>
+      <textarea
+        ref={area}
+        id="composer"
+        rows={1}
+        value={text}
+        maxLength={4000}
+        enterKeyHint="enter"
+        onChange={(e) => {
+          setText(e.target.value)
+          setError(null)
+        }}
+        placeholder="Message"
+        className="min-h-11 flex-1 resize-none overflow-y-auto rounded-2xl bg-muted px-3 py-2.5 text-body outline-none"
+      />
+      <Button type="submit" disabled={!text.trim()}>
+        Send
+      </Button>
+      {error ? (
+        <p role="alert" className="sr-only">
+          {error}
+        </p>
+      ) : null}
+    </form>
   )
 }
 

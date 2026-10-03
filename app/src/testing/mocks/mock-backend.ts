@@ -43,6 +43,21 @@ export const mockBackend = {
   /** the signed-in caller (tokens aren't checked; the role is) */
   role: "scouter" as "admin" | "scouter" | "guest",
   userId: MOCK_USER_ID,
+  /**
+   * Dev server only (`pnpm mock:api`): each device signs in on its own, like the real backend's
+   * HttpOnly refresh cookie. Sign-in creates a session; refresh reads the device's cookie; every
+   * request acts as the user its access token belongs to. Tests keep the single global caller.
+   */
+  perDeviceSessions: false,
+  sessions: new Map<
+    string,
+    {
+      userId: string
+      role: "admin" | "scouter" | "guest"
+      /** guests aren't accounts: their user record travels with the session */
+      user?: Record<string, unknown>
+    }
+  >(),
   /** tokens that answer 401 token_expired */
   expiredTokens: new Set<string>(),
   records: new Map<string, MockRecord>(),
@@ -73,6 +88,8 @@ export const mockBackend = {
     this.signedIn = false
     this.role = "scouter"
     this.userId = MOCK_USER_ID
+    this.perDeviceSessions = false
+    this.sessions = new Map()
     this.expiredTokens = new Set()
     this.records = new Map()
     this.tombstones = new Map()
