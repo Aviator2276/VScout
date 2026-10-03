@@ -16,7 +16,7 @@ function describe(
   value: unknown
 ): string | null {
   if (value === undefined) return null
-  if (value === null) return "Didn’t see"
+  if (value === null) return null
   switch (field.kind) {
     case "boolean": {
       const yes = value === true
@@ -65,6 +65,8 @@ export function summarize(
   data: Readonly<Record<string, unknown>>
 ): Array<AnswerLine> {
   return allFields(form).flatMap((f) => {
+    // a question nobody answered isn't a line (ui-patterns §4: no rows without a value)
+    if (data[f.id] === null) return []
     const value = describe(game, f, data[f.id])
     return value === null || value === ""
       ? []

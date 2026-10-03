@@ -90,7 +90,9 @@ test("matches: bad search values fall back (criterion 8), and a match opens", as
   await expect(page).toHaveURL(/[?&]q=q1/)
   await page.getByRole("link", { name: /^Qual 1$/ }).click()
   await expect(page.getByRole("heading", { name: "Qual 1" })).toBeAttached()
-  await expect(page.getByRole("region", { name: "Red Alliance" })).toBeVisible()
+  await expect(
+    page.getByRole("rowgroup", { name: "Red Alliance" })
+  ).toBeVisible()
   await expect(page.getByText(/Played/)).toBeVisible()
   expect(await axe(page)).toEqual([])
 })
@@ -124,10 +126,13 @@ test("teams: rank order with an Unranked group, search, detail and watch", async
   await expect(
     page.getByRole("button", { name: "Watch", exact: true })
   ).toHaveAttribute("aria-pressed", "true")
-  await page.getByRole("radio", { name: "Matches" }).click()
+  await page.getByRole("radio", { name: "Matches", exact: true }).click()
   await expect(page).toHaveURL(/view=matches/)
   await expect(
-    page.getByRole("list", { name: "Matches" }).getByRole("listitem").first()
+    page
+      .getByRole("tabpanel", { name: "Matches" })
+      .getByRole("link", { name: /^Qual / })
+      .first()
   ).toBeVisible()
   expect(await axe(page)).toEqual([])
 })

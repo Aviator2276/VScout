@@ -8,8 +8,10 @@ import { useToast } from "@/components/overlays/toaster"
 import {
   useMatch,
   useMatchCoverage,
+  useMatchEntries,
   useMatchTeams,
 } from "@/features/matches/api/get-matches"
+import { NO_COVERAGE, toMatchView } from "@/features/matches/utils/match-view"
 import { MatchDetailView } from "@/features/matches/components/match-detail-view"
 import { longMatchLabel, parseMatchKey } from "@/utils/match-label"
 import {
@@ -21,6 +23,9 @@ import { StationPickerSheet } from "@/features/scouting/components/station-picke
 import type { PickerRobot } from "@/features/scouting/components/station-picker-sheet"
 import { STATION_ORDER } from "@/features/scouting/utils/recommend-slots"
 import { Button } from "@/components/controls/button"
+import { BottomActionBar } from "@/components/layout/bottom-action-bar"
+import { activeGame } from "@/config/game"
+import { useEventTeamMetrics } from "@/hooks/use-event-team-metrics"
 import { useWatchedTeams } from "@/hooks/use-prefs"
 import { useNotes } from "@/hooks/use-notes"
 import { useOnline } from "@/hooks/use-online"
@@ -52,6 +57,8 @@ function MatchDetail() {
     state.status === "success" ? state.data.teamNumbers : []
   )
   const notes = useNotes({ eventKey: event.key, matchKey })
+  const entries = useMatchEntries(event.key, matchKey)
+  const metrics = useEventTeamMetrics(event.key, "all")
   const ourTeam = useOurTeam()
   const now = useNow()
   const online = useOnline()
@@ -91,6 +98,11 @@ function MatchDetail() {
           ]
         })
       : []
+  // once played, Scout a Robot moves from the thumb zone into the ⋯ menu (ADR-078)
+  const played =
+    state.status === "success" &&
+    toMatchView(state.data, NO_COVERAGE, now).played
+  const openPicker = () => void nav({ search: { sheet: "scout-team" } })
   const scoped: DataState<never> | null = matchKey.startsWith(`${event.key}_`)
     ? null
     : { status: "missing", reason: "not-found" }
@@ -117,6 +129,9 @@ function MatchDetail() {
               label: "Downloaded Videos",
               onSelect: () => void navigate({ to: "/matches/videos" }),
             },
+            ...(canScout && played
+              ? [{ label: "Scout a Robot", onSelect: openPicker }]
+              : []),
             {
               label: "Copy Link",
               onSelect: () => {
@@ -130,22 +145,29 @@ function MatchDetail() {
       }
     >
       <MatchDetailView
+        game={activeGame}
         state={scoped ?? state}
         label={title}
         teams={teams}
         coverage={coverage.get(matchKey)}
+        entries={entries}
+        metrics={metrics.byTeam ?? undefined}
         notes={notes}
         showCoverage={canScout}
         ourTeam={ourTeam}
         now={now}
-        actions={
+        strategyHref={`/scout/strategy/${matchKey}`}
+        scoutAction={
           canScout ? (
-            <Button
-              size="large"
-              onClick={() => void nav({ search: { sheet: "scout-team" } })}
-            >
-              Scout a Robot
-            </Button>
+            <BottomActionBar label="Match actions">
+              <Button
+                size="large"
+                className="flex-1 shadow-lg"
+                onClick={openPicker}
+              >
+                Scout a Robot
+              </Button>
+            </BottomActionBar>
           ) : undefined
         }
       />

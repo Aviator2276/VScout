@@ -6,7 +6,7 @@ import {
   useRecordState,
 } from "@/lib/db/react/data-state-hooks"
 import type { DataState } from "@/lib/db/react/data-state"
-import type { MatchRecord } from "@/lib/db/types"
+import type { MatchRecord, ScoutEntryRecord } from "@/lib/db/types"
 import { coverageByMatch } from "../utils/match-view"
 import type { Coverage } from "../utils/match-view"
 
@@ -139,5 +139,22 @@ export function useMatchTeams(
     },
     [eventKey, key],
     new Map()
+  )
+}
+
+/** Every match-scouting entry on one match (M2 played lines, ADR-078). */
+export function useMatchEntries(
+  eventKey: string,
+  matchKey: string
+): ReadonlyArray<ScoutEntryRecord> {
+  const { db } = useDataRuntime()
+  return useLiveOr(
+    () =>
+      db.scoutEntries
+        .where("[eventKey+matchKey]")
+        .equals([eventKey, matchKey])
+        .toArray(),
+    [db, eventKey, matchKey],
+    []
   )
 }

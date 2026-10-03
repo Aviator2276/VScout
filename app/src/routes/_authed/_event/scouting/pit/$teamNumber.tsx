@@ -22,7 +22,7 @@ function PitScoutingRoute() {
   const navigate = Route.useNavigate()
   const online = useOnline()
   const settings = useScoutingSettings(event.key)
-  const parent = `/teams/${teamNumber}?view=pit`
+  const parent = `/teams/${teamNumber}`
   const finish = useScoutingFinish(parent)
   return (
     <ScoutingPage title={`Pit · ${teamNumber}`} parentHref={parent}>

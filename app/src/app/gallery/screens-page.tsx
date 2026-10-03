@@ -44,6 +44,9 @@ export function ScreensPage() {
       </GallerySection>
       <GallerySection title="Match">
         <MatchDetailView
+          game={activeGame}
+          entries={[]}
+          metrics={undefined}
           state={
             firstMatch
               ? { status: "success", data: firstMatch }

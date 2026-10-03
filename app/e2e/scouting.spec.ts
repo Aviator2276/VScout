@@ -132,8 +132,11 @@ async function openPitForm(page: Page, team: number) {
     .getByRole("link")
     .first()
     .click()
-  await page.getByRole("radio", { name: "Pit" }).click()
-  await page.getByRole("button", { name: "Pit Scout" }).click()
+  // pit answers and the pit form live in Overview's Robot section (ADR-078)
+  await page
+    .getByRole("button", { name: /^(Pit Scout|Edit Pit Scouting)$/ })
+    .first()
+    .click()
 }
 
 async function pitScout(page: Page, drivetrain: string) {
@@ -170,14 +173,13 @@ test("the same author edits on two devices: a conflict, resolved by keeping mine
   await b.getByRole("list", { name: "Teams" }).getByRole("link").first().click()
   // wait for the detail page itself: its chunk may still be loading under the list
   await expect(b.getByRole("heading", { level: 1, name: "254" })).toBeVisible()
-  await b.getByRole("radio", { name: "Pit" }).click()
-  await expect(b.getByRole("tabpanel", { name: "Pit" })).toContainText(
+  await expect(b.getByRole("tabpanel", { name: "Overview" })).toContainText(
     "Swerve",
     {
       timeout: 15_000,
     }
   )
-  await b.getByRole("button", { name: "Pit Scout" }).click()
+  await b.getByRole("button", { name: "Edit Pit Scouting" }).click()
   await expect(
     b.getByText("You already scouted this. Editing your entry.")
   ).toBeVisible()
@@ -209,16 +211,18 @@ test("the same author edits on two devices: a conflict, resolved by keeping mine
   // B shows its own answer, not the server's old one
   await expect(sheet).toBeHidden()
   await b.goto("/teams/254")
-  await b.getByRole("radio", { name: "Pit" }).click()
-  await expect(b.getByRole("tabpanel", { name: "Pit" })).toContainText("Tank")
+  await expect(b.getByRole("tabpanel", { name: "Overview" })).toContainText(
+    "Tank"
+  )
   // and A gets it on its next sync (navigating in-app, no reload)
   await syncNow(a)
   await openTab(a, "Teams")
   await a.getByLabel("Search teams").fill("254")
   await a.getByRole("list", { name: "Teams" }).getByRole("link").first().click()
   await expect(a.getByRole("heading", { level: 1, name: "254" })).toBeVisible()
-  await a.getByRole("radio", { name: "Pit" }).click()
-  await expect(a.getByRole("tabpanel", { name: "Pit" })).toContainText("Tank")
+  await expect(a.getByRole("tabpanel", { name: "Overview" })).toContainText(
+    "Tank"
+  )
   for (const d of devices) await d.close()
 })
 
@@ -240,7 +244,9 @@ test("guests can't scout: no Scout a Robot, no composer, and the form says no ac
   await page.getByLabel("Search matches").fill("q40")
   await expect(page).toHaveURL(/[?&]q=q40/)
   await page.getByRole("link", { name: /^Qual 40$/ }).click()
-  await expect(page.getByRole("region", { name: "Red Alliance" })).toBeVisible()
+  await expect(
+    page.getByRole("rowgroup", { name: "Red Alliance" })
+  ).toBeVisible()
   await expect(page.getByRole("button", { name: "Scout a Robot" })).toHaveCount(
     0
   )

@@ -2,38 +2,42 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 import { Button } from "@/components/controls/button"
 import { Ellipsis, Star } from "@/components/icons/icon"
+import { BottomActionBar } from "@/components/layout/bottom-action-bar"
 import { NavBackButton } from "@/components/layout/nav-back-button"
 import { StackPage } from "@/components/layout/stack-page"
+import { List } from "@/components/list/list"
+import { NoteComposer } from "@/components/notes/note-composer"
 import { ActionMenu } from "@/components/overlays/menu"
 import { useToast } from "@/components/overlays/toaster"
 import { activeGame } from "@/config/game"
 import {
   useTeam,
+  useTeamEntries,
   useTeamMatches,
+  useTeamPhotos,
   useTeamPit,
   useTeamPost,
-  useTeamPhotos,
 } from "@/features/teams/api/get-teams"
-import { TEAM_VIEWS } from "@/features/teams/types/team-views"
 import {
   TeamDetailView,
-  TeamPhotoHero,
   TeamMatches,
   TeamNotes,
-  TeamOverview,
-  TeamPitView,
-  TeamPostView,
 } from "@/features/teams/components/team-detail-view"
-import { NoteComposer } from "@/components/notes/note-composer"
+import { TeamOverview } from "@/features/teams/components/team-overview"
+import { TEAM_VIEWS } from "@/features/teams/types/team-views"
+import type { TeamViewKey } from "@/features/teams/types/team-views"
 import { useEventTeamMetrics } from "@/hooks/use-event-team-metrics"
 import { useAddNote, useDeleteNote, useNotes } from "@/hooks/use-notes"
-import { can } from "@/lib/authorization"
 import { useWatchedTeams } from "@/hooks/use-prefs"
+import { can } from "@/lib/authorization"
+import type { TeamDetail } from "@/features/teams/api/get-teams"
 
 export const Route = createFileRoute("/_authed/_event/_tabs/teams/$teamNumber")(
   {
     validateSearch: z.object({
+      // `pit` and `post` (merged into Overview, ADR-078) fall back to Overview
       view: z.enum(TEAM_VIEWS).optional().catch(undefined),
+      window: z.enum(["recent"]).optional().catch(undefined),
       notes: z.enum(["all", "team", "private"]).optional().catch(undefined),
     }),
     component: TeamDetailRoute,
@@ -53,6 +57,12 @@ function TeamDetailRoute() {
   const photos = useTeamPhotos(event.key, teamNumber)
   const { watched, toggle } = useWatchedTeams()
   const isWatched = watched.has(teamNumber)
+  const canScout = can(session, "scouting:create")
+  const setView = (v: TeamViewKey) =>
+    void navigate({
+      search: (prev) => ({ ...prev, view: v === "overview" ? undefined : v }),
+      replace: true,
+    })
 
   return (
     <StackPage
@@ -105,34 +115,28 @@ function TeamDetailRoute() {
         state={team}
         teamNumber={teamNumber}
         view={view}
-        hero={<TeamPhotoHero photos={photos} teamNumber={teamNumber} />}
-        actions={
-          can(session, "scouting:create") ? (
-            <ScoutActions
-              eventKey={event.key}
-              teamNumber={teamNumber}
-              view={view}
-            />
+        photoUrl={photos[0] ? (photos[0].thumbUrl ?? photos[0].url) : null}
+        bottom={
+          canScout ? (
+            <ScoutNext eventKey={event.key} teamNumber={teamNumber} />
           ) : undefined
         }
-        onViewChange={(v) =>
-          void navigate({
-            search: (prev) => ({
-              ...prev,
-              view: v === "overview" ? undefined : v,
-            }),
-            replace: true,
-          })
-        }
+        onViewChange={setView}
       >
         {view === "overview" && team.status === "success" ? (
           <Overview
             eventKey={event.key}
-            teamNumber={teamNumber}
             team={team.data}
+            windowParam={search.window}
+            canScout={canScout}
+            onAllNotes={() => setView("notes")}
           />
         ) : view === "matches" ? (
-          <MatchesView eventKey={event.key} teamNumber={teamNumber} />
+          <MatchesView
+            eventKey={event.key}
+            teamNumber={teamNumber}
+            canScout={canScout}
+          />
         ) : view === "notes" ? (
           <NotesView
             eventKey={event.key}
@@ -150,10 +154,6 @@ function TeamDetailRoute() {
             canWritePrivate={session.role !== "guest"}
             canWrite={can(session, "comment:create")}
           />
-        ) : view === "pit" ? (
-          <PitView eventKey={event.key} teamNumber={teamNumber} />
-        ) : view === "post" ? (
-          <PostView eventKey={event.key} teamNumber={teamNumber} />
         ) : null}
       </TeamDetailView>
     </StackPage>
@@ -164,19 +164,65 @@ function TeamDetailRoute() {
 
 function Overview({
   eventKey,
-  teamNumber,
   team,
+  windowParam,
+  canScout,
+  onAllNotes,
 }: {
   eventKey: string
-  teamNumber: number
-  team: Parameters<typeof TeamOverview>[0]["team"]
+  team: TeamDetail
+  windowParam: "recent" | undefined
+  canScout: boolean
+  onAllNotes: () => void
 }) {
-  const metrics = useEventTeamMetrics(eventKey, "all")
+  const navigate = Route.useNavigate()
+  const go = useNavigate()
+  const window = windowParam ?? "all"
+  const all = useEventTeamMetrics(eventKey, "all")
+  const recent = useEventTeamMetrics(eventKey, "recent")
+  const selected = window === "recent" ? recent : all
+  const teamNumber = team.teamNumber
+  const pit = useTeamPit(eventKey, teamNumber)
+  const scout = (
+    to: "/scouting/pit/$teamNumber" | "/scouting/post/$teamNumber"
+  ) => void go({ to, params: { teamNumber: String(teamNumber) } })
   return (
     <TeamOverview
       game={activeGame}
       team={team}
-      metrics={metrics.byTeam?.get(teamNumber)}
+      window={window}
+      onWindowChange={(w) =>
+        void navigate({
+          search: (prev) => ({
+            ...prev,
+            window: w === "recent" ? "recent" : undefined,
+          }),
+          replace: true,
+        })
+      }
+      metrics={selected.byTeam?.get(teamNumber)}
+      recent={recent.byTeam?.get(teamNumber)}
+      byTeam={selected.byTeam ?? undefined}
+      pit={pit}
+      post={useTeamPost(eventKey, teamNumber)}
+      notes={useNotes({ eventKey, teamNumber })}
+      onAllNotes={onAllNotes}
+      robotActions={
+        canScout ? (
+          <>
+            <List.Row
+              title={
+                pit.status === "success" ? "Edit Pit Scouting" : "Pit Scout"
+              }
+              onSelect={() => scout("/scouting/pit/$teamNumber")}
+            />
+            <List.Row
+              title="Post-Scout"
+              onSelect={() => scout("/scouting/post/$teamNumber")}
+            />
+          </>
+        ) : undefined
+      }
     />
   )
 }
@@ -184,17 +230,19 @@ function Overview({
 function MatchesView({
   eventKey,
   teamNumber,
+  canScout,
 }: {
   eventKey: string
   teamNumber: number
+  canScout: boolean
 }) {
-  const { session } = Route.useRouteContext()
-  const canScout = can(session, "scouting:create")
   const navigate = useNavigate()
   return (
     <TeamMatches
+      game={activeGame}
       state={useTeamMatches(eventKey, teamNumber)}
       teamNumber={teamNumber}
+      entries={useTeamEntries(eventKey, teamNumber)}
       onScout={
         canScout
           ? (matchKey) =>
@@ -240,79 +288,28 @@ function NotesView({
   )
 }
 
-function PitView({
+/** Thumb-zone action (teams.md T2): the team's next unplayed match, else Pit Scout if never pit scouted. */
+function ScoutNext({
   eventKey,
   teamNumber,
 }: {
   eventKey: string
   teamNumber: number
-}) {
-  return (
-    <TeamPitView game={activeGame} state={useTeamPit(eventKey, teamNumber)} />
-  )
-}
-
-function PostView({
-  eventKey,
-  teamNumber,
-}: {
-  eventKey: string
-  teamNumber: number
-}) {
-  return (
-    <TeamPostView game={activeGame} state={useTeamPost(eventKey, teamNumber)} />
-  )
-}
-
-/** Thumb-zone actions (teams.md T2): scout the team's next match, pit scout, or post-scout. */
-function ScoutActions({
-  eventKey,
-  teamNumber,
-  view,
-}: {
-  eventKey: string
-  teamNumber: number
-  view: string
 }) {
   const go = useNavigate()
   const matches = useTeamMatches(eventKey, teamNumber)
+  const pit = useTeamPit(eventKey, teamNumber)
   const next =
     matches.status === "success"
       ? matches.data.find((m) => m.status !== "played")
       : undefined
   const team = String(teamNumber)
-  return (
-    <div className="flex gap-2">
-      {view === "pit" || !next ? (
+  if (next)
+    return (
+      <BottomActionBar label="Team actions">
         <Button
           size="large"
-          className="flex-1"
-          onClick={() =>
-            void go({
-              to: "/scouting/pit/$teamNumber",
-              params: { teamNumber: team },
-            })
-          }
-        >
-          Pit Scout
-        </Button>
-      ) : view === "post" ? (
-        <Button
-          size="large"
-          className="flex-1"
-          onClick={() =>
-            void go({
-              to: "/scouting/post/$teamNumber",
-              params: { teamNumber: team },
-            })
-          }
-        >
-          Post-Scout
-        </Button>
-      ) : (
-        <Button
-          size="large"
-          className="flex-1"
+          className="flex-1 shadow-lg"
           onClick={() =>
             void go({
               to: "/scouting/match/$matchKey/$teamNumber",
@@ -322,7 +319,24 @@ function ScoutActions({
         >
           Scout {teamNumber} Next
         </Button>
-      )}
-    </div>
-  )
+      </BottomActionBar>
+    )
+  if (pit.status === "missing")
+    return (
+      <BottomActionBar label="Team actions">
+        <Button
+          size="large"
+          className="flex-1 shadow-lg"
+          onClick={() =>
+            void go({
+              to: "/scouting/pit/$teamNumber",
+              params: { teamNumber: team },
+            })
+          }
+        >
+          Pit Scout
+        </Button>
+      </BottomActionBar>
+    )
+  return null
 }

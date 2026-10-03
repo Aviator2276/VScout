@@ -91,6 +91,15 @@ export const game = defineGame({
       ],
     },
   ],
+  detailPage: {
+    matchSummary: [
+      { field: "auto.effectiveness", label: "summary.auto" },
+      { field: "teleop.scoringRating", label: "summary.scoring" },
+      { field: "endgame.climbResult", label: "summary.climb" },
+      { field: "incidents", label: "summary.stops" },
+    ],
+    prediction: { external: "epa" },
+  },
   picklistHints: {
     first: ["consistency", "autoEffectiveness", "climbMax"],
     second: ["defense", "reliability", "fitsTrench"],

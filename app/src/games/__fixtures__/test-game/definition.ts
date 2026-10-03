@@ -228,6 +228,14 @@ export const game = defineGame({
     units: { teleopScoring: "units.widgets" },
   },
   metrics,
+  detailPage: {
+    matchSummary: [
+      { field: "auto.effectiveness", label: "summary.auto" },
+      { field: "teleop.widgetRating", label: "summary.widgets" },
+      { field: "incidents", label: "summary.stops" },
+    ],
+    prediction: { external: "epa" },
+  },
   validations: [],
   teamListColumns: [
     {
@@ -290,6 +298,10 @@ export const game = defineGame({
       "postForm.title": "After quals",
       "postForm.willingDefense": "Willing to defend",
       "cap.grabber": "Grabber",
+      "summary.auto": "Auto",
+      "summary.widgets": "Widgets",
+      "summary.stops": "Stops",
+      "breakdown.autoPoints": "Auto",
       "units.widgets": "widgets",
       "metric.reliability": "Reliability",
       "metric.reliability.desc": "Matches without a breakdown",

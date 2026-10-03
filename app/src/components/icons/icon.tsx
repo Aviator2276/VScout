@@ -2,6 +2,7 @@
 // directly, so the set stays consistent and swappable. HIG standard actions map to lucide here.
 export {
   ArrowDown,
+  ArrowUp,
   ArrowDownUp,
   ArrowUpCircle,
   Bell,
@@ -19,6 +20,7 @@ export {
   CircleQuestionMark,
   CircleUser,
   CircleX,
+  ClipboardCheck,
   ClipboardList,
   CloudCheck,
   CloudOff,
