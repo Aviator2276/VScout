@@ -1,6 +1,7 @@
-// Demo data for `pnpm mock:api`, so a local sign-in has events to pick. Replaced by the admin demo
-// generator (AD7a) when it exists.
+// Demo data for `pnpm mock:api`, so a local sign-in has events to pick, and the demo event is
+// mid-qualification (demo-event.ts). The admin demo generator (AD7a, FX-60) builds on it.
 import { wireEnvelope, wireEvent, wireUser } from "../factories/wire"
+import { seedDemoEvent } from "./demo-event"
 import { MOCK_CREDENTIALS, MOCK_USER_ID, mockBackend } from "./mock-backend"
 
 const EVENTS = [
@@ -27,11 +28,16 @@ const EVENTS = [
 
 /** Local accounts: alex is the team's admin; sam shows the scouter view. Same password. */
 const DEV_ACCOUNTS = [
-  { id: MOCK_USER_ID, username: "alex", displayName: "Alex", role: "admin" },
+  {
+    id: MOCK_USER_ID,
+    username: "alex",
+    displayName: "Alex Rivera",
+    role: "admin",
+  },
   {
     id: "01900000-0000-7000-8000-000000009001",
     username: "sam",
-    displayName: "Sam",
+    displayName: "Sam Chen",
     role: "scouter",
   },
 ] as const
@@ -77,4 +83,5 @@ export function seedDevData(): void {
         wireEvent({ ...e, gameId: "2026-rebuilt", year: 2026 })
       )
     )
+  seedDemoEvent("2026chcmp")
 }

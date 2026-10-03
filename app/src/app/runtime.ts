@@ -37,6 +37,7 @@ import type { Clock } from "@/lib/clock"
 import { migrateDrafts } from "@/lib/db/drafts"
 import { getKv, setKv } from "@/lib/db/kv"
 import type { DataRuntime } from "@/lib/db/react/data-runtime"
+import { clearLiveCache } from "@/lib/db/react/use-live"
 import type { VScoutDB } from "@/lib/db/schema"
 import type { DeviceSettingsRow, EventRecord } from "@/lib/db/types"
 import { uuidIds } from "@/lib/ids"
@@ -233,6 +234,8 @@ export function createAppRuntime(o: RuntimeOptions) {
       activeEventKey.set(null)
       // pages reading Dexie must unmount before the database is deleted (DatabaseClosedError)
       await Promise.all([...sessionEnded].map(async (l) => l(reason)))
+      // the next user must never see the last user's rows, not even for a frame
+      clearLiveCache()
     },
     onRoleChanged: (role) => {
       for (const l of roleChanged) l(role)

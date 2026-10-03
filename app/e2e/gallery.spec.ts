@@ -119,7 +119,8 @@ test("axe with solid surfaces, and AX3 text never scrolls sideways", async ({
   const sizes = await page.evaluate(() =>
     [
       "[role=radiogroup][aria-label=Page] [role=radio] > span",
-      "li a[href]",
+      // the row is the link (FX-2); its title is the text-body element inside it
+      "li a[href] .text-body",
     ].map((sel) =>
       parseFloat(
         getComputedStyle(document.querySelector(sel) as Element).fontSize

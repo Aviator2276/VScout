@@ -47,7 +47,7 @@ function Section({
         </h2>
       ) : null}
       {/* the page already has its side padding: the card lines up with the large title */}
-      <KList strong inset dividers className="mx-0! my-0">
+      <KList strong inset dividers className="vs-list mx-0! my-0">
         {children}
       </KList>
       {footer ? (
@@ -73,6 +73,46 @@ interface RowProps {
   className?: string
 }
 
+const ROW_CONTENT = "min-h-11 w-full text-start"
+
+/** Konsta renders `linkComponent` as an element type; its typings only allow tag names. */
+const asLinkComponent = (c: (props: never) => ReactNode) =>
+  c as unknown as string
+
+/**
+ * Konsta's link mode makes the whole row the control (FX-2): the row's content element is the
+ * router link, so the chevron and the empty space activate it too, and `activeBgIos` shows the
+ * pressed state. Konsta passes its own props; only these are forwarded.
+ */
+function RowLink({
+  href = "",
+  className = "",
+  children,
+}: {
+  href?: string
+  className?: string
+  children?: ReactNode
+}) {
+  const renderLink = use(ListLinkContext)
+  return renderLink({ href, className, children })
+}
+
+function RowButton({
+  className,
+  children,
+  onClick,
+}: {
+  className?: string
+  children?: ReactNode
+  onClick?: () => void
+}) {
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {children}
+    </button>
+  )
+}
+
 function Row({
   title,
   subtitle,
@@ -82,71 +122,48 @@ function Row({
   onSelect,
   className,
 }: RowProps) {
-  const renderLink = use(ListLinkContext)
   const after = detail ? (
     <span className="text-muted-foreground">{detail}</span>
   ) : undefined
-  if (href) {
-    // Konsta's `link` mode renders its own <a>; the router link must be the only one
+  const common = {
+    // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
+    titleFontSizeIos: "text-body",
+    colors: ROW_COLORS,
+    className: cn("min-h-11", className),
+    title,
+    subtitle,
+    after,
+    media: leading,
+  }
+  if (href)
     return (
       <ListItem
-        // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
-        titleFontSizeIos="text-body"
-        colors={ROW_COLORS}
-        className={cn("relative min-h-11", className)}
-        title={renderLink({
-          href,
-          className: "after:absolute after:inset-0",
-          children: title,
-        })}
-        subtitle={subtitle}
-        after={
-          <span className="flex items-center gap-1">
-            {after}
-            <ChevronRight
-              aria-hidden
-              size={20}
-              className="text-muted-foreground/60"
-            />
-          </span>
+        {...common}
+        link
+        href={href}
+        linkComponent={asLinkComponent(RowLink)}
+        contentClassName={ROW_CONTENT}
+        chevronIcon={
+          <ChevronRight
+            aria-hidden
+            size={20}
+            className="ms-1 shrink-0 text-muted-foreground/60"
+          />
         }
-        media={leading}
       />
     )
-  }
   if (onSelect)
     return (
       <ListItem
-        // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
-        titleFontSizeIos="text-body"
-        colors={ROW_COLORS}
-        className={cn("min-h-11", className)}
-        title={
-          <button
-            type="button"
-            onClick={onSelect}
-            className="text-start after:absolute after:inset-0"
-          >
-            {title}
-          </button>
-        }
-        subtitle={subtitle}
-        after={after}
-        media={leading}
+        {...common}
+        link
+        chevron={false}
+        linkComponent={asLinkComponent(RowButton)}
+        linkProps={{ onClick: onSelect }}
+        contentClassName={ROW_CONTENT}
       />
     )
-  return (
-    <ListItem
-      // Konsta's default is text-[17px], which ignores Dynamic Type (AX3, ui-design-system §6.2)
-      titleFontSizeIos="text-body"
-      colors={ROW_COLORS}
-      className={cn("min-h-11", className)}
-      title={title}
-      subtitle={subtitle}
-      after={after}
-      media={leading}
-    />
-  )
+  return <ListItem {...common} />
 }
 
 function ToggleRow({
@@ -182,7 +199,7 @@ function ToggleRow({
 /** A standalone list without a section title. Prefer <List.Section> on settings-style screens. */
 function ListRoot({ children }: { children: ReactNode }) {
   return (
-    <KList strong inset dividers>
+    <KList strong inset dividers className="vs-list">
       {children}
     </KList>
   )

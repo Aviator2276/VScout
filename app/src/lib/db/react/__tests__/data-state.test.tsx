@@ -103,6 +103,37 @@ describe("useCollectionState (data-layer §9.2.2)", () => {
     expect(second[1]).not.toBe(first[1])
   })
 
+  it("shows the last result on the first render when a page mounts again", async () => {
+    const t = createTestRuntime()
+    await t.seedScope(EV, "match")
+    await t.db.matches.bulkPut([match(1), match(2)])
+    const first = renderHook(() => useMatches(t), { wrapper: t.wrapper })
+    await waitFor(() => expect(first.result.current.status).toBe("success"))
+    first.unmount()
+    const again = renderHook(() => useMatches(t), { wrapper: t.wrapper })
+    expect(again.result.current).toEqual({
+      status: "success",
+      data: [match(1), match(2)],
+    })
+  })
+
+  it("doesn't reuse a result across databases or different inputs", async () => {
+    const a = createTestRuntime()
+    await a.seedScope(EV, "match")
+    await a.db.matches.put(match(1))
+    const first = renderHook(() => useMatches(a), { wrapper: a.wrapper })
+    await waitFor(() => expect(first.result.current.status).toBe("success"))
+    first.unmount()
+    const b = createTestRuntime()
+    await b.seedScope(EV, "match")
+    const other = renderHook(() => useMatches(b), { wrapper: b.wrapper })
+    expect(other.result.current).toEqual({ status: "loading" })
+    const changed = renderHook(() => useMatches(a, { fail: false }), {
+      wrapper: a.wrapper,
+    })
+    expect(changed.result.current).toEqual({ status: "loading" })
+  })
+
   it("turns a failing query into an error with a retry", async () => {
     const t = createTestRuntime()
     await t.seedScope(EV, "match")

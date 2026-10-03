@@ -174,13 +174,30 @@ describe("List", () => {
     )
     expect(screen.getByText("Account")).toBeInTheDocument()
     expect(screen.getByText("Signed in until Oct 8")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Event" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /^Event/ })).toHaveAttribute(
       "data-router",
       "yes"
     )
-    await userEvent.click(screen.getByRole("button", { name: "Layout" }))
+    await userEvent.click(screen.getByRole("button", { name: /^Layout/ }))
     expect(onSelect).toHaveBeenCalledOnce()
     expect(screen.getByRole("checkbox", { name: "Haptics" })).toBeChecked()
+  })
+
+  it("the whole row is the control: title, detail and chevron (FX-2)", () => {
+    const { container } = ios(
+      <List>
+        <List.Row title="Event" detail="Silicon Valley" href="/e" />
+        <List.Row title="Layout" detail="Starter" onSelect={() => undefined} />
+      </List>
+    )
+    const link = screen.getByRole("link", { name: /^Event/ })
+    expect(link).toHaveTextContent("Silicon Valley")
+    expect(link.querySelector("svg")).not.toBeNull()
+    const rows = container.querySelectorAll("li")
+    expect(rows[0]?.firstElementChild).toBe(link)
+    expect(rows[1]?.firstElementChild).toBe(
+      screen.getByRole("button", { name: /^Layout/ })
+    )
   })
 
   it("a navigating row is exactly one link (no link inside a link)", () => {

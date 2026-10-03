@@ -120,6 +120,8 @@ test("chat: a message sent on one device arrives on the other", async ({
   const [a, b] = pages
   if (!a || !b) throw new Error("no pages")
   await signIn(a, "/scout")
+  // the Needs Scouting card grows once it loads; let it settle before tapping below it
+  await expect(a.getByRole("button", { name: /^Start Scouting/ })).toBeVisible()
   await a.getByRole("link", { name: "Messages" }).click()
   await expect(
     a.getByRole("heading", { level: 1, name: "Messages" })
@@ -143,6 +145,7 @@ test("chat: a message sent on one device arrives on the other", async ({
 
   await signIn(b, "/scout")
   await syncNow(b)
+  await expect(b.getByRole("button", { name: /^Start Scouting/ })).toBeVisible()
   await b.getByRole("link", { name: "Messages" }).click()
   await expect(b.getByRole("list", { name: "Conversations" })).toContainText(
     "Q14 queue moved"

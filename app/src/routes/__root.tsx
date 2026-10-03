@@ -14,6 +14,7 @@ import { HelpRuntime } from "@/app/help-runtime"
 import { UpdateRuntime } from "@/app/update-runtime"
 import type { RouterContext } from "@/app/router-context"
 import { RouteNotFound } from "@/components/errors/route-not-found"
+import { SplashScreen, useHideSplash } from "@/components/layout/splash-screen"
 import { PREPAINT_SCRIPT } from "@/lib/theme"
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -60,6 +61,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 // No I/O here: the root renders in Node for the shell prerender (routing-auth §1).
 function Root() {
   const { app } = Route.useRouteContext()
+  useHideSplash()
   return (
     <AppProviders>
       <UpdateRuntime app={app}>
@@ -91,6 +93,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body>
+        <SplashScreen />
         {children}
         {import.meta.env.DEV && (
           <TanStackDevtools

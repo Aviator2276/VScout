@@ -15,6 +15,7 @@ import { useOurTeam } from "@/hooks/use-our-team"
 import { usePrefs, useSetPrefs } from "@/hooks/use-prefs"
 import { useSession } from "@/hooks/use-session"
 import { can } from "@/lib/authorization"
+import { initials } from "@/utils/initials"
 
 export const Route = createFileRoute("/_authed/_event/_tabs/settings/")({
   component: Settings,
@@ -31,15 +32,6 @@ const PUSH_LABEL = {
   "needs-install": "Needs install",
   unsupported: "Not available",
 } as const
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
-}
 
 // Settings (features/settings.md S0): one row per section with its current value.
 function Settings() {

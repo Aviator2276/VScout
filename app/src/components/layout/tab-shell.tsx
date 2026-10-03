@@ -9,7 +9,12 @@ import {
   House,
   UsersRound,
 } from "@/components/icons/icon"
-import { getTabMemory, isTabRoot, tabForPath } from "@/stores/tab-memory"
+import {
+  TAB_ROOTS,
+  getTabMemory,
+  isTabRoot,
+  tabForPath,
+} from "@/stores/tab-memory"
 import type { TabId } from "@/stores/tab-memory"
 import { TabBar } from "./tab-bar"
 import type { TabItem } from "./tab-bar"
@@ -32,6 +37,21 @@ export function TabShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     memory.remember(pathname, href)
   }, [memory, pathname, href])
+
+  // Load every tab's code once the first page has painted, so the first visit to a tab doesn't
+  // wait for its chunk behind a pending skeleton (FX-1). Loaders are cheap Dexie reads.
+  useEffect(() => {
+    const preload = () => {
+      for (const to of [...Object.values(TAB_ROOTS), "/settings"])
+        void router.preloadRoute({ to }).catch(() => undefined)
+    }
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(preload, { timeout: 2000 })
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(preload, 500)
+    return () => clearTimeout(id)
+  }, [router])
 
   const select = (tab: TabId) => {
     if (tab !== active) {

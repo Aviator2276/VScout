@@ -14,7 +14,7 @@ import { logger } from "@/lib/logger"
 import type { ScopeInfo } from "@/lib/sync/scope-info"
 import { useDataRuntime } from "./data-runtime"
 import type { DataState, MissingReason } from "./data-state"
-import { useLive } from "./use-live"
+import { liveCacheKey, useLive } from "./use-live"
 import type { Settled } from "./use-live"
 
 export interface ScopeRef {
@@ -42,6 +42,14 @@ function useScopes(
   )
   const list: ReadonlyArray<ScopeRef> = isScopeList(source) ? source : [source]
   return list.map((s) => scopeInfo.get(s.scope, s.entity))
+}
+
+/** The scope and entity names, part of a query's cache key. */
+function sourceParts(
+  source: ScopeRef | ReadonlyArray<ScopeRef>
+): Array<string> {
+  const list: ReadonlyArray<ScopeRef> = isScopeList(source) ? source : [source]
+  return list.map((s) => `${s.scope}/${s.entity}`)
 }
 
 function useCanSync(): boolean {
@@ -123,6 +131,7 @@ export function useCollectionState<TRow>(
 ): DataState<ReadonlyArray<TRow>> {
   const scopes = useScopes(opts.source)
   const canSync = useCanSync()
+  const { db } = useDataRuntime()
   const { key, retry } = useRetry()
   const allowed = opts.allowed ?? true
   const [share] = useState(() =>
@@ -131,7 +140,8 @@ export function useCollectionState<TRow>(
   const { query } = opts
   const result = useLive(
     opts.enabled && allowed ? async () => share(await query()) : null,
-    [...opts.deps, key]
+    [...opts.deps, key],
+    liveCacheKey(query, [db, ...sourceParts(opts.source), ...opts.deps])
   )
   useLogError(result)
 
@@ -194,7 +204,8 @@ export function useRecordState<TRecord>(
           return { found: false, deleted, explained: await explainMissing?.() }
         }
       : null,
-    [...opts.deps, key]
+    [...opts.deps, key],
+    liveCacheKey(query, [db, ...sourceParts(opts.source), ...opts.deps])
   )
   useLogError(result)
   const state = recordState(result, {
@@ -276,7 +287,8 @@ export function useLiveOr<TValue>(
   deps: DependencyList,
   fallback: TValue
 ): TValue {
-  const result = useLive(query, deps)
+  const { db } = useDataRuntime()
+  const result = useLive(query, deps, liveCacheKey(query, [db, ...deps]))
   useLogError(result)
   return result?.kind === "ok" ? result.value : fallback
 }
