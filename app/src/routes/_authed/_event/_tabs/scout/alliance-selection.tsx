@@ -31,6 +31,7 @@ import {
 } from "@/features/alliance-selection/utils/selection-rules"
 import type { LocalAction } from "@/features/alliance-selection/utils/selection-rules"
 import { useOnline } from "@/hooks/use-online"
+import { useHideTabBar } from "@/hooks/use-tab-bar"
 import { can } from "@/lib/authorization"
 import { useLiveActions } from "@/lib/db/react/data-runtime"
 import type { DataState } from "@/lib/db/react/data-state"
@@ -51,6 +52,8 @@ export const Route = createFileRoute(
 
 function AllianceSelection() {
   const { event, session } = Route.useRouteContext()
+  // the live board is immersive: Back is the way out (FX-11)
+  useHideTabBar()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const toast = useToast()

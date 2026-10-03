@@ -21,10 +21,12 @@ import { Route as AuthedEventScoutingMineRouteImport } from './routes/_authed/_e
 import { Route as AuthedEventTabsMatchesIndexRouteImport } from './routes/_authed/_event/_tabs/matches/index'
 import { Route as AuthedEventTabsMatchesMatchKeyRouteImport } from './routes/_authed/_event/_tabs/matches/$matchKey'
 import { Route as AuthedEventTabsMatchesVideosRouteImport } from './routes/_authed/_event/_tabs/matches/videos'
+import { Route as AuthedEventTabsMessagesIndexRouteImport } from './routes/_authed/_event/_tabs/messages/index'
+import { Route as AuthedEventTabsMessagesChannelIdRouteImport } from './routes/_authed/_event/_tabs/messages/$channelId'
+import { Route as AuthedEventTabsMessagesAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/messages/announcements'
 import { Route as AuthedEventTabsScoutIndexRouteImport } from './routes/_authed/_event/_tabs/scout/index'
 import { Route as AuthedEventTabsScoutAllianceSelectionRouteImport } from './routes/_authed/_event/_tabs/scout/alliance-selection'
 import { Route as AuthedEventTabsScoutAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/scout/announcements'
-import { Route as AuthedEventTabsScoutMessagesRouteRouteImport } from './routes/_authed/_event/_tabs/scout/messages/route'
 import { Route as AuthedEventTabsScoutNeedsScoutingRouteImport } from './routes/_authed/_event/_tabs/scout/needs-scouting'
 import { Route as AuthedEventTabsSettingsIndexRouteImport } from './routes/_authed/_event/_tabs/settings/index'
 import { Route as AuthedEventTabsSettingsAboutRouteImport } from './routes/_authed/_event/_tabs/settings/about'
@@ -126,6 +128,24 @@ const AuthedEventTabsMatchesVideosRoute =
     path: '/matches/videos',
     getParentRoute: () => AuthedEventTabsRoute,
   } as any)
+const AuthedEventTabsMessagesIndexRoute =
+  AuthedEventTabsMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMessagesChannelIdRoute =
+  AuthedEventTabsMessagesChannelIdRouteImport.update({
+    id: '/messages/$channelId',
+    path: '/messages/$channelId',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMessagesAnnouncementsRoute =
+  AuthedEventTabsMessagesAnnouncementsRouteImport.update({
+    id: '/messages/announcements',
+    path: '/messages/announcements',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
 const AuthedEventTabsScoutIndexRoute =
   AuthedEventTabsScoutIndexRouteImport.update({
     id: '/scout/',
@@ -142,12 +162,6 @@ const AuthedEventTabsScoutAnnouncementsRoute =
   AuthedEventTabsScoutAnnouncementsRouteImport.update({
     id: '/scout/announcements',
     path: '/scout/announcements',
-    getParentRoute: () => AuthedEventTabsRoute,
-  } as any)
-const AuthedEventTabsScoutMessagesRouteRoute =
-  AuthedEventTabsScoutMessagesRouteRouteImport.update({
-    id: '/scout/messages',
-    path: '/scout/messages',
     getParentRoute: () => AuthedEventTabsRoute,
   } as any)
 const AuthedEventTabsScoutNeedsScoutingRoute =
@@ -260,15 +274,15 @@ const AuthedEventScoutingPostTeamNumberRoute =
   } as any)
 const AuthedEventTabsScoutMessagesIndexRoute =
   AuthedEventTabsScoutMessagesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthedEventTabsScoutMessagesRouteRoute,
+    id: '/scout/messages/',
+    path: '/scout/messages/',
+    getParentRoute: () => AuthedEventTabsRoute,
   } as any)
 const AuthedEventTabsScoutMessagesChannelIdRoute =
   AuthedEventTabsScoutMessagesChannelIdRouteImport.update({
-    id: '/$channelId',
-    path: '/$channelId',
-    getParentRoute: () => AuthedEventTabsScoutMessagesRouteRoute,
+    id: '/scout/messages/$channelId',
+    path: '/scout/messages/$channelId',
+    getParentRoute: () => AuthedEventTabsRoute,
   } as any)
 const AuthedEventTabsScoutPicklistsIndexRoute =
   AuthedEventTabsScoutPicklistsIndexRouteImport.update({
@@ -392,10 +406,11 @@ export interface FileRoutesByFullPath {
   '/dev/gallery': typeof DevGalleryRoute
   '/scouting': typeof AuthedEventScoutingRouteRouteWithChildren
   '/scouting/mine': typeof AuthedEventScoutingMineRoute
-  '/scout/messages': typeof AuthedEventTabsScoutMessagesRouteRouteWithChildren
   '/settings/admin': typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
   '/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
   '/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
   '/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
   '/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
   '/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
@@ -414,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
   '/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
   '/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/messages/': typeof AuthedEventTabsMessagesIndexRoute
   '/scout/': typeof AuthedEventTabsScoutIndexRoute
   '/settings/': typeof AuthedEventTabsSettingsIndexRoute
   '/teams/': typeof AuthedEventTabsTeamsIndexRoute
@@ -448,6 +464,8 @@ export interface FileRoutesByTo {
   '/scouting/mine': typeof AuthedEventScoutingMineRoute
   '/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
   '/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
   '/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
   '/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
   '/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
@@ -466,6 +484,7 @@ export interface FileRoutesByTo {
   '/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
   '/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
   '/matches': typeof AuthedEventTabsMatchesIndexRoute
+  '/messages': typeof AuthedEventTabsMessagesIndexRoute
   '/scout': typeof AuthedEventTabsScoutIndexRoute
   '/settings': typeof AuthedEventTabsSettingsIndexRoute
   '/teams': typeof AuthedEventTabsTeamsIndexRoute
@@ -502,10 +521,11 @@ export interface FileRoutesById {
   '/_authed/_event/_tabs': typeof AuthedEventTabsRouteWithChildren
   '/_authed/_event/scouting/mine': typeof AuthedEventScoutingMineRoute
   '/_authed/_event/_tabs/': typeof AuthedEventTabsIndexRoute
-  '/_authed/_event/_tabs/scout/messages': typeof AuthedEventTabsScoutMessagesRouteRouteWithChildren
   '/_authed/_event/_tabs/settings/admin': typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
   '/_authed/_event/_tabs/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
   '/_authed/_event/_tabs/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/_authed/_event/_tabs/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/_authed/_event/_tabs/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
   '/_authed/_event/_tabs/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
   '/_authed/_event/_tabs/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
   '/_authed/_event/_tabs/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
@@ -524,6 +544,7 @@ export interface FileRoutesById {
   '/_authed/_event/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
   '/_authed/_event/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
   '/_authed/_event/_tabs/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/_authed/_event/_tabs/messages/': typeof AuthedEventTabsMessagesIndexRoute
   '/_authed/_event/_tabs/scout/': typeof AuthedEventTabsScoutIndexRoute
   '/_authed/_event/_tabs/settings/': typeof AuthedEventTabsSettingsIndexRoute
   '/_authed/_event/_tabs/teams/': typeof AuthedEventTabsTeamsIndexRoute
@@ -558,10 +579,11 @@ export interface FileRouteTypes {
     | '/dev/gallery'
     | '/scouting'
     | '/scouting/mine'
-    | '/scout/messages'
     | '/settings/admin'
     | '/matches/$matchKey'
     | '/matches/videos'
+    | '/messages/$channelId'
+    | '/messages/announcements'
     | '/scout/alliance-selection'
     | '/scout/announcements'
     | '/scout/needs-scouting'
@@ -580,6 +602,7 @@ export interface FileRouteTypes {
     | '/scouting/pit/$teamNumber'
     | '/scouting/post/$teamNumber'
     | '/matches/'
+    | '/messages/'
     | '/scout/'
     | '/settings/'
     | '/teams/'
@@ -614,6 +637,8 @@ export interface FileRouteTypes {
     | '/scouting/mine'
     | '/matches/$matchKey'
     | '/matches/videos'
+    | '/messages/$channelId'
+    | '/messages/announcements'
     | '/scout/alliance-selection'
     | '/scout/announcements'
     | '/scout/needs-scouting'
@@ -632,6 +657,7 @@ export interface FileRouteTypes {
     | '/scouting/pit/$teamNumber'
     | '/scouting/post/$teamNumber'
     | '/matches'
+    | '/messages'
     | '/scout'
     | '/settings'
     | '/teams'
@@ -667,10 +693,11 @@ export interface FileRouteTypes {
     | '/_authed/_event/_tabs'
     | '/_authed/_event/scouting/mine'
     | '/_authed/_event/_tabs/'
-    | '/_authed/_event/_tabs/scout/messages'
     | '/_authed/_event/_tabs/settings/admin'
     | '/_authed/_event/_tabs/matches/$matchKey'
     | '/_authed/_event/_tabs/matches/videos'
+    | '/_authed/_event/_tabs/messages/$channelId'
+    | '/_authed/_event/_tabs/messages/announcements'
     | '/_authed/_event/_tabs/scout/alliance-selection'
     | '/_authed/_event/_tabs/scout/announcements'
     | '/_authed/_event/_tabs/scout/needs-scouting'
@@ -689,6 +716,7 @@ export interface FileRouteTypes {
     | '/_authed/_event/scouting/pit/$teamNumber'
     | '/_authed/_event/scouting/post/$teamNumber'
     | '/_authed/_event/_tabs/matches/'
+    | '/_authed/_event/_tabs/messages/'
     | '/_authed/_event/_tabs/scout/'
     | '/_authed/_event/_tabs/settings/'
     | '/_authed/_event/_tabs/teams/'
@@ -807,6 +835,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventTabsMatchesVideosRouteImport
       parentRoute: typeof AuthedEventTabsRoute
     }
+    '/_authed/_event/_tabs/messages/': {
+      id: '/_authed/_event/_tabs/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthedEventTabsMessagesIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/messages/$channelId': {
+      id: '/_authed/_event/_tabs/messages/$channelId'
+      path: '/messages/$channelId'
+      fullPath: '/messages/$channelId'
+      preLoaderRoute: typeof AuthedEventTabsMessagesChannelIdRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/messages/announcements': {
+      id: '/_authed/_event/_tabs/messages/announcements'
+      path: '/messages/announcements'
+      fullPath: '/messages/announcements'
+      preLoaderRoute: typeof AuthedEventTabsMessagesAnnouncementsRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
     '/_authed/_event/_tabs/scout/': {
       id: '/_authed/_event/_tabs/scout/'
       path: '/scout'
@@ -826,13 +875,6 @@ declare module '@tanstack/react-router' {
       path: '/scout/announcements'
       fullPath: '/scout/announcements'
       preLoaderRoute: typeof AuthedEventTabsScoutAnnouncementsRouteImport
-      parentRoute: typeof AuthedEventTabsRoute
-    }
-    '/_authed/_event/_tabs/scout/messages': {
-      id: '/_authed/_event/_tabs/scout/messages'
-      path: '/scout/messages'
-      fullPath: '/scout/messages'
-      preLoaderRoute: typeof AuthedEventTabsScoutMessagesRouteRouteImport
       parentRoute: typeof AuthedEventTabsRoute
     }
     '/_authed/_event/_tabs/scout/needs-scouting': {
@@ -963,17 +1005,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authed/_event/_tabs/scout/messages/': {
       id: '/_authed/_event/_tabs/scout/messages/'
-      path: '/'
+      path: '/scout/messages'
       fullPath: '/scout/messages/'
       preLoaderRoute: typeof AuthedEventTabsScoutMessagesIndexRouteImport
-      parentRoute: typeof AuthedEventTabsScoutMessagesRouteRoute
+      parentRoute: typeof AuthedEventTabsRoute
     }
     '/_authed/_event/_tabs/scout/messages/$channelId': {
       id: '/_authed/_event/_tabs/scout/messages/$channelId'
-      path: '/$channelId'
+      path: '/scout/messages/$channelId'
       fullPath: '/scout/messages/$channelId'
       preLoaderRoute: typeof AuthedEventTabsScoutMessagesChannelIdRouteImport
-      parentRoute: typeof AuthedEventTabsScoutMessagesRouteRoute
+      parentRoute: typeof AuthedEventTabsRoute
     }
     '/_authed/_event/_tabs/scout/picklists/': {
       id: '/_authed/_event/_tabs/scout/picklists/'
@@ -1134,24 +1176,6 @@ const AuthedEventScoutingRouteRouteWithChildren =
     AuthedEventScoutingRouteRouteChildren,
   )
 
-interface AuthedEventTabsScoutMessagesRouteRouteChildren {
-  AuthedEventTabsScoutMessagesChannelIdRoute: typeof AuthedEventTabsScoutMessagesChannelIdRoute
-  AuthedEventTabsScoutMessagesIndexRoute: typeof AuthedEventTabsScoutMessagesIndexRoute
-}
-
-const AuthedEventTabsScoutMessagesRouteRouteChildren: AuthedEventTabsScoutMessagesRouteRouteChildren =
-  {
-    AuthedEventTabsScoutMessagesChannelIdRoute:
-      AuthedEventTabsScoutMessagesChannelIdRoute,
-    AuthedEventTabsScoutMessagesIndexRoute:
-      AuthedEventTabsScoutMessagesIndexRoute,
-  }
-
-const AuthedEventTabsScoutMessagesRouteRouteWithChildren =
-  AuthedEventTabsScoutMessagesRouteRoute._addFileChildren(
-    AuthedEventTabsScoutMessagesRouteRouteChildren,
-  )
-
 interface AuthedEventTabsSettingsAdminRouteRouteChildren {
   AuthedEventTabsSettingsAdminAllianceBoardRoute: typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   AuthedEventTabsSettingsAdminAnnouncementsRoute: typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
@@ -1205,10 +1229,11 @@ const AuthedEventTabsSettingsAdminRouteRouteWithChildren =
 
 interface AuthedEventTabsRouteChildren {
   AuthedEventTabsIndexRoute: typeof AuthedEventTabsIndexRoute
-  AuthedEventTabsScoutMessagesRouteRoute: typeof AuthedEventTabsScoutMessagesRouteRouteWithChildren
   AuthedEventTabsSettingsAdminRouteRoute: typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
   AuthedEventTabsMatchesMatchKeyRoute: typeof AuthedEventTabsMatchesMatchKeyRoute
   AuthedEventTabsMatchesVideosRoute: typeof AuthedEventTabsMatchesVideosRoute
+  AuthedEventTabsMessagesChannelIdRoute: typeof AuthedEventTabsMessagesChannelIdRoute
+  AuthedEventTabsMessagesAnnouncementsRoute: typeof AuthedEventTabsMessagesAnnouncementsRoute
   AuthedEventTabsScoutAllianceSelectionRoute: typeof AuthedEventTabsScoutAllianceSelectionRoute
   AuthedEventTabsScoutAnnouncementsRoute: typeof AuthedEventTabsScoutAnnouncementsRoute
   AuthedEventTabsScoutNeedsScoutingRoute: typeof AuthedEventTabsScoutNeedsScoutingRoute
@@ -1225,24 +1250,28 @@ interface AuthedEventTabsRouteChildren {
   AuthedEventTabsSettingsStorageRoute: typeof AuthedEventTabsSettingsStorageRoute
   AuthedEventTabsTeamsTeamNumberRoute: typeof AuthedEventTabsTeamsTeamNumberRoute
   AuthedEventTabsMatchesIndexRoute: typeof AuthedEventTabsMatchesIndexRoute
+  AuthedEventTabsMessagesIndexRoute: typeof AuthedEventTabsMessagesIndexRoute
   AuthedEventTabsScoutIndexRoute: typeof AuthedEventTabsScoutIndexRoute
   AuthedEventTabsSettingsIndexRoute: typeof AuthedEventTabsSettingsIndexRoute
   AuthedEventTabsTeamsIndexRoute: typeof AuthedEventTabsTeamsIndexRoute
+  AuthedEventTabsScoutMessagesChannelIdRoute: typeof AuthedEventTabsScoutMessagesChannelIdRoute
   AuthedEventTabsScoutPicklistsPicklistIdRoute: typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
   AuthedEventTabsScoutPicklistsCombinedRoute: typeof AuthedEventTabsScoutPicklistsCombinedRoute
   AuthedEventTabsScoutStrategyMatchKeyRoute: typeof AuthedEventTabsScoutStrategyMatchKeyRoute
+  AuthedEventTabsScoutMessagesIndexRoute: typeof AuthedEventTabsScoutMessagesIndexRoute
   AuthedEventTabsScoutPicklistsIndexRoute: typeof AuthedEventTabsScoutPicklistsIndexRoute
   AuthedEventTabsScoutStrategyIndexRoute: typeof AuthedEventTabsScoutStrategyIndexRoute
 }
 
 const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
   AuthedEventTabsIndexRoute: AuthedEventTabsIndexRoute,
-  AuthedEventTabsScoutMessagesRouteRoute:
-    AuthedEventTabsScoutMessagesRouteRouteWithChildren,
   AuthedEventTabsSettingsAdminRouteRoute:
     AuthedEventTabsSettingsAdminRouteRouteWithChildren,
   AuthedEventTabsMatchesMatchKeyRoute: AuthedEventTabsMatchesMatchKeyRoute,
   AuthedEventTabsMatchesVideosRoute: AuthedEventTabsMatchesVideosRoute,
+  AuthedEventTabsMessagesChannelIdRoute: AuthedEventTabsMessagesChannelIdRoute,
+  AuthedEventTabsMessagesAnnouncementsRoute:
+    AuthedEventTabsMessagesAnnouncementsRoute,
   AuthedEventTabsScoutAllianceSelectionRoute:
     AuthedEventTabsScoutAllianceSelectionRoute,
   AuthedEventTabsScoutAnnouncementsRoute:
@@ -1266,15 +1295,20 @@ const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
   AuthedEventTabsSettingsStorageRoute: AuthedEventTabsSettingsStorageRoute,
   AuthedEventTabsTeamsTeamNumberRoute: AuthedEventTabsTeamsTeamNumberRoute,
   AuthedEventTabsMatchesIndexRoute: AuthedEventTabsMatchesIndexRoute,
+  AuthedEventTabsMessagesIndexRoute: AuthedEventTabsMessagesIndexRoute,
   AuthedEventTabsScoutIndexRoute: AuthedEventTabsScoutIndexRoute,
   AuthedEventTabsSettingsIndexRoute: AuthedEventTabsSettingsIndexRoute,
   AuthedEventTabsTeamsIndexRoute: AuthedEventTabsTeamsIndexRoute,
+  AuthedEventTabsScoutMessagesChannelIdRoute:
+    AuthedEventTabsScoutMessagesChannelIdRoute,
   AuthedEventTabsScoutPicklistsPicklistIdRoute:
     AuthedEventTabsScoutPicklistsPicklistIdRoute,
   AuthedEventTabsScoutPicklistsCombinedRoute:
     AuthedEventTabsScoutPicklistsCombinedRoute,
   AuthedEventTabsScoutStrategyMatchKeyRoute:
     AuthedEventTabsScoutStrategyMatchKeyRoute,
+  AuthedEventTabsScoutMessagesIndexRoute:
+    AuthedEventTabsScoutMessagesIndexRoute,
   AuthedEventTabsScoutPicklistsIndexRoute:
     AuthedEventTabsScoutPicklistsIndexRoute,
   AuthedEventTabsScoutStrategyIndexRoute:

@@ -15,7 +15,8 @@ export default defineConfig({
   // both engines and the dev server run at once: give slow steps room, never retries
   expect: { timeout: 10_000 },
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
-  use: { trace: "retain-on-failure" },
+  // reduced motion: page slides (FX-13) run at 0 s, so a tap never lands on a transition overlay
+  use: { trace: "retain-on-failure", reducedMotion: "reduce" },
   projects: [
     {
       name: "chromium",

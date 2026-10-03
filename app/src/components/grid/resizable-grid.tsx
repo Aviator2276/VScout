@@ -141,6 +141,8 @@ export function ResizableGrid({
         >
           <ol
             aria-label="Home widgets"
+            // dragging widgets must not switch tabs (FX-13)
+            data-no-swipe={editing || undefined}
             className="grid"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,

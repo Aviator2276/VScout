@@ -78,7 +78,7 @@ export function ConversationsView({
                     >
                       <div className="flex min-w-0 flex-1 flex-col">
                         {renderLink({
-                          href: `/scout/messages/${c.channelId}`,
+                          href: `/messages/${c.channelId}`,
                           className:
                             "truncate text-body font-medium after:absolute after:inset-0",
                           children: c.title,
@@ -218,9 +218,9 @@ export function ThreadView({
         </DataView.Success>
       </DataView>
       {state.status === "missing" ? null : (
-        // above the tab bar, like the board's Record Pick
+        // above the tab bar when it shows, on the home indicator when it doesn't (FX-11)
         <form
-          className="fixed inset-x-0 bottom-[calc(var(--k-safe-area-bottom,0px)+4.5rem)] z-20 flex items-end gap-2 glass py-2 px-safe-4"
+          className="fixed inset-x-0 bottom-(--tabbar-offset) z-20 flex items-end gap-2 glass pt-2 px-safe-4 pb-[calc(var(--tabbar-safe)+0.5rem)] transition-[bottom] duration-300"
           onSubmit={(e) => {
             e.preventDefault()
             const body = text.trim()

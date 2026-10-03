@@ -33,6 +33,7 @@ export {
   Lock,
   LogIn,
   Megaphone,
+  MessageCircle,
   MessageSquare,
   Minus,
   MousePointerClick,

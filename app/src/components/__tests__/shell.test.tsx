@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
-import { CalendarDays, House } from "@/components/icons/icon"
+import { CalendarDays, House, MessageCircle } from "@/components/icons/icon"
 import { ComingSoon } from "../layout/coming-soon"
 import { FullPageMessage } from "../layout/full-page-message"
 import { ShellBannersContext } from "../layout/shell-banners"
@@ -48,6 +48,45 @@ describe("TabBar", () => {
     await user.click(screen.getByRole("link", { name: "Matches" }))
     await user.keyboard("{/Meta}")
     expect(onSelect).not.toHaveBeenCalled()
+  })
+})
+
+describe("TabBar center button and hiding (FX-11, FX-12)", () => {
+  const five = [
+    { id: "home", label: "Home", icon: House, href: "/" },
+    { id: "matches", label: "Matches", icon: CalendarDays, href: "/matches" },
+    {
+      id: "messages",
+      label: "Messages",
+      icon: MessageCircle,
+      href: "/messages",
+      center: true,
+      badge: 3,
+    },
+    { id: "teams", label: "Teams", icon: House, href: "/teams" },
+  ] as const
+
+  it("the center tab is a round button named with its unread count", async () => {
+    const onSelect = vi.fn()
+    render(<TabBar items={five} active="home" onSelect={onSelect} />)
+    const center = screen.getByRole("link", { name: "Messages, 3 unread" })
+    expect(center).toHaveAttribute("data-center")
+    expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Home",
+      "Matches",
+      "3",
+      "Teams",
+    ])
+    await userEvent.click(center)
+    expect(onSelect).toHaveBeenCalledWith("messages")
+  })
+
+  it("hidden: slides away and leaves the accessibility tree", () => {
+    render(<TabBar items={five} active="home" onSelect={() => {}} hidden />)
+    expect(
+      screen.queryByRole("navigation", { name: "Tabs" })
+    ).not.toBeInTheDocument()
+    expect(document.querySelector("nav")).toHaveAttribute("inert")
   })
 })
 

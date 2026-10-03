@@ -193,6 +193,20 @@
   }
 }
 
+/* Bottom-fixed controls sit above the tab bar (FX-11). --tabbar-offset is the bar's height while
+   it shows (0 when hidden or absent); --tabbar-safe is the home-indicator inset those controls
+   pad themselves when no bar covers it. TabShell sets data-tabbar on <html>. */
+:root {
+  --tabbar-offset: 0px;
+  --tabbar-safe: var(--k-safe-area-bottom, 0px);
+}
+:root[data-tabbar="shown"] {
+  --tabbar-offset: calc(
+    max(var(--k-safe-area-bottom, 0px), 0.5rem) + 3rem + 1px
+  );
+  --tabbar-safe: 0px;
+}
+
 /* Inset-list separators (FX-4): Konsta's start at the text but run into the card's right edge.
    Inset them on both sides so the line sits evenly inside the card. */
 .vs-list .k-list-item .hairline-b::after {
@@ -387,6 +401,97 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+}
+
+/* Page slides (FX-13). The router tags each navigation (stores/tab-memory.ts navTransitionTypes):
+   a push slides in from the right over the old page, which drifts left and dims; Back reverses it;
+   a tab switch slides the whole page in tab order. Untyped transitions keep the default fade. */
+:root {
+  --nav-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --nav-duration: 380ms;
+}
+@keyframes nav-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes nav-out-to-left-dim {
+  to {
+    transform: translateX(-30%);
+    filter: brightness(0.85);
+  }
+}
+@keyframes nav-in-from-left-dim {
+  from {
+    transform: translateX(-30%);
+    filter: brightness(0.85);
+  }
+}
+@keyframes nav-out-to-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes tab-out-to-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes tab-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+html:active-view-transition-type(nav-forward, nav-back, tab-forward, tab-back) {
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    animation-duration: var(--nav-duration);
+    animation-timing-function: var(--nav-ease);
+    animation-fill-mode: both;
+    mix-blend-mode: normal;
+  }
+}
+html:active-view-transition-type(nav-forward) {
+  &::view-transition-old(root) {
+    animation-name: nav-out-to-left-dim;
+  }
+  &::view-transition-new(root) {
+    animation-name: nav-in-from-right;
+  }
+}
+html:active-view-transition-type(nav-back) {
+  &::view-transition-old(root) {
+    z-index: 1;
+    animation-name: nav-out-to-right;
+  }
+  &::view-transition-new(root) {
+    animation-name: nav-in-from-left-dim;
+  }
+}
+html:active-view-transition-type(tab-forward) {
+  &::view-transition-old(root) {
+    animation-name: tab-out-to-left;
+  }
+  &::view-transition-new(root) {
+    animation-name: nav-in-from-right;
+  }
+}
+html:active-view-transition-type(tab-back) {
+  &::view-transition-old(root) {
+    animation-name: nav-out-to-right;
+  }
+  &::view-transition-new(root) {
+    animation-name: tab-in-from-left;
+  }
+}
+/* The tab bar stays put while pages slide under it. Its glass can't be snapshotted with the blur,
+   so only the new snapshot shows, without animating (ui-design-system §10.1). */
+::view-transition-group(app-tabbar),
+::view-transition-new(app-tabbar) {
+  animation: none;
+}
+::view-transition-old(app-tabbar) {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -882,7 +882,7 @@ platform:
     "renotify": true,             // 'message': true for DMs, mentions and replies; false for plain chatter
     "timestamp": 0,               // ms epoch
     "app_badge": 3,               // integer; only with capabilities.readMarkers, otherwise omit
-    "data": { "v": 1, "id": "<uuid>", "kind": "message", "url": "/scout/messages/<channelId>",
+    "data": { "v": 1, "id": "<uuid>", "kind": "message", "url": "/messages/<channelId>",
               "uid": "<recipient userId>", "eventKey": "2026casj",
               "entity": { "type": "message", "id": "<id>" }, "ts": "…" }
   }
@@ -893,10 +893,12 @@ Deep links (`data.url`):
 
 | Kind | URL |
 |---|---|
-| `message` | `/scout/messages/{channelId}` |
-| `announcement`, `urgent` | `/scout/announcements` |
+| `message` | `/messages/{channelId}` |
+| `announcement`, `urgent` | `/messages/announcements` |
 | `match` | `/matches/{matchKey}`, or `/scout/strategy/{matchKey}` for our own match |
 | `system` | `/settings/notifications` |
+
+The old `/scout/messages/…` and `/scout/announcements` paths still redirect in the app (FX-14, 2026-10-03), so a server that hasn't switched yet keeps working.
 
 **Never put record data in a push.** It's only an alert.
 - Never send a push the app is expected to hide: iOS has no silent push and revokes subscriptions that try.

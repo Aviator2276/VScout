@@ -125,7 +125,7 @@ export function BoardView({
                   </li>
                 ))}
               </ol>
-              <div className="fixed inset-x-0 bottom-[calc(var(--k-safe-area-bottom,0px)+4.5rem)] z-20 px-safe-4">
+              <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-offset)+var(--tabbar-safe)+0.75rem)] z-20 px-safe-4 transition-[bottom] duration-300">
                 <Button
                   size="large"
                   disabled={!canRecord || !turn}

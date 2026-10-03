@@ -5,6 +5,7 @@ import { RouteError } from "@/components/errors/route-error"
 import { RouteNotFound } from "@/components/errors/route-not-found"
 import { RoutePending } from "@/components/layout/route-pending"
 import { activeGame } from "@/config/game"
+import { getTabMemory, navTransitionTypes } from "@/stores/tab-memory"
 import { routeTree } from "./routeTree.gen"
 
 // Called in Node for the shell prerender too: the context is lazy (routing-auth §3).
@@ -23,7 +24,13 @@ export function getRouter() {
     defaultNotFoundComponent: RouteNotFound,
     scrollRestoration: true,
     getScrollRestorationKey: (l) => l.pathname,
-    // no defaultViewTransition: React <ViewTransition> owns transitions (ui-design-system §10.1)
+    // Page slides (FX-13, ui-design-system §10.1 fallback): the router starts the view transition
+    // and tags it nav-forward/nav-back/tab-forward/tab-back; styles.css animates the root by type.
+    // Computed from the tab stacks, so Back links and the browser's back slide the right way too.
+    defaultViewTransition: {
+      types: ({ fromLocation, toLocation }) =>
+        navTransitionTypes(getTabMemory(), fromLocation, toLocation),
+    },
   })
 
   return router

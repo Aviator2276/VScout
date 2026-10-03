@@ -1,10 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { TabRootActions } from "@/app/tab-root-actions"
-import { DataView } from "@/components/data-view/data-view"
 import { StackPage } from "@/components/layout/stack-page"
 import { List } from "@/components/list/list"
-import { useAnnouncements } from "@/features/messages/api/get-announcements"
-import { useConversations } from "@/features/messages/api/get-messages"
 import {
   useMyDrafts,
   useRecommendation,
@@ -38,7 +35,7 @@ function draftTitle(d: ResumeDraft): string {
 }
 
 // The Scout tab home (scout-tab.md S0): what needs attention, one section each, so one failing
-// section never blanks the screen.
+// section never blanks the screen. Messages and announcements have their own tab (FX-14).
 function ScoutHome() {
   const { event, session } = Route.useRouteContext()
   const navigate = useNavigate()
@@ -48,15 +45,7 @@ function ScoutHome() {
   const settings = useScoutingSettings(event.key)
   const rec = useRecommendation(event.key, { ourTeam, watched })
   const drafts = useMyDrafts(event.key)
-  const announcements = useAnnouncements(event.key)
   const now = useNow()
-  const conversations = useConversations(event.key)
-  const unread =
-    conversations.status === "success"
-      ? conversations.data.reduce((n, c) => n + c.unread, 0)
-      : 0
-  const latest =
-    announcements.status === "success" ? announcements.data[0] : undefined
 
   return (
     <StackPage title="Scout" trailing={<TabRootActions />}>
@@ -113,29 +102,6 @@ function ScoutHome() {
         <List.Row title="Alliance Selection" href="/scout/alliance-selection" />
         <List.Row title="Picklists" href="/scout/picklists" />
       </List.Section>
-
-      {can(session, "message:read") ? (
-        <List.Section title="Talk">
-          <List.Row
-            title="Messages"
-            detail={unread > 0 ? `${unread} unread` : undefined}
-            href="/scout/messages"
-          />
-        </List.Section>
-      ) : null}
-
-      {latest ? (
-        <List.Section title="Announcements">
-          <List.Row
-            title={latest.urgent ? `Urgent: ${latest.body}` : latest.body}
-            href="/scout/announcements"
-          />
-        </List.Section>
-      ) : announcements.status === "error" ? (
-        <DataView state={announcements} size="inline">
-          <DataView.Error title="Couldn’t load announcements." />
-        </DataView>
-      ) : null}
     </StackPage>
   )
 }

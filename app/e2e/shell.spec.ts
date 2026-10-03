@@ -37,7 +37,7 @@ test("sign in → pick an event → tabs, then offline", async ({
   ).toBeVisible()
   await expect(page.getByText("Silicon Valley Regional")).toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-  for (const name of ["Matches", "Scout", "Home"]) {
+  for (const name of ["Matches", "Messages", "Scout", "Home"]) {
     await tabs.getByRole("link", { name }).click()
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible()
   }

@@ -120,9 +120,11 @@ test("chat: a message sent on one device arrives on the other", async ({
   const [a, b] = pages
   if (!a || !b) throw new Error("no pages")
   await signIn(a, "/scout")
-  // the Needs Scouting card grows once it loads; let it settle before tapping below it
-  await expect(a.getByRole("button", { name: /^Start Scouting/ })).toBeVisible()
-  await a.getByRole("link", { name: "Messages" }).click()
+  // Messages is the round center tab (FX-14)
+  await a
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: /^Messages/ })
+    .click()
   await expect(
     a.getByRole("heading", { level: 1, name: "Messages" })
   ).toBeVisible()
@@ -145,8 +147,10 @@ test("chat: a message sent on one device arrives on the other", async ({
 
   await signIn(b, "/scout")
   await syncNow(b)
-  await expect(b.getByRole("button", { name: /^Start Scouting/ })).toBeVisible()
-  await b.getByRole("link", { name: "Messages" }).click()
+  await b
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: /^Messages/ })
+    .click()
   await expect(b.getByRole("list", { name: "Conversations" })).toContainText(
     "Q14 queue moved"
   )
@@ -173,7 +177,7 @@ test("strategy: a briefing lists opponents first, with the game's sections", asy
   expect(await page.getByRole("article").count()).toBe(6)
 })
 
-test("guests: no Messages row, and the messages page says no access", async ({
+test("guests: Messages shows announcements only, and a chat says no access", async ({
   page,
   context,
 }) => {
@@ -187,14 +191,19 @@ test("guests: no Messages row, and the messages page says no access", async ({
   ).toBeVisible()
   await page
     .getByRole("navigation", { name: "Tabs" })
-    .getByRole("link", { name: "Scout" })
+    .getByRole("link", { name: /^Messages/ })
     .click()
-  await expect(page.getByRole("link", { name: "Picklists" })).toBeVisible()
-  await expect(page.getByRole("link", { name: "Messages" })).toHaveCount(0)
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Messages" })
+  ).toBeVisible()
+  await expect(page.getByText(/Chat is for team members/)).toBeVisible()
+  await expect(page.getByRole("list", { name: "Conversations" })).toHaveCount(0)
+  // an old link to the chat moved with it, and still says no access
   await page.evaluate(() => {
-    history.pushState({}, "", "/scout/messages")
+    history.pushState({}, "", "/scout/messages/event:2026casj")
     dispatchEvent(new PopStateEvent("popstate"))
   })
+  await expect(page).toHaveURL(/\/messages\/event(:|%3A)2026casj$/)
   await expect(
     page.getByText("You don't have access", { exact: false })
   ).toBeVisible()

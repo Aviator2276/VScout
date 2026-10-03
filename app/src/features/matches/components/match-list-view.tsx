@@ -388,7 +388,7 @@ function MatchList({
         <button
           type="button"
           onClick={() => handle.current?.scrollToIndex(target, "smooth")}
-          className="fixed bottom-[calc(var(--k-safe-area-bottom,0px)+6rem)] left-1/2 z-30 inline-flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 text-subhead font-semibold text-primary-foreground shadow-lg"
+          className="fixed bottom-[calc(var(--tabbar-offset)+var(--tabbar-safe)+1.5rem)] left-1/2 z-30 inline-flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 text-subhead font-semibold text-primary-foreground shadow-lg transition-[bottom] duration-300"
         >
           Jump to Now
           <ArrowDown aria-hidden size={16} />

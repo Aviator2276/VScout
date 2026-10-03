@@ -156,6 +156,7 @@ function DelayedLoading({
   children?: ReactNode
   label?: string
 }) {
+  const size = use(SizeContext)
   const [show, setShow] = useState(false)
   useEffect(() => {
     const t = setTimeout(() => setShow(true), defaults.LOADING_DELAY_MS)
@@ -164,9 +165,19 @@ function DelayedLoading({
   const text = label ?? defaults.LOADING_LABEL
   if (!show)
     return (
-      <div role="status" aria-busy className="sr-only">
-        {text}
-      </div>
+      <>
+        <div role="status" aria-busy className="sr-only">
+          {text}
+        </div>
+        {/* a section keeps its skeleton's space while it's invisible, so nothing below it jumps
+            when it appears (taps aimed below landed on the wrong thing). A page-size view has
+            nothing below it, and a tall placeholder would skew scroll restoration. */}
+        {children && size !== "page" ? (
+          <div aria-hidden className="invisible">
+            {children}
+          </div>
+        ) : null}
+      </>
     )
   if (children)
     return (

@@ -12,7 +12,7 @@ import type { ChatMessage } from "../api/get-messages"
 export function AnnouncementsWidget({ eventKey, h }: WidgetProps) {
   const state = useAnnouncements(eventKey)
   return (
-    <WidgetCard title="Announcements" href="/scout/announcements">
+    <WidgetCard title="Announcements" href="/messages/announcements">
       <DataView state={state} size="inline">
         <DataView.Empty icon={Megaphone} title="No announcements yet" />
         <DataView.Error title="Couldn’t load announcements." />
@@ -62,7 +62,7 @@ export function RecentMessagesWidget({ eventKey, h, config }: WidgetProps) {
         : { status: "empty" }
       : state
   return (
-    <WidgetCard title="Recent Messages" href={`/scout/messages/${channel}`}>
+    <WidgetCard title="Recent Messages" href={`/messages/${channel}`}>
       <DataView state={latest} size="inline">
         <DataView.Empty icon={MessageSquare} title="No messages yet. Say hi." />
         <DataView.Missing
