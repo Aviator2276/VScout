@@ -2,7 +2,7 @@
 // badge, and the sheet with a category filter, row menus, select mode with bulk actions, and the
 // settings view. The app layer provides what the sheet can't know: the settings content, how to
 // navigate, and what an action does (applying an update).
-import { createContext, use, useState } from "react"
+import { createContext, use, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import { Button } from "@/components/controls/button"
 import { Segmented } from "@/components/controls/segmented"
@@ -11,6 +11,8 @@ import { SkeletonRows } from "@/components/data-view/skeleton-rows"
 import {
   Bell,
   CalendarDays,
+  CheckCheck,
+  Trash2,
   ChevronLeft,
   Ellipsis,
   MessageCircle,
@@ -21,8 +23,12 @@ import type { LucideIcon } from "@/components/icons/icon"
 import { ConfirmAlert } from "@/components/overlays/confirm-alert"
 import { ActionMenu } from "@/components/overlays/menu"
 import { Sheet } from "@/components/overlays/sheet"
+import { SwipeRow } from "@/components/list/swipe-row"
 import type { NotificationRow } from "@/lib/db/types"
+import { AnimatePresence, m, useReducedMotion } from "motion/react"
+import { springs } from "@/components/motion/springs"
 import { cn } from "@/lib/utils"
+import { onNotified } from "../api/notifications-store"
 import {
   useNotificationActions,
   useNotificationSummary,
@@ -90,6 +96,8 @@ export function NotificationCenter({
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<CenterView>("list")
   const [openedAt, setOpenedAt] = useState(0)
+  const actions = useNotificationActions()
+  const markRead = (id: string) => actions.markRead([id])
   const ctx: CenterContext = {
     open: (next = "list") => {
       setView(next)
@@ -100,6 +108,14 @@ export function NotificationCenter({
   return (
     <Ctx value={ctx}>
       {children}
+      <NotificationBanner
+        suppressed={open}
+        onOpen={(row) => {
+          void markRead(row.id)
+          if (row.action) onAction(row.action)
+          else if (row.href) onNavigate(row.href)
+        }}
+      />
       <Sheet open={open} onOpenChange={setOpen}>
         <Sheet.Content
           title={
@@ -137,6 +153,85 @@ export function NotificationCenter({
   )
 }
 
+const BANNER_MS = 4500
+
+/**
+ * A notification that arrives while the app is open slides in at the top for a few seconds, like
+ * an iOS banner (owner). Tap opens it; swipe it up to dismiss. Not for low priority, not while the
+ * center is open, and not for the page you're already on (an open thread).
+ */
+function NotificationBanner({
+  suppressed,
+  onOpen,
+}: {
+  suppressed: boolean
+  onOpen: (row: NotificationRow) => void
+}) {
+  const [row, setRow] = useState<NotificationRow | null>(null)
+  useEffect(
+    () =>
+      onNotified((r) => {
+        if (r.priority === "low") return
+        if (r.href && location.pathname === r.href.split("?")[0]) return
+        setRow(r)
+      }),
+    []
+  )
+  useEffect(() => {
+    if (!row) return
+    const t = setTimeout(() => setRow(null), BANNER_MS)
+    return () => clearTimeout(t)
+  }, [row])
+  const shown = row && !suppressed ? row : null
+  const Icon = shown ? ICON[shown.category] : Bell
+  // Reduce Motion: the banner just appears (no slide, and no half-faded text)
+  const reduce = useReducedMotion() === true
+  return (
+    <AnimatePresence>
+      {shown ? (
+        <m.div
+          key={shown.id}
+          role="status"
+          initial={reduce ? false : { y: -120, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={reduce ? { opacity: 0 } : { y: -120, opacity: 0 }}
+          transition={springs.smooth}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0.6, bottom: 0.1 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.y < -30) setRow(null)
+          }}
+          className="fixed inset-x-0 top-[calc(var(--k-safe-area-top,0px)+0.5rem)] z-[65] mx-auto w-[min(100%-1.5rem,28rem)]"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setRow(null)
+              onOpen(shown)
+            }}
+            className="flex w-full items-center gap-3 rounded-3xl glass bg-(--glass-tint-sheet) px-4 py-3 text-start shadow-xl transition-[scale] active:scale-[0.98]"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Icon aria-hidden size={20} />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-subhead font-semibold">
+                {shown.title}
+              </span>
+              {shown.body ? (
+                <span className="line-clamp-2 text-footnote text-muted-foreground">
+                  {shown.body}
+                </span>
+              ) : null}
+            </span>
+          </button>
+        </m.div>
+      ) : null}
+    </AnimatePresence>
+  )
+}
+
 /** The bell: replaces the sync pill in the nav bar (FX-15). */
 export function NotificationBell() {
   const center = useNotificationCenter()
@@ -148,7 +243,7 @@ export function NotificationBell() {
       type="button"
       aria-label={label}
       onClick={() => center.open()}
-      className="relative inline-flex size-11 items-center justify-center rounded-full text-primary active:opacity-60"
+      className="hit-44 relative inline-flex size-9 items-center justify-center rounded-full glass-button text-primary transition-[scale] active:scale-90"
     >
       <Bell aria-hidden size={24} />
       {unread > 0 ? (
@@ -381,65 +476,102 @@ function NotificationItem({
   const urgent = row.priority === "high" || row.priority === "critical"
   const label = `${unread ? "Unread. " : ""}${CATEGORY_NAME[row.category]}: ${row.title}`
   return (
-    <li className="relative flex items-start gap-3 rounded-2xl bg-card p-3 shadow-xs has-[button.row:active]:bg-muted">
-      {selecting ? (
-        <input
-          type="checkbox"
-          aria-label={`Select: ${row.title}`}
-          checked={selected}
-          onChange={onToggle}
-          className="mt-2 size-5 shrink-0 accent-(--primary)"
-        />
-      ) : null}
-      <span
-        className={cn(
-          "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full",
-          urgent && unread
-            ? "bg-destructive/15 text-destructive"
-            : "bg-primary/12 text-primary"
-        )}
+    <li className="overflow-hidden rounded-2xl shadow-xs">
+      {/* swipe right: read/unread; swipe left (or all the way): delete (owner) */}
+      <SwipeRow
+        leading={
+          selecting
+            ? []
+            : [
+                unread
+                  ? {
+                      label: "Read",
+                      icon: CheckCheck,
+                      tone: "primary",
+                      onAction: onMarkRead,
+                    }
+                  : {
+                      label: "Unread",
+                      icon: Bell,
+                      tone: "primary",
+                      onAction: onMarkUnread,
+                    },
+              ]
+        }
+        trailing={
+          selecting
+            ? []
+            : [
+                {
+                  label: "Delete",
+                  icon: Trash2,
+                  tone: "destructive",
+                  onAction: onDelete,
+                },
+              ]
+        }
       >
-        <Icon aria-hidden size={20} />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <button
-          type="button"
-          aria-label={label}
-          onClick={selecting ? onToggle : onOpen}
-          className="row text-start text-body font-semibold after:absolute after:inset-0"
-        >
-          {row.title}
-        </button>
-        {row.body ? (
-          <p className="line-clamp-2 text-subhead text-muted-foreground">
-            {row.body}
-          </p>
-        ) : null}
-        <p className="mt-0.5 text-footnote text-muted-foreground">
-          {relative(row.createdAt, now || row.createdAt)}
-        </p>
-      </div>
-      {unread ? (
-        <span
-          aria-hidden
-          className="mt-2 size-2.5 shrink-0 rounded-full bg-primary"
-        />
-      ) : null}
-      {selecting ? null : (
-        <div className="relative z-10 -my-1 -mr-1">
-          <ActionMenu
-            label={`More for ${row.title}`}
-            trigger={<Ellipsis aria-hidden size={20} />}
-            actions={[
-              unread
-                ? { label: "Mark as Read", onSelect: onMarkRead }
-                : { label: "Mark as Unread", onSelect: onMarkUnread },
-              { label: "Dismiss", onSelect: onDismiss },
-              { label: "Delete", onSelect: onDelete, destructive: true },
-            ]}
-          />
+        <div className="relative flex items-start gap-3 bg-card p-3 has-[button.row:active]:bg-muted">
+          {selecting ? (
+            <input
+              type="checkbox"
+              aria-label={`Select: ${row.title}`}
+              checked={selected}
+              onChange={onToggle}
+              className="mt-2 size-5 shrink-0 accent-(--primary)"
+            />
+          ) : null}
+          <span
+            className={cn(
+              "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full",
+              urgent && unread
+                ? "bg-destructive/15 text-destructive"
+                : "bg-primary/12 text-primary"
+            )}
+          >
+            <Icon aria-hidden size={20} />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <button
+              type="button"
+              aria-label={label}
+              onClick={selecting ? onToggle : onOpen}
+              className="row text-start text-body font-semibold after:absolute after:inset-0"
+            >
+              {row.title}
+            </button>
+            {row.body ? (
+              <p className="line-clamp-2 text-subhead text-muted-foreground">
+                {row.body}
+              </p>
+            ) : null}
+            <p className="mt-0.5 text-footnote text-muted-foreground">
+              {relative(row.createdAt, now || row.createdAt)}
+            </p>
+          </div>
+          {unread ? (
+            <span
+              aria-hidden
+              className="mt-2 size-2.5 shrink-0 rounded-full bg-primary"
+            />
+          ) : null}
+          {selecting ? null : (
+            <div className="relative z-10 -my-1 -mr-1">
+              <ActionMenu
+                label={`More for ${row.title}`}
+                trigger={<Ellipsis aria-hidden size={20} />}
+                actions={[
+                  unread
+                    ? { label: "Mark as Read", onSelect: onMarkRead }
+                    : { label: "Mark as Unread", onSelect: onMarkUnread },
+                  { label: "Dismiss", onSelect: onDismiss },
+                  { label: "Delete", onSelect: onDelete, destructive: true },
+                ]}
+              />
+            </div>
+          )}
         </div>
-      )}
+      </SwipeRow>
     </li>
   )
 }

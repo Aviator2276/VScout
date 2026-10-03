@@ -63,7 +63,9 @@ export function FeedbackForm() {
             src={FEEDBACK_FORM_URL}
             title="VScout feedback form"
             onLoad={() => setLoaded(true)}
-            className="block h-[1526px] w-full border-0"
+            // sized to the screen so the form scrolls inside itself: a touch on an iframe goes
+            // to the iframe, so a 1,500 px frame inside a scrolling sheet couldn't scroll on iOS
+            className="block h-[calc(100dvh-13rem)] w-full border-0"
           />
         </div>
       ) : (
@@ -85,7 +87,7 @@ export function FeedbackButton() {
       type="button"
       aria-label="Send Feedback"
       onClick={feedback.open}
-      className="inline-flex size-11 items-center justify-center rounded-full text-primary active:opacity-60"
+      className="hit-44 inline-flex size-9 items-center justify-center rounded-full glass-button text-primary transition-[scale] active:scale-90"
     >
       <MessageSquareText aria-hidden size={22} />
     </button>

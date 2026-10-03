@@ -246,6 +246,14 @@ describe("messages (scout-tab.md D)", () => {
       ).not.toBeInTheDocument()
     })
 
+    it("Enter sends; Shift+Enter adds a line", async () => {
+      const props = renderThread([])
+      const box = screen.getByLabelText("Message", { selector: "textarea" })
+      await userEvent.type(box, "first{Shift>}{Enter}{/Shift}second{Enter}")
+      expect(props.onSend).toHaveBeenCalledWith("first\nsecond")
+      expect((box as HTMLTextAreaElement).value).toBe("")
+    })
+
     it("the composer is a growing text area (new lines allowed)", async () => {
       const props = renderThread([])
       const box = screen.getByLabelText("Message", { selector: "textarea" })

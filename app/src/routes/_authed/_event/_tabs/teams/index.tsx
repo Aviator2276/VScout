@@ -4,7 +4,7 @@ import {
   useRouter,
 } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo } from "react"
-import { TabRootActions } from "@/app/tab-root-actions"
+import { TabRootActions, TabRootLeading } from "@/app/tab-root-actions"
 import { StackPage } from "@/components/layout/stack-page"
 import { activeGame } from "@/config/game"
 import { useEventTeams } from "@/features/teams/api/get-teams"
@@ -73,7 +73,7 @@ function TeamsTab() {
   const state = useEventTeams(event.key)
   const metrics = useEventTeamMetrics(event.key, search.window)
   const ourTeam = useOurTeam()
-  const { watched } = useWatchedTeams()
+  const { watched, toggle } = useWatchedTeams()
   const prefs = usePrefs()
   const setPrefs = useSetPrefs()
   const columns = useMemo(
@@ -84,18 +84,9 @@ function TeamsTab() {
 
   return (
     <StackPage
+      leading={<TabRootLeading />}
       title="Teams"
-      trailing={
-        <>
-          <TabRootActions />
-          <TeamsToolbar
-            game={activeGame}
-            search={search}
-            onSearchChange={onSearchChange}
-            canScout={canScout}
-          />
-        </>
-      }
+      trailing={<TabRootActions />}
     >
       <TeamListView
         game={activeGame}
@@ -109,6 +100,21 @@ function TeamsTab() {
         ourTeam={ourTeam}
         watched={watched}
         canScout={canScout}
+        searchActions={
+          <TeamsToolbar
+            game={activeGame}
+            search={search}
+            onSearchChange={onSearchChange}
+            canScout={canScout}
+          />
+        }
+        onToggleWatch={(n: number) => void toggle(n)}
+        onPitScout={(n: number) =>
+          void navigate({
+            to: "/scouting/pit/$teamNumber",
+            params: { teamNumber: String(n) },
+          })
+        }
       />
       <TeamFilterSheet
         game={activeGame}

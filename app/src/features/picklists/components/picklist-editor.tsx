@@ -40,6 +40,8 @@ export interface PicklistEditorProps {
   onRemove: (row: PicklistRow) => void
   onReason: (row: PicklistRow) => void
   onAddTeams: () => void
+  /** tap a team: a preview sheet (owner), composed by the route */
+  onPreview?: (teamNumber: number) => void
   /** viewers (scouters/admins) copy someone else's list */
   onCopy?: (() => void) | undefined
   /** owner's ⋯ actions etc., composed by the route */
@@ -132,12 +134,30 @@ export function PicklistEditor(p: PicklistEditorProps) {
                             done && "line-through opacity-60"
                           )}
                         >
-                          <span className="font-heading text-headline tabular-nums">
-                            {row.teamNumber}
-                          </span>
-                          <span className="truncate text-subhead">
-                            {row.nickname}
-                          </span>
+                          {p.onPreview ? (
+                            <button
+                              type="button"
+                              aria-label={`Preview ${row.teamNumber} ${row.nickname}`}
+                              onClick={() => p.onPreview?.(row.teamNumber)}
+                              className="flex min-w-0 items-center gap-2 text-start active:opacity-60"
+                            >
+                              <span className="font-heading text-headline tabular-nums">
+                                {row.teamNumber}
+                              </span>
+                              <span className="truncate text-subhead">
+                                {row.nickname}
+                              </span>
+                            </button>
+                          ) : (
+                            <>
+                              <span className="font-heading text-headline tabular-nums">
+                                {row.teamNumber}
+                              </span>
+                              <span className="truncate text-subhead">
+                                {row.nickname}
+                              </span>
+                            </>
+                          )}
                           {done ? (
                             <span className="sr-only">(picked)</span>
                           ) : null}

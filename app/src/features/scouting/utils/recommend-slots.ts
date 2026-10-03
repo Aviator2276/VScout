@@ -294,3 +294,24 @@ export function recommendSlots(
     if (distinct.length < 4 && !distinct.includes(c)) distinct.push(c)
   return { primary, alternates: distinct, all }
 }
+
+/**
+ * The Needs Scouting page's groups (owner): matches in schedule order, and inside each match the
+ * robots by alliance and station (Red 1–3, then Blue 1–3), not by score.
+ */
+export function groupByMatch(
+  slots: ReadonlyArray<Slot>
+): Array<[matchKey: string, slots: Array<Slot>]> {
+  const groups = new Map<string, Array<Slot>>()
+  for (const s of [...slots].sort((a, b) => a.idx - b.idx)) {
+    const list = groups.get(s.matchKey)
+    if (list) list.push(s)
+    else groups.set(s.matchKey, [s])
+  }
+  for (const list of groups.values())
+    list.sort(
+      (a, b) =>
+        STATION_ORDER.indexOf(a.station) - STATION_ORDER.indexOf(b.station)
+    )
+  return [...groups]
+}

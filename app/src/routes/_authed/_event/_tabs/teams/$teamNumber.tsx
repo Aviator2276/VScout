@@ -12,10 +12,12 @@ import {
   useTeamMatches,
   useTeamPit,
   useTeamPost,
+  useTeamPhotos,
 } from "@/features/teams/api/get-teams"
 import { TEAM_VIEWS } from "@/features/teams/types/team-views"
 import {
   TeamDetailView,
+  TeamPhotoHero,
   TeamMatches,
   TeamNotes,
   TeamOverview,
@@ -48,6 +50,7 @@ function TeamDetailRoute() {
   const toast = useToast()
   const view = search.view ?? "overview"
   const team = useTeam(event.key, teamNumber)
+  const photos = useTeamPhotos(event.key, teamNumber)
   const { watched, toggle } = useWatchedTeams()
   const isWatched = watched.has(teamNumber)
 
@@ -102,6 +105,7 @@ function TeamDetailRoute() {
         state={team}
         teamNumber={teamNumber}
         view={view}
+        hero={<TeamPhotoHero photos={photos} teamNumber={teamNumber} />}
         actions={
           can(session, "scouting:create") ? (
             <ScoutActions
@@ -184,10 +188,22 @@ function MatchesView({
   eventKey: string
   teamNumber: number
 }) {
+  const { session } = Route.useRouteContext()
+  const canScout = can(session, "scouting:create")
+  const navigate = useNavigate()
   return (
     <TeamMatches
       state={useTeamMatches(eventKey, teamNumber)}
       teamNumber={teamNumber}
+      onScout={
+        canScout
+          ? (matchKey) =>
+              void navigate({
+                to: "/scouting/match/$matchKey/$teamNumber",
+                params: { matchKey, teamNumber: String(teamNumber) },
+              })
+          : undefined
+      }
     />
   )
 }

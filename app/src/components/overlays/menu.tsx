@@ -46,7 +46,13 @@ export function PullDownMenu({ label, trigger, groups }: PullDownMenuProps) {
         {trigger}
       </BaseMenu.Trigger>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner side="bottom" align="end" sideOffset={4}>
+        <BaseMenu.Positioner
+          side="bottom"
+          align="end"
+          sideOffset={4}
+          // above sticky headers, cards and sheets: menus hid behind them (owner)
+          className="z-[70]"
+        >
           <BaseMenu.Popup className="max-h-[70dvh] min-w-56 overflow-y-auto rounded-2xl bg-popover py-1 text-popover-foreground shadow-xl ring-1 ring-foreground/10 outline-none data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
             {groups.map((g, i) => (
               <BaseMenu.Group
@@ -118,7 +124,13 @@ export function ActionMenu({
         {trigger}
       </BaseMenu.Trigger>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner side="bottom" align="end" sideOffset={4}>
+        <BaseMenu.Positioner
+          side="bottom"
+          align="end"
+          sideOffset={4}
+          // above sticky headers, cards and sheets: menus hid behind them (owner)
+          className="z-[70]"
+        >
           <BaseMenu.Popup className="min-w-56 rounded-2xl bg-popover py-1 text-popover-foreground shadow-xl ring-1 ring-foreground/10 outline-none">
             {actions.map((a) => (
               <BaseMenu.Item

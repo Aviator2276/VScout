@@ -1,8 +1,10 @@
+import { useState } from "react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 import { NavBackButton } from "@/components/layout/nav-back-button"
 import { StackPage } from "@/components/layout/stack-page"
 import { useRecommendation } from "@/features/scouting/api/get-recommendations"
+import { MatchPreviewSheet } from "@/features/matches/components/match-preview-sheet"
 import { NeedsScoutingList } from "@/features/scouting/components/needs-scouting"
 import { useOurTeam } from "@/hooks/use-our-team"
 import { useWatchedTeams } from "@/hooks/use-prefs"
@@ -26,6 +28,7 @@ function NeedsScouting() {
   const { event } = Route.useRouteContext()
   const { match } = Route.useSearch()
   const navigate = useNavigate()
+  const [preview, setPreview] = useState<string | null>(null)
   const ourTeam = useOurTeam()
   const { watched } = useWatchedTeams()
   const rec = useRecommendation(event.key, { ourTeam, watched })
@@ -49,12 +52,23 @@ function NeedsScouting() {
     >
       <NeedsScoutingList
         state={state}
+        onPreviewMatch={setPreview}
         onStart={(s) =>
           void navigate({
             to: "/scouting/match/$matchKey/$teamNumber",
             params: { matchKey: s.matchKey, teamNumber: String(s.teamNumber) },
           })
         }
+      />
+      <MatchPreviewSheet
+        matchKey={preview}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null)
+        }}
+        onViewMatch={(matchKey) => {
+          setPreview(null)
+          void navigate({ to: "/matches/$matchKey", params: { matchKey } })
+        }}
       />
     </StackPage>
   )

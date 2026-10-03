@@ -116,7 +116,7 @@ export interface OptionDef {
 
 export interface ChoiceField extends FieldBase<"choice"> {
   options: ReadonlyArray<OptionDef>
-  display?: "segmented" | "list" | "grid"
+  display?: "segmented" | "list" | "grid" | "dropdown"
   /** adds "Didn't see" → null */
   allowUnknown?: boolean
 }

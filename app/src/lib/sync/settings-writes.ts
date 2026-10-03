@@ -15,6 +15,7 @@ export type SettingsPatch = Partial<
     | "teamListColumns"
     | "scouterLevel"
     | "theme"
+    | "appBackground"
     | "notifications"
     | "celebrate"
     | "dismissedTips"

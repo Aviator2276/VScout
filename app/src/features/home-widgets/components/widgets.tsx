@@ -6,17 +6,32 @@ import { StaleNote } from "@/components/sync/sync-badge"
 import { useNow } from "@/hooks/use-now"
 import { useOnline } from "@/hooks/use-online"
 import { useOurTeam } from "@/hooks/use-our-team"
+import { settingOn } from "@/config/widget-catalog"
 import type { WidgetProps } from "@/types/widget"
 import { usePitMap } from "../api/get-pit-map"
 
-const clock = new Intl.DateTimeFormat(undefined, {
-  hour: "numeric",
-  minute: "2-digit",
-})
+const clocks = new Map<string, Intl.DateTimeFormat>()
+function clockFormat(seconds: boolean, hour24: boolean): Intl.DateTimeFormat {
+  const key = `${seconds}-${hour24}`
+  let f = clocks.get(key)
+  if (!f) {
+    f = new Intl.DateTimeFormat(undefined, {
+      hour: hour24 ? "2-digit" : "numeric",
+      minute: "2-digit",
+      ...(seconds ? { second: "2-digit" } : {}),
+      hourCycle: hour24 ? "h23" : "h12",
+    })
+    clocks.set(key, f)
+  }
+  return f
+}
 const day = new Intl.DateTimeFormat(undefined, { weekday: "long" })
 
-export function ClockWidget({ w, h }: WidgetProps) {
-  const now = useNow(15_000)
+export function ClockWidget({ w, h, config }: WidgetProps) {
+  const seconds = settingOn("clock", config, "seconds")
+  const hour24 = settingOn("clock", config, "hour24")
+  const showDay = settingOn("clock", config, "showDay")
+  const now = useNow(seconds ? 1000 : 15_000)
   const tiny = w === 1
   return (
     <WidgetCard title="Clock" compact={h === 1}>
@@ -29,9 +44,9 @@ export function ClockWidget({ w, h }: WidgetProps) {
               : "font-heading text-title-1 tabular-nums"
           }
         >
-          {clock.format(now)}
+          {clockFormat(seconds, hour24).format(now)}
         </time>
-        {tiny ? null : (
+        {tiny || !showDay ? null : (
           <span className="text-footnote text-muted-foreground">
             {day.format(now)}
           </span>

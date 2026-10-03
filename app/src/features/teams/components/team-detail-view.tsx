@@ -1,7 +1,7 @@
 // One team (teams.md T2): a header, then Overview · Matches · Notes · Pit · Post sub-views (URL
 // `view`). Metrics always show their sample size; claimed and observed capabilities are labelled
 // apart (round-1 criterion 5).
-import { use } from "react"
+import { use, useState } from "react"
 import type { ReactNode } from "react"
 import { Segmented } from "@/components/controls/segmented"
 import { DataView } from "@/components/data-view/data-view"
@@ -13,12 +13,17 @@ import {
   Trash2,
 } from "@/components/icons/icon"
 import { List, ListLinkContext } from "@/components/list/list"
+import { SwipeRow } from "@/components/list/swipe-row"
 import { NoteList } from "@/components/notes/note-list"
 import type { NoteItem } from "@/components/notes/note-list"
 import { t } from "@/games/kit/labels"
 import type { GameDefinition } from "@/games/types"
 import type { DataState } from "@/lib/db/react/data-state"
-import type { MatchRecord, PostScoutingRecord } from "@/lib/db/types"
+import type {
+  MatchRecord,
+  MediaAssetRecord,
+  PostScoutingRecord,
+} from "@/lib/db/types"
 import type { TeamMetrics } from "@/lib/metrics/event-team-metrics"
 import { formatMetric, formatValue } from "@/lib/metrics/format-metric"
 import { cn } from "@/lib/utils"
@@ -44,6 +49,7 @@ export function TeamDetailView({
   view,
   onViewChange,
   actions,
+  hero,
   children,
 }: {
   state: DataState<TeamDetail>
@@ -52,6 +58,8 @@ export function TeamDetailView({
   onViewChange: (view: TeamViewKey) => void
   /** Scout Next / Pit Scout for scouters, composed by the route */
   actions?: ReactNode
+  /** robot photos, the first thing on the page (owner) */
+  hero?: ReactNode
   /** the selected sub-view, composed by the route */
   children: ReactNode
 }) {
@@ -74,6 +82,7 @@ export function TeamDetailView({
       <DataView.Success>
         {(team: TeamDetail) => (
           <div className="flex flex-col gap-4">
+            {hero}
             <header className="flex items-center gap-3">
               <span className="rounded-xl bg-muted px-3 py-1 font-heading text-title-2 tabular-nums">
                 {team.teamNumber}
@@ -110,6 +119,62 @@ export function TeamDetailView({
         )}
       </DataView.Success>
     </DataView>
+  )
+}
+
+/** The robot, front and center (owner): the newest photo large, the others in a strip below. */
+export function TeamPhotoHero({
+  photos,
+  teamNumber,
+}: {
+  photos: ReadonlyArray<MediaAssetRecord>
+  teamNumber: number
+}) {
+  const [selected, setSelected] = useState(0)
+  const main = photos[selected] ?? photos[0]
+  if (!main)
+    return (
+      <div className="flex aspect-[16/7] flex-col items-center justify-center gap-1 rounded-2xl bg-muted text-muted-foreground">
+        <Camera aria-hidden size={28} />
+        <p className="text-subhead">No robot photo yet</p>
+      </div>
+    )
+  return (
+    <section
+      aria-label={`Team ${teamNumber} robot photos`}
+      className="flex flex-col gap-2"
+    >
+      <img
+        src={main.url}
+        alt={`Team ${teamNumber}’s robot`}
+        className="aspect-[4/3] w-full rounded-2xl bg-muted object-cover"
+      />
+      {photos.length > 1 ? (
+        <ul className="flex gap-2 overflow-x-auto" aria-label="More photos">
+          {photos.map((p, i) => (
+            <li key={p.id} className="shrink-0">
+              <button
+                type="button"
+                aria-label={`Photo ${i + 1}`}
+                aria-pressed={i === selected}
+                onClick={() => setSelected(i)}
+                className={cn(
+                  "block overflow-hidden rounded-lg ring-2 transition-[box-shadow]",
+                  i === selected ? "ring-primary" : "ring-transparent"
+                )}
+              >
+                <img
+                  src={p.thumbUrl ?? p.url}
+                  alt=""
+                  loading="lazy"
+                  className="size-14 object-cover"
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   )
 }
 
@@ -219,9 +284,12 @@ export function TeamOverview({
 export function TeamMatches({
   state,
   teamNumber,
+  onScout,
 }: {
   state: DataState<ReadonlyArray<MatchRecord>>
   teamNumber: number
+  /** swipe left on an unplayed match: scout this team in it (owner's example) */
+  onScout?: (matchKey: string) => void
 }) {
   const renderLink = use(ListLinkContext)
   return (
@@ -248,30 +316,48 @@ export function TeamMatches({
                     ? `Tied ${ours}–${theirs}`
                     : `Lost ${ours}–${theirs}`
               return (
-                <li
-                  key={m.key}
-                  className={cn(
-                    "relative flex min-h-14 items-center gap-3 rounded-2xl border-s-4 px-4 py-2",
-                    alliance === "red"
-                      ? "border-alliance-red bg-alliance-red-muted"
-                      : "border-alliance-blue bg-alliance-blue-muted"
-                  )}
-                >
-                  {renderLink({
-                    href: `/matches/${m.key}`,
-                    className:
-                      "w-14 font-heading text-headline after:absolute after:inset-0",
-                    children: (
-                      <>
-                        <span aria-hidden>{shortMatchLabel(m)}</span>
-                        <span className="sr-only">{longMatchLabel(m)}</span>
-                      </>
-                    ),
-                  })}
-                  <span className="flex-1 text-subhead">
-                    {alliance === "red" ? "Red" : "Blue"} alliance
-                  </span>
-                  <span className="text-subhead tabular-nums">{result}</span>
+                <li key={m.key} className="overflow-hidden rounded-2xl">
+                  <SwipeRow
+                    trailing={
+                      onScout && !played
+                        ? [
+                            {
+                              label: "Scout",
+                              icon: ClipboardList,
+                              tone: "primary",
+                              onAction: () => onScout(m.key),
+                            },
+                          ]
+                        : []
+                    }
+                  >
+                    <div
+                      className={cn(
+                        "relative flex min-h-14 items-center gap-3 border-s-4 px-4 py-2",
+                        alliance === "red"
+                          ? "border-alliance-red bg-alliance-red-muted"
+                          : "border-alliance-blue bg-alliance-blue-muted"
+                      )}
+                    >
+                      {renderLink({
+                        href: `/matches/${m.key}`,
+                        className:
+                          "w-14 font-heading text-headline after:absolute after:inset-0",
+                        children: (
+                          <>
+                            <span aria-hidden>{shortMatchLabel(m)}</span>
+                            <span className="sr-only">{longMatchLabel(m)}</span>
+                          </>
+                        ),
+                      })}
+                      <span className="flex-1 text-subhead">
+                        {alliance === "red" ? "Red" : "Blue"} alliance
+                      </span>
+                      <span className="text-subhead tabular-nums">
+                        {result}
+                      </span>
+                    </div>
+                  </SwipeRow>
                 </li>
               )
             })}

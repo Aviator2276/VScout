@@ -19,6 +19,11 @@ export interface ChipGroupProps<TValue extends string> {
   value: ReadonlyArray<TValue>
   onValueChange: (value: Array<TValue>) => void
   size?: "default" | "form"
+  /**
+   * Quick filters (owner): one scrolling row of short chips; the fill and a bolder label show
+   * what's on, no check mark. The visible chip is 36 pt, the hit area 44 pt.
+   */
+  compact?: boolean
   describedBy?: string | undefined
 }
 
@@ -28,6 +33,7 @@ export function ChipGroup<TValue extends string>({
   value,
   onValueChange,
   size = "default",
+  compact = false,
   describedBy,
 }: ChipGroupProps<TValue>) {
   return (
@@ -40,7 +46,12 @@ export function ChipGroup<TValue extends string>({
         haptic("selection")
         onValueChange(next as Array<TValue>)
       }}
-      className="flex flex-wrap gap-2"
+      className={cn(
+        "flex gap-2",
+        compact
+          ? "-mx-4 [scrollbar-width:none] overflow-x-auto px-4 py-1"
+          : "flex-wrap"
+      )}
     >
       {options.map((o) => (
         <Toggle
@@ -48,16 +59,24 @@ export function ChipGroup<TValue extends string>({
           value={o.value}
           disabled={o.disabled === true && !value.includes(o.value)}
           className={cn(
-            "group inline-flex items-center gap-1.5 rounded-full border border-border px-4 text-subhead text-foreground disabled:opacity-40 data-[pressed]:border-primary data-[pressed]:bg-primary data-[pressed]:text-primary-foreground",
-            size === "form" ? "min-h-14" : "min-h-11"
+            "group inline-flex shrink-0 items-center gap-1.5 rounded-full text-subhead whitespace-nowrap text-foreground transition-[background-color,color,scale] active:scale-95 disabled:opacity-40 data-[pressed]:bg-primary data-[pressed]:text-primary-foreground",
+            compact
+              ? "hit-44 min-h-9 bg-muted px-3.5 data-[pressed]:font-semibold"
+              : cn(
+                  "border border-border px-4 data-[pressed]:border-primary",
+                  size === "form" ? "min-h-14" : "min-h-11"
+                )
           )}
         >
-          {/* selected state is never color alone (ui-patterns §2.3) */}
-          <Check
-            aria-hidden
-            size={16}
-            className="hidden group-data-[pressed]:block"
-          />
+          {/* forms: the state is never color alone (ui-patterns §2.3); compact chips change
+              fill and weight instead */}
+          {compact ? null : (
+            <Check
+              aria-hidden
+              size={16}
+              className="hidden group-data-[pressed]:block"
+            />
+          )}
           {o.label}
         </Toggle>
       ))}

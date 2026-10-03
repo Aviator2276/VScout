@@ -361,6 +361,7 @@ describe("sync engine: response handling", () => {
         matchResults: true,
       },
       celebrate: false,
+      appBackground: "none",
       dismissedTips: [],
       syncState: "pending",
     })
@@ -387,6 +388,68 @@ describe("sync engine: response handling", () => {
     expect(await db.userSettings.get(MOCK_USER_ID)).toMatchObject({
       rev: 3,
       theme: "light",
+      celebrate: false,
+      syncState: "synced",
+    })
+    expect(await db.conflicts.count()).toBe(0)
+  })
+
+  it("rebases userSettings even when the server's copy is a bare placeholder (owner NC-3: Keep Mine kept failing)", async () => {
+    const { db, engine } = setupEngine()
+    const key = mockBackend.key("userSettings", MOCK_USER_ID)
+    // no updatedAt: the record doesn't decode, but its rev is still known
+    mockBackend.records.set(key, {
+      id: MOCK_USER_ID,
+      userId: MOCK_USER_ID,
+      rev: 2,
+      theme: "light",
+    })
+    await db.userSettings.put({
+      id: MOCK_USER_ID,
+      userId: MOCK_USER_ID,
+      rev: 1,
+      updatedAt: 0,
+      v: 1,
+      scouterLevel: "new",
+      watchedTeams: [],
+      theme: "system",
+      notifications: {
+        announcements: true,
+        directMessages: true,
+        eventChat: "all",
+        mutedChannelIds: [],
+        ourMatchQueue: true,
+        watchedMatchQueue: false,
+        matchLeadMinutes: 10,
+        matchResults: true,
+      },
+      celebrate: false,
+      appBackground: "none",
+      dismissedTips: [],
+      syncState: "pending",
+    })
+    await db.outbox.add({
+      opId: "s1",
+      userId: MOCK_USER_ID,
+      entity: "userSettings",
+      recordId: MOCK_USER_ID,
+      recordKey: `userSettings:${MOCK_USER_ID}`,
+      eventKey: null,
+      kind: "update",
+      patchKeys: ["celebrate"],
+      state: "queued",
+      attempts: 0,
+      nextAttemptAt: 0,
+      createdAt: 0,
+    })
+    await engine.syncNow("write", { pushOnly: true })
+    expect(mockBackend.records.get(key)).toMatchObject({
+      rev: 3,
+      theme: "light",
+      celebrate: false,
+    })
+    expect(await db.userSettings.get(MOCK_USER_ID)).toMatchObject({
+      rev: 3,
       celebrate: false,
       syncState: "synced",
     })

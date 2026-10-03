@@ -437,6 +437,35 @@ call. There's no separate snapshot endpoint. Expect ~6,000 records per event.
 A phone whose local storage was wiped (iOS does this) simply bootstraps again, so this path
 **MUST** be reliable and reasonably fast.
 
+### 6.2a Optional: `GET /sync/stream` (Server-Sent Events, `capabilities.changeStream`)
+
+Added 2026-10-03 (owner: HTTP-only clients saw new messages only on their next sync). For clients
+that can't reach MQTT. Optional: advertise it with `capabilities.changeStream: true` in `/meta`.
+
+- `GET /sync/stream?scopes=global,user,event:{eventKey}&access_token={accessToken}`
+  - `access_token` because `EventSource` can't send an `Authorization` header. Treat it exactly like
+    the bearer token (same expiry; the client reconnects with the new token after a refresh). Don't
+    log the query string.
+  - Response `200 text/event-stream`, kept open. Each change is one event whose `data` is one
+    `ChangeEnvelope` JSON (the same object as MQTT fan-out and `/sync/changes`).
+  - Send a comment line (`: ping`) every 20 s so proxies keep it open; optionally `retry: 2000`.
+  - The same access rules as `/sync/changes`: the `user` scope only carries the caller's own
+    records; DMs only reach their two members.
+  - `401` for a missing or expired token.
+- The stream is a hint channel like MQTT: on every (re)connect the client pulls `/sync/changes`
+  from its cursors, so nothing published while it was disconnected is lost. The `rev` rule drops
+  duplicates.
+- Clients use it only while MQTT isn't connected; with MQTT up it's closed.
+
+### 6.2b Optional: demo events (`capabilities.demoSeed`)
+
+An admin can ask for a made-up event to demo VScout or train scouters (`POST /admin/demo-events`,
+`DELETE /admin/demo-events/{eventKey}`, http-api-contract §2.6). The server generates it (the mock API's
+generator is `app/src/testing/mocks/demo-generator.ts`, with form data from the game descriptors in
+`app/src/games/kit/demo.ts`) and publishes every record through the change log like real data. Mark the
+event `isDemo: true` and never send push notifications for it. Without the capability the Demo Data page
+says the server can't make demo events.
+
 ### 6.3 Other reads
 
 - `GET /channels/{channelId}/messages?before=<iso>&limit=100` → older chat history on demand (the app

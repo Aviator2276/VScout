@@ -37,10 +37,17 @@ const STATE_COPY: Record<PushState, { title: string; detail: string }> = {
     detail:
       "In Safari: Share → Add to Home Screen, then open VScout from the icon. Notifications, offline storage and full screen only work there.",
   },
-  unsupported: {
-    title: "Not available",
-    detail: "This browser can’t show notifications from VScout.",
-  },
+  unsupported: import.meta.env.DEV
+    ? {
+        // the dev server has no service worker, which push needs (owner asked why)
+        title: "Not available in development builds",
+        detail:
+          "Push notifications need the installed app from a release build (HTTPS). The bell’s in-app notifications still work.",
+      }
+    : {
+        title: "Not available",
+        detail: "This browser can’t show notifications from VScout.",
+      },
 }
 
 export function NotificationSettings({

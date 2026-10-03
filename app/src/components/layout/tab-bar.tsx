@@ -41,11 +41,14 @@ export function TabBar<TId extends string>({
   active,
   onSelect,
   hidden = false,
+  instant = false,
 }: {
   items: ReadonlyArray<TabItem<TId>>
   active: TId | null
   onSelect: (id: TId) => void
   hidden?: boolean
+  /** show or hide without the slide (a new page) */
+  instant?: boolean
 }) {
   const click = (id: TId) => (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
@@ -62,7 +65,8 @@ export function TabBar<TId extends string>({
       className={cn(
         "pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-safe-4 pb-safe-4 transition-[translate,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] [view-transition-name:app-tabbar] motion-reduce:transition-none",
         hidden &&
-          "translate-y-[calc(100%+var(--k-safe-area-bottom,0px))] opacity-0"
+          "translate-y-[calc(100%+var(--k-safe-area-bottom,0px))] opacity-0",
+        instant && "transition-none"
       )}
     >
       <ul className="pointer-events-auto flex w-full max-w-md items-center rounded-full glass p-1 shadow-lg">
@@ -103,12 +107,13 @@ export function TabBar<TId extends string>({
               <a
                 href={item.href}
                 onClick={click(item.id)}
-                aria-label={badge > 0 ? name : undefined}
+                // icons only (owner): the label is the accessible name
+                aria-label={name}
                 aria-current={selected ? "page" : undefined}
                 className={cn(
-                  "group relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-full text-caption-2 font-medium transition-colors",
+                  "group relative flex min-h-12 items-center justify-center rounded-full transition-colors",
                   selected
-                    ? "font-semibold text-primary dark:text-foreground"
+                    ? "text-primary dark:text-foreground"
                     : "text-muted-foreground"
                 )}
               >
@@ -116,23 +121,24 @@ export function TabBar<TId extends string>({
                   <m.span
                     aria-hidden
                     layoutId="tab-bar-lens"
+                    // glide only when the selected tab changes, never when the whole bar moves
+                    // (it replayed a fly-in after the bar slid back up, owner)
+                    layoutDependency={active}
                     transition={springs.smooth}
                     className="absolute inset-0 rounded-full bg-white/75 shadow-sm ring-1 ring-black/5 dark:bg-white/15 dark:ring-white/10"
                   />
                 ) : null}
-                <span className="relative flex flex-col items-center gap-0.5 transition-[scale] duration-150 group-active:scale-90">
-                  <span className="relative">
-                    <Icon
-                      aria-hidden
-                      size={24}
-                      fill={selected ? "currentColor" : "none"}
-                      fillOpacity={selected ? 0.2 : 0}
-                    />
-                    {badge > 0 ? (
-                      <Badge count={badge} className="-top-1 -right-2.5" />
-                    ) : null}
-                  </span>
-                  {item.label}
+                <span className="relative transition-[scale] duration-150 group-active:scale-90">
+                  <Icon
+                    aria-hidden
+                    size={26}
+                    strokeWidth={selected ? 2.25 : 2}
+                    fill={selected ? "currentColor" : "none"}
+                    fillOpacity={selected ? 0.2 : 0}
+                  />
+                  {badge > 0 ? (
+                    <Badge count={badge} className="-top-1 -right-2.5" />
+                  ) : null}
                 </span>
               </a>
             </li>

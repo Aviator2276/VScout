@@ -2,7 +2,7 @@ import { usePrePrompt } from "@/app/use-push-state"
 import { PushPrePrompt } from "@/features/notifications/components/push-pre-prompt"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
-import { TabRootActions } from "@/app/tab-root-actions"
+import { TabRootActions, TabRootLeading } from "@/app/tab-root-actions"
 import { ToolbarButton } from "@/components/controls/toolbar-button"
 import { DataView } from "@/components/data-view/data-view"
 import { Megaphone, SquarePen } from "@/components/icons/icon"
@@ -45,6 +45,7 @@ function Messages() {
   const conversations = useConversations(event.key)
   return (
     <StackPage
+      leading={<TabRootLeading />}
       title="Messages"
       trailing={
         <>

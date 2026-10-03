@@ -71,9 +71,11 @@ describe("per-tab back stacks (FX-10)", () => {
     const m = createTabMemory(storage())
     m.remember("/scout", "/scout")
     m.remember("/scout/alliance-selection", "/scout/alliance-selection")
+    m.switchTo("teams")
     m.remember("/teams", "/teams")
     m.remember("/teams/254", "/teams/254")
-    // back on the Scout tab, where we left it
+    // back on the Scout tab (tab bar), where we left it
+    m.switchTo("scout")
     m.remember("/scout/alliance-selection", "/scout/alliance-selection")
     expect(m.backFor("/scout/alliance-selection")).toBe("/scout")
     expect(m.backFor("/teams/254")).toBe("/teams")
@@ -111,6 +113,39 @@ describe("per-tab back stacks (FX-10)", () => {
     cold.remember("/matches/qm9", "/matches/qm9")
     expect(cold.backFor("/matches/qm9")).toBeNull()
     expect(cold.backFor("/scouting/match/x/1")).toBeNull()
+  })
+
+  it("a link to another tab's page stays in the current tab: team → match → Back → team (owner)", () => {
+    const m = createTabMemory(storage())
+    m.switchTo("teams")
+    m.remember("/teams", "/teams")
+    m.remember("/teams/254", "/teams/254")
+    m.remember("/matches/2026casj_qm14", "/matches/2026casj_qm14")
+    expect(m.currentTab()).toBe("teams")
+    expect(m.backFor("/matches/2026casj_qm14")).toBe("/teams/254")
+    // the Matches tab itself is untouched
+    expect(m.hrefFor("matches")).toBe("/matches")
+    // a Home widget's match: Back goes Home
+    m.switchTo("home")
+    m.remember("/", "/")
+    m.remember("/matches/2026casj_qm20", "/matches/2026casj_qm20")
+    expect(m.backFor("/matches/2026casj_qm20")).toBe("/")
+    // a link to another tab's root does switch tabs
+    m.remember("/matches", "/matches?ours=true")
+    expect(m.currentTab()).toBe("matches")
+  })
+
+  it("the Back button is labelled with the previous page's title", () => {
+    const m = createTabMemory(storage())
+    m.switchTo("teams")
+    m.remember("/teams", "/teams")
+    m.setTitle("/teams", "Teams")
+    m.remember("/teams/254", "/teams/254")
+    m.setTitle("/teams/254", "254")
+    m.remember("/matches/qm1", "/matches/qm1")
+    expect(m.backTitle("/matches/qm1")).toBe("254")
+    expect(m.backTitle("/teams/254")).toBe("Teams")
+    expect(m.backTitle("/teams")).toBeNull()
   })
 
   it("Messages is a tab of its own", () => {
@@ -183,6 +218,26 @@ describe("page transition direction (FX-13)", () => {
     expect(
       navTransitionTypes(m, at("/scout/picklists"), at("/messages"))
     ).toEqual(["tab-back"])
+  })
+
+  it("a tab switch slides the right way even when the new page was remembered first (owner: swipes)", () => {
+    const m = setup("/teams")
+    // swipe right from Teams: Messages, then Matches
+    m.switchTo("messages")
+    m.remember("/messages", "/messages")
+    expect(navTransitionTypes(m, at("/teams"), at("/messages"))).toEqual([
+      "tab-back",
+    ])
+    m.switchTo("teams")
+    m.remember("/teams", "/teams")
+    expect(navTransitionTypes(m, at("/messages"), at("/teams"))).toEqual([
+      "tab-forward",
+    ])
+    // a later link within the tab is a push again
+    m.remember("/teams/254", "/teams/254")
+    expect(navTransitionTypes(m, at("/teams"), at("/teams/254"))).toEqual([
+      "nav-forward",
+    ])
   })
 
   it("scouting forms push over the tabs and pop back to them", () => {

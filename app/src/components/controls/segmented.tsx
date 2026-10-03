@@ -49,10 +49,11 @@ export function Segmented<TValue extends string>({
         strong
         rounded
         className={height}
+        // a raised glass thumb on the selected option (owner: more liquid glass, iOS 26)
         colors={{
           strongBgIos: "bg-muted",
           strongHighlightBgIos:
-            "bg-card shadow-sm dark:bg-[oklch(0.38_0.01_220)]",
+            "bg-white/85 shadow-[0_2px_8px_rgb(0_0_0/0.12)] ring-1 ring-black/5 dark:bg-[oklch(0.42_0.01_220)] dark:ring-white/10",
         }}
       >
         {options.map((o, i) => {

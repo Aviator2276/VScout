@@ -71,12 +71,10 @@ describe("TabBar center button and hiding (FX-11, FX-12)", () => {
     render(<TabBar items={five} active="home" onSelect={onSelect} />)
     const center = screen.getByRole("link", { name: "Messages, 3 unread" })
     expect(center).toHaveAttribute("data-center")
-    expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual([
-      "Home",
-      "Matches",
-      "3",
-      "Teams",
-    ])
+    // icons only: the names come from aria-label
+    expect(
+      screen.getAllByRole("link").map((l) => l.getAttribute("aria-label"))
+    ).toEqual(["Home", "Matches", "Messages, 3 unread", "Teams"])
     await userEvent.click(center)
     expect(onSelect).toHaveBeenCalledWith("messages")
   })

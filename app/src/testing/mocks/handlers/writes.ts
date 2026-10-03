@@ -450,10 +450,12 @@ export const writeHandlers = [
     return idempotent(request, body, () => {
       if (mockBackend.role === "guest") return problem(403, "role_required")
       const key = mockBackend.key("userSettings", mockBackend.userId)
+      // no document yet: a valid empty one at rev 0 (a 409 must carry a decodable `current`)
       const current = mockBackend.records.get(key) ?? {
         id: mockBackend.userId,
         rev: 0,
         userId: mockBackend.userId,
+        updatedAt: mockBackend.now(),
       }
       if (body.baseRev !== current.rev)
         return problem(409, "rev_conflict", { current })

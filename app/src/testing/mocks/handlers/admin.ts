@@ -3,6 +3,7 @@
 // without them.
 import { http, HttpResponse } from "msw"
 import { wireEventSettings } from "@/lib/contracts/event-settings"
+import { demoEventOptions } from "@/lib/contracts/demo-events"
 import { mockBackend } from "../mock-backend"
 import type { MockRecord } from "../mock-backend"
 import { problemResponse } from "./problem"
@@ -45,6 +46,39 @@ export function activeGuestCode(): string | null {
 }
 
 export const adminHandlers = [
+  // shared demo events (AD7a, capabilities.demoSeed)
+  // the generator loads the game module, which Playwright's Node loader can't import (JSON), so
+  // it loads only when a demo endpoint is called
+  http.post("*/api/v1/admin/demo-events", async ({ request }) => {
+    const body = await request.json()
+    const { createDemoEvent } = await import("../demo-generator")
+    return idempotent(request, body, () => {
+      if (mockBackend.role !== "admin") return problem(403, "role_required")
+      const options = demoEventOptions.safeParse(body)
+      if (!options.success) return problem(422, "validation_failed")
+      const scouters = [...mockBackend.accounts.values()]
+        .filter((a) => a.role === "scouter" || a.role === "admin")
+        .map((a) => a.id)
+      const created = createDemoEvent(
+        options.data,
+        { userId: mockBackend.userId },
+        scouters
+      )
+      mockBackend.applied++
+      return { status: 201, body: created }
+    })
+  }),
+
+  http.delete("*/api/v1/admin/demo-events/:ek", async ({ request, params }) => {
+    const { deleteDemoEvent } = await import("../demo-generator")
+    return idempotent(request, {}, () => {
+      if (mockBackend.role !== "admin") return problem(403, "role_required")
+      if (!deleteDemoEvent(String(params.ek))) return problem(404, "not_found")
+      mockBackend.applied++
+      return { status: 200, body: { eventKey: String(params.ek) } }
+    })
+  }),
+
   http.put("*/api/v1/team-settings", async ({ request }) => {
     const body = (await request.json()) as {
       baseRev?: number

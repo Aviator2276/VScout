@@ -4,7 +4,7 @@ import {
   useRouter,
 } from "@tanstack/react-router"
 import { useCallback, useEffect } from "react"
-import { TabRootActions } from "@/app/tab-root-actions"
+import { TabRootActions, TabRootLeading } from "@/app/tab-root-actions"
 import { StackPage } from "@/components/layout/stack-page"
 import {
   useEventMatches,
@@ -76,17 +76,9 @@ function MatchesTab() {
 
   return (
     <StackPage
+      leading={<TabRootLeading />}
       title="Matches"
-      trailing={
-        <>
-          <TabRootActions />
-          <MatchesToolbar
-            search={search}
-            onSearchChange={onSearchChange}
-            canScout={canScout}
-          />
-        </>
-      }
+      trailing={<TabRootActions />}
     >
       <MatchListView
         state={state}
@@ -98,6 +90,26 @@ function MatchesTab() {
         watched={watched}
         canScout={canScout}
         now={now}
+        searchActions={
+          <MatchesToolbar
+            search={search}
+            onSearchChange={onSearchChange}
+            canScout={canScout}
+          />
+        }
+        onScout={(key) =>
+          void navigate({
+            to: "/matches/$matchKey",
+            params: { matchKey: key },
+            search: { sheet: "scout-team" },
+          })
+        }
+        onBriefing={(key) =>
+          void navigate({
+            to: "/scout/strategy/$matchKey",
+            params: { matchKey: key },
+          })
+        }
       />
       <MatchFilterSheet
         search={search}

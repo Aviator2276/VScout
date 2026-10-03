@@ -214,9 +214,19 @@ async function onConflict(
 
   return deps.db.transaction("rw", txTables(deps, op), async () => {
     const row = await table.get(def.key(op.recordId))
-    if (op.entity === "userSettings" && remote && row) {
+    // the server's revision, even when its copy doesn't decode (a bare or older document): a
+    // settings patch only needs the rev to go again; without it Keep Mine looped (owner NC-3)
+    const rawRev =
+      typeof currentRaw === "object" &&
+      currentRaw !== null &&
+      typeof (currentRaw as { rev?: unknown }).rev === "number"
+        ? (currentRaw as { rev: number }).rev
+        : null
+    if (op.entity === "userSettings" && row && (remote || rawRev !== null)) {
       // per-key last-writer-wins (ADR-033): my changed keys on top of the server copy, sent again
-      const merged: Row = { ...remote, rev: remote.rev, syncState: "pending" }
+      const merged: Row = remote
+        ? { ...remote, rev: remote.rev, syncState: "pending" }
+        : { ...row, rev: rawRev ?? row.rev, syncState: "pending" }
       for (const k of op.patchKeys ?? []) merged[k] = row[k]
       await table.put(merged)
       // a different body is a different operation: a new Idempotency-Key, or the server

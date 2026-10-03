@@ -443,10 +443,17 @@ function Composer({
         rows={1}
         value={text}
         maxLength={4000}
-        enterKeyHint="enter"
+        enterKeyHint="send"
         onChange={(e) => {
           setText(e.target.value)
           setError(null)
+        }}
+        // Enter sends; Shift+Enter adds a line (owner). Never mid-composition (IME, dictation).
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault()
+            form.current?.requestSubmit()
+          }
         }}
         placeholder="Message"
         className="min-h-11 flex-1 resize-none overflow-y-auto rounded-2xl bg-muted px-3 py-2.5 text-body outline-none"

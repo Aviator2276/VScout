@@ -66,5 +66,15 @@ export {
   HardDrive,
   ShieldCheck,
   BookOpen,
+  Hash,
+  KeyRound,
+  ListOrdered,
+  ChartColumn,
+  Flag,
+  Activity,
+  CheckCheck,
+  StarOff,
+  Swords,
+  FlaskConical,
 } from "lucide-react"
 export type { LucideIcon, LucideProps } from "lucide-react"

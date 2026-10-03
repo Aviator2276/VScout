@@ -63,3 +63,23 @@ export function useNotificationActions() {
     [db]
   )
 }
+
+/** Unread, not dismissed, in one category (the Messages tab badge counts announcements). */
+export function useUnreadCount(
+  category: NotificationCategory,
+  group?: string
+): number {
+  const { db } = useDataRuntime()
+  return useLiveOr(
+    async () =>
+      (await db.notifications.toArray()).filter(
+        (r) =>
+          r.category === category &&
+          r.readAt === undefined &&
+          r.dismissedAt === undefined &&
+          (group === undefined || r.group === group)
+      ).length,
+    [db, category, group],
+    0
+  )
+}

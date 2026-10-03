@@ -1,5 +1,8 @@
-// choice → Segmented (up to 5 short options) or wrapping chips (ui-patterns §2.2).
+// choice → Segmented (up to 5 short options); otherwise wrapping chips in the match form (one tap,
+// time pressure) and a dropdown in the pit and post forms (owner: chips took too much room), or
+// whatever the game module asks for with `display` (ui-patterns §2.2).
 import { ChoiceChips } from "@/components/controls/choice-chips"
+import { Dropdown } from "@/components/controls/dropdown"
 import { Segmented } from "@/components/controls/segmented"
 import { t } from "@/games/kit/labels"
 import type { ChoiceField as ChoiceDef } from "@/games/types"
@@ -19,7 +22,7 @@ export function ChoiceField({
   help,
   issue,
 }: FieldProps<ChoiceDef>) {
-  const { game } = useFormEnv()
+  const { game, alliance } = useFormEnv()
   const options = [
     ...field.options.map((o) => ({ value: o.value, label: t(game, o.label) })),
     ...(field.allowUnknown ? [{ value: UNKNOWN, label: UNKNOWN_LABEL }] : []),
@@ -36,10 +39,26 @@ export function ChoiceField({
     field.display !== "grid" &&
     options.length <= SEGMENTED_MAX &&
     options.every((o) => o.label.length <= SHORT_LABEL)
+  // the match form has an alliance; pit and post forms don't
+  const dropdown =
+    field.display === "dropdown" ||
+    (!segmented &&
+      field.display !== "list" &&
+      field.display !== "grid" &&
+      alliance === null)
   return (
     <FieldFrame label={label} help={help} issue={issue}>
       {(describedBy) =>
-        segmented ? (
+        dropdown ? (
+          <Dropdown
+            describedBy={describedBy}
+            label={label}
+            options={options}
+            value={selected}
+            onValueChange={set}
+            size="form"
+          />
+        ) : segmented ? (
           <Segmented
             describedBy={describedBy}
             label={label}

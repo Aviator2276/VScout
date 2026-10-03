@@ -5,6 +5,15 @@ import type { VScoutDB } from "@/lib/db/schema"
 import type { NotificationRow } from "@/lib/db/types"
 import type { IdGen } from "@/lib/ids"
 
+/** Listeners for notifications created on this device (the in-app banner). */
+const created = new Set<(row: NotificationRow) => void>()
+export function onNotified(listener: (row: NotificationRow) => void) {
+  created.add(listener)
+  return () => {
+    created.delete(listener)
+  }
+}
+
 export type NotifyInput = Omit<
   NotificationRow,
   "id" | "createdAt" | "readAt" | "dismissedAt"
@@ -32,30 +41,35 @@ export async function notify(
   input: NotifyInput,
   opts: { now: number; ids: IdGen; refresh?: boolean }
 ): Promise<NotificationRow | null> {
-  return db.transaction("rw", db.notifications, async () => {
-    const existing = await db.notifications
-      .where("key")
-      .equals(input.key)
-      .first()
-    if (existing) {
-      if (!opts.refresh) return null
-      const raised = RANK[input.priority] > RANK[existing.priority]
-      const next: NotificationRow = { ...existing, ...input }
-      if (raised) {
-        delete next.readAt
-        delete next.dismissedAt
+  return db
+    .transaction("rw", db.notifications, async () => {
+      const existing = await db.notifications
+        .where("key")
+        .equals(input.key)
+        .first()
+      if (existing) {
+        if (!opts.refresh) return null
+        const raised = RANK[input.priority] > RANK[existing.priority]
+        const next: NotificationRow = { ...existing, ...input }
+        if (raised) {
+          delete next.readAt
+          delete next.dismissedAt
+        }
+        await db.notifications.put(next)
+        return null
       }
-      await db.notifications.put(next)
-      return null
-    }
-    const row: NotificationRow = {
-      ...input,
-      id: opts.ids.newId(),
-      createdAt: opts.now,
-    }
-    await db.notifications.add(row)
-    return row
-  })
+      const row: NotificationRow = {
+        ...input,
+        id: opts.ids.newId(),
+        createdAt: opts.now,
+      }
+      await db.notifications.add(row)
+      return row
+    })
+    .then((row) => {
+      if (row) for (const l of created) l(row)
+      return row
+    })
 }
 
 /** The condition behind a system item cleared: delete it so it can come back later. */

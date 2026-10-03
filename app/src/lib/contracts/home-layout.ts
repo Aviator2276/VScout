@@ -11,6 +11,8 @@ export const homeGridItem = z.looseObject({
   w: z.number().int().min(1).max(8),
   h: z.number().int().min(1).max(8),
   config: z.record(z.string(), z.unknown()).optional(),
+  /** a card tint (owner); unknown values from a newer app are dropped */
+  color: z.string().max(16).optional(),
 })
 
 export const homeGridList = z.array(homeGridItem).max(40)

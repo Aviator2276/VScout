@@ -1,10 +1,11 @@
-import { render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { App } from "konsta/react"
 import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 import type { Placed } from "@/components/grid/grid-engine"
 import { ToastProvider } from "@/components/overlays/toaster"
+import { widgetSetting } from "@/config/widget-catalog"
 import { createTestRuntime } from "@/testing/data-runtime"
 import { TEST_USER } from "@/testing/db"
 import type { WidgetRole } from "@/types/widget"
@@ -21,7 +22,13 @@ function Harness({ role }: { role: WidgetRole }) {
     <HomeView
       role={role}
       editing={editing}
-      onEditingChange={setEditing}
+      onEditingChange={(e, then) => {
+        setEditing(e)
+        if (then) {
+          setSheet(then.sheet)
+          setId(then.id)
+        }
+      }}
       sheet={sheet}
       sheetId={id}
       onSheet={(s, i) => {
@@ -105,6 +112,50 @@ describe("Home (features/home.md)", () => {
     expect(
       screen.getByRole("button", { name: "Layout, Custom" })
     ).toBeInTheDocument()
+  })
+
+  it("the widget menu (long press / right-click) opens Widget Settings; settings and color sync on every screen size (owner)", async () => {
+    const t = mount()
+    await vi.waitFor(() => expect(widgets()).toHaveLength(6))
+    const clock = screen
+      .getAllByTestId("widget")
+      .find((e) => e.textContent === "clock")
+    if (!clock) throw new Error("no clock")
+    fireEvent.contextMenu(clock)
+    const menu = await screen.findByRole("dialog", { name: "Clock" })
+    await userEvent.click(
+      within(menu).getByRole("button", { name: "Widget Settings" })
+    )
+    const sheet = await screen.findByRole("dialog", { name: "Clock" })
+    await userEvent.click(
+      within(sheet).getByRole("checkbox", { name: "Show Seconds" })
+    )
+    await userEvent.click(within(sheet).getByRole("radio", { name: "Blue" }))
+    expect(within(sheet).getByRole("radio", { name: "Blue" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+    await userEvent.click(within(sheet).getByRole("button", { name: "Done" }))
+    await userEvent.click(screen.getByRole("button", { name: "Done" }))
+    await vi.waitFor(async () => expect(await t.db.outbox.count()).toBe(1))
+    const stored = (await t.db.userSettings.get(TEST_USER))?.homeLayout as {
+      custom: Record<
+        string,
+        Array<{ widget: string; color?: string; config?: object }>
+      >
+    }
+    for (const list of Object.values(stored.custom)) {
+      const c = list.find((i) => i.widget === "clock")
+      expect(c).toMatchObject({ color: "blue", config: { seconds: true } })
+    }
+  })
+
+  it("widget settings fall back to the catalog defaults and clamp counts", () => {
+    expect(widgetSetting("clock", undefined, "showDay")).toBe(true)
+    expect(widgetSetting("clock", { seconds: "yes" }, "seconds")).toBe(false)
+    expect(widgetSetting("rankings", { rows: 999 }, "rows")).toBe(24)
+    expect(widgetSetting("rankings", { rows: 1 }, "rows")).toBe(3)
+    expect(widgetSetting("clock", {}, "nope")).toBeUndefined()
   })
 
   it("remove offers Undo; a guest's layout stays on the device", async () => {

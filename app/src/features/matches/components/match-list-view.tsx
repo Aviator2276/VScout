@@ -1,10 +1,18 @@
 // The match list (matches.md M1): search, quick chips, sections with the Now divider, virtualized
 // rows. Search and filters live in the URL; the route passes them in and writes them back.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { ReactNode } from "react"
 import { ChipGroup } from "@/components/controls/chip-group"
 import { DataView } from "@/components/data-view/data-view"
 import { SearchField } from "@/components/form/search-field"
-import { ArrowDown, CalendarDays, SearchX, X } from "@/components/icons/icon"
+import {
+  ArrowDown,
+  CalendarDays,
+  ClipboardList,
+  SearchX,
+  Swords,
+  X,
+} from "@/components/icons/icon"
 import { Button } from "@/components/controls/button"
 import { VirtualList } from "@/components/list/virtual-list"
 import type { VirtualListHandle } from "@/components/list/virtual-list"
@@ -21,6 +29,7 @@ import { parseMatchQuery } from "../utils/parse-match-query"
 import { nextMatch, sortAndSection } from "../utils/sort-and-section-matches"
 import type { ListItem } from "../utils/sort-and-section-matches"
 import { MatchRow } from "./match-row"
+import { SwipeRow } from "@/components/list/swipe-row"
 
 export type SearchPatch = Partial<MatchesSearch>
 
@@ -36,6 +45,11 @@ export interface MatchListViewProps {
   watched: ReadonlySet<number>
   canScout: boolean
   now: number
+  /** swipe actions (owner): left = scout a robot, right = the pre-match briefing */
+  onScout?: (matchKey: string) => void
+  onBriefing?: (matchKey: string) => void
+  /** sort and filter, beside the search field */
+  searchActions?: ReactNode
 }
 
 const QUICK = ["ours", "watched", "unscouted", "upcoming"] as const
@@ -80,6 +94,9 @@ export function MatchListView({
   watched,
   canScout,
   now,
+  onScout,
+  onBriefing,
+  searchActions,
 }: MatchListViewProps) {
   // typing filters on every keystroke; the URL follows 300 ms after the last key (criterion 7)
   const {
@@ -182,9 +199,11 @@ export function MatchListView({
         value={query}
         onValueChange={onQuery}
         footnote={footnote}
+        actions={searchActions}
       />
       <div className="pb-2">
         <ChipGroup
+          compact
           label="Quick filters"
           options={quickOptions}
           value={quickValue(search)}
@@ -241,6 +260,8 @@ export function MatchListView({
               videos={context.videos}
               now={now}
               autoScroll={search.sort === "schedule" && !query}
+              onScout={canScout ? onScout : undefined}
+              onBriefing={onBriefing}
             />
           )}
         </DataView.Success>
@@ -312,6 +333,8 @@ function MatchList({
   videos,
   now,
   autoScroll,
+  onScout,
+  onBriefing,
 }: {
   sectioned: ReturnType<typeof sortAndSection>
   ourTeam: number | null
@@ -320,6 +343,8 @@ function MatchList({
   videos: ReadonlySet<string>
   now: number
   autoScroll: boolean
+  onScout?: (matchKey: string) => void
+  onBriefing?: (matchKey: string) => void
 }) {
   const handle = useRef<VirtualListHandle | null>(null)
   const { items, upNextIndex, nowIndex, rowCount } = sectioned
@@ -360,17 +385,44 @@ function MatchList({
         restorationId="matches-list"
         renderItem={(it) =>
           it.kind === "row" ? (
-            <MatchRow
-              match={it.match}
-              position={it.position}
-              setSize={rowCount}
-              upNext={it.upNext}
-              ourTeam={ourTeam}
-              watched={watched}
-              showCoverage={showCoverage}
-              hasVideo={videos.has(it.match.key)}
-              now={now}
-            />
+            <SwipeRow
+              leading={
+                onBriefing
+                  ? [
+                      {
+                        label: "Briefing",
+                        icon: Swords,
+                        tone: "warning",
+                        onAction: () => onBriefing(it.match.key),
+                      },
+                    ]
+                  : []
+              }
+              trailing={
+                onScout && it.match.status !== "played"
+                  ? [
+                      {
+                        label: "Scout",
+                        icon: ClipboardList,
+                        tone: "primary",
+                        onAction: () => onScout(it.match.key),
+                      },
+                    ]
+                  : []
+              }
+            >
+              <MatchRow
+                match={it.match}
+                position={it.position}
+                setSize={rowCount}
+                upNext={it.upNext}
+                ourTeam={ourTeam}
+                watched={watched}
+                showCoverage={showCoverage}
+                hasVideo={videos.has(it.match.key)}
+                now={now}
+              />
+            </SwipeRow>
           ) : it.kind === "now" ? (
             <div className="flex h-9 items-center gap-2 text-footnote font-semibold text-primary uppercase">
               <span className="h-px flex-1 bg-primary/40" />

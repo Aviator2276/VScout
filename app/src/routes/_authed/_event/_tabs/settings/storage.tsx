@@ -85,7 +85,9 @@ function checkCopy(s: UpdateState, now: number): string {
     case "error":
       return "Couldn't check for updates. Try again."
     case "unsupported":
-      return "Not supported in this browser"
+      return import.meta.env.DEV
+        ? "Not available in development builds"
+        : "Not supported in this browser"
     case "ready":
     case "applying":
       return `Version ${s.available ?? ""} is ready.`
@@ -198,8 +200,10 @@ function Storage() {
   }
 
   const ready = state.status === "ready" || state.status === "applying"
-  const offlineReady =
-    state.status === "unsupported"
+  // the dev server never registers the service worker: say so instead of "Downloading…" forever
+  const offlineReady = import.meta.env.DEV
+    ? "Not available in development builds"
+    : state.status === "unsupported"
       ? "Not supported in this browser"
       : state.offlineReady
         ? "Yes"

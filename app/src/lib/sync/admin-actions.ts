@@ -2,6 +2,11 @@
 // through lib/api (MQTT RPC or HTTP, ADR-063). Results are applied to Dexie where they are data.
 import { decodeRecord } from "@/lib/api/adapters/entity-registry"
 import { wireEventSettings } from "@/lib/contracts/event-settings"
+import { demoEventCreated } from "@/lib/contracts/demo-events"
+import type {
+  DemoEventCreated,
+  DemoEventOptions,
+} from "@/lib/contracts/demo-events"
 import { wireUser } from "@/lib/contracts/user"
 import type { WireUser } from "@/lib/contracts/user"
 import { z } from "zod"
@@ -255,5 +260,48 @@ export async function fetchOptional<T>(
     if (r.kind === "error" && (r.code === "not_found" || /404/.test(r.message)))
       return { kind: "missing" }
     return r as Exclude<OnlineResult, { kind: "ok" }>
+  }
+}
+
+/** Generate a shared demo event (AD7a, capability demoSeed): the server builds it from the options. */
+export async function createDemoEvent(
+  deps: Pick<LiveDeps, "api" | "newId">,
+  options: DemoEventOptions
+): Promise<
+  | { kind: "ok"; created: DemoEventCreated }
+  | Exclude<OnlineResult, { kind: "ok" }>
+> {
+  try {
+    const res = await deps.api.request({
+      method: "POST",
+      path: "/admin/demo-events",
+      class: "write",
+      idempotencyKey: deps.newId(),
+      body: options,
+    })
+    const parsed = demoEventCreated.safeParse(res.body)
+    return parsed.success
+      ? { kind: "ok", created: parsed.data }
+      : { kind: "error", message: "Unexpected response" }
+  } catch (error) {
+    return fail(error) as Exclude<OnlineResult, { kind: "ok" }>
+  }
+}
+
+/** Delete a demo event and everything in it, for everyone (AD7a). */
+export async function deleteDemoEvent(
+  deps: Pick<LiveDeps, "api" | "newId">,
+  eventKey: string
+): Promise<OnlineResult> {
+  try {
+    await deps.api.request({
+      method: "DELETE",
+      path: `/admin/demo-events/${eventKey}`,
+      class: "write",
+      idempotencyKey: deps.newId(),
+    })
+    return { kind: "ok" }
+  } catch (error) {
+    return fail(error)
   }
 }

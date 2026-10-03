@@ -10,6 +10,7 @@ import type { DataState } from "@/lib/db/react/data-state"
 import { haptic } from "@/lib/haptics"
 import { cn } from "@/lib/utils"
 import { longMatchLabel, parseMatchKey } from "@/utils/match-label"
+import { groupByMatch } from "../utils/recommend-slots"
 import type { Recommendation, Reason, Slot } from "../utils/recommend-slots"
 import { stationLabel } from "./match-scouting"
 
@@ -130,9 +131,12 @@ export function NeedsScoutingCard({
 export function NeedsScoutingList({
   state,
   onStart,
+  onPreviewMatch,
 }: {
   state: DataState<Recommendation>
   onStart: (slot: Slot) => void
+  /** tap a match heading: a preview sheet (owner), composed by the route */
+  onPreviewMatch?: (matchKey: string) => void
 }) {
   return (
     <DataView state={state} size="page">
@@ -153,21 +157,25 @@ export function NeedsScoutingList({
       <DataView.Error title="Couldn’t work out what needs scouting." />
       <DataView.Success>
         {(rec: Recommendation) => {
-          const groups = new Map<string, Array<Slot>>()
-          for (const s of rec.all) {
-            const list = groups.get(s.matchKey)
-            if (list) list.push(s)
-            else groups.set(s.matchKey, [s])
-          }
           return (
             <div className="flex flex-col gap-5">
-              {[...groups].map(([key, slots]) => (
+              {groupByMatch(rec.all).map(([key, slots]) => (
                 <section key={key} aria-labelledby={`g-${key}`}>
                   <h2
                     id={`g-${key}`}
                     className="mb-1.5 px-1 text-footnote text-muted-foreground uppercase"
                   >
-                    {matchName(key)}
+                    {onPreviewMatch ? (
+                      <button
+                        type="button"
+                        onClick={() => onPreviewMatch(key)}
+                        className="min-h-8 uppercase active:opacity-60"
+                      >
+                        {matchName(key)} ›
+                      </button>
+                    ) : (
+                      matchName(key)
+                    )}
                   </h2>
                   <ul className="flex flex-col gap-2">
                     {slots.map((s) => (

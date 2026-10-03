@@ -2,7 +2,6 @@
 // opaque to the client.
 import { http, HttpResponse } from "msw"
 import { syncScope } from "@/lib/contracts/sync-changes"
-import { testTime } from "../../factories/ids"
 import { mockBackend } from "../mock-backend"
 import { problemResponse } from "./problem"
 
@@ -52,7 +51,7 @@ export const syncHandlers = [
       changes,
       cursors: nextCursors,
       hasMore,
-      serverTime: testTime(),
+      serverTime: mockBackend.at(),
     })
   }),
 ]

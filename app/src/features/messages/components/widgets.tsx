@@ -3,13 +3,16 @@ import { DataView } from "@/components/data-view/data-view"
 import { GlossaryText } from "@/components/glossary/glossary-text"
 import { WidgetCard } from "@/components/grid/widget-card"
 import { Megaphone, MessageSquare } from "@/components/icons/icon"
+import { settingCount, settingOn } from "@/config/widget-catalog"
 import type { WidgetProps } from "@/types/widget"
 import { useAnnouncements } from "../api/get-announcements"
 import type { AnnouncementView } from "../api/get-announcements"
 import { eventChannel, useThread } from "../api/get-messages"
 import type { ChatMessage } from "../api/get-messages"
 
-export function AnnouncementsWidget({ eventKey, h }: WidgetProps) {
+export function AnnouncementsWidget({ eventKey, h, config }: WidgetProps) {
+  const upTo = settingCount("announcements", config, "count")
+  const urgentOnly = settingOn("announcements", config, "urgentOnly")
   const state = useAnnouncements(eventKey)
   return (
     <WidgetCard title="Announcements" href="/messages/announcements">
@@ -20,23 +23,31 @@ export function AnnouncementsWidget({ eventKey, h }: WidgetProps) {
           {(list: ReadonlyArray<AnnouncementView>) => {
             const ordered = [
               ...list.filter((a) => a.urgent),
-              ...list.filter((a) => !a.urgent),
+              ...(urgentOnly ? [] : list.filter((a) => !a.urgent)),
             ]
+            if (ordered.length === 0)
+              return (
+                <p className="flex h-full items-center justify-center text-center text-footnote text-balance text-muted-foreground">
+                  No urgent announcements
+                </p>
+              )
             return (
               <ul className="flex flex-col gap-2 text-subhead">
-                {ordered.slice(0, Math.max(1, h - 1)).map((a) => (
-                  <li key={a.id} className="line-clamp-2">
-                    {a.urgent ? <strong>Urgent: </strong> : null}
-                    <GlossaryText>{a.body}</GlossaryText>
-                    {a.reactions.length ? (
-                      <span className="ms-1 text-footnote text-muted-foreground">
-                        {a.reactions
-                          .map((r) => `${r.emoji}${r.count}`)
-                          .join(" ")}
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
+                {ordered
+                  .slice(0, Math.min(upTo, Math.max(1, h - 1)))
+                  .map((a) => (
+                    <li key={a.id} className="line-clamp-2">
+                      {a.urgent ? <strong>Urgent: </strong> : null}
+                      <GlossaryText>{a.body}</GlossaryText>
+                      {a.reactions.length ? (
+                        <span className="ms-1 text-footnote text-muted-foreground">
+                          {a.reactions
+                            .map((r) => `${r.emoji}${r.count}`)
+                            .join(" ")}
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
               </ul>
             )
           }}
@@ -57,7 +68,14 @@ export function RecentMessagesWidget({ eventKey, h, config }: WidgetProps) {
       ? state.data.length
         ? {
             ...state,
-            data: state.data.slice(-Math.max(1, Math.floor(h * 1.5))).reverse(),
+            data: state.data
+              .slice(
+                -Math.min(
+                  settingCount("recentMessages", config, "count"),
+                  Math.max(1, Math.floor(h * 1.5))
+                )
+              )
+              .reverse(),
           }
         : { status: "empty" }
       : state

@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { getTabMemory } from "@/stores/tab-memory"
 import { ShellBannersContext } from "./shell-banners"
 
 export interface StackPageProps {
@@ -27,6 +28,11 @@ export function StackPage({
 }: StackPageProps) {
   const large = titleMode === "large"
   const shellBanners = use(ShellBannersContext)
+  // the next page's Back button is labelled with this title (no router needed: this runs after
+  // the navigation has committed, so the address is the page's own)
+  useEffect(() => {
+    getTabMemory().setTitle(location.pathname, title)
+  }, [title])
   const titleRef = useRef<HTMLHeadingElement>(null)
   const [collapsed, setCollapsed] = useState(!large)
 
@@ -46,10 +52,11 @@ export function StackPage({
       <header
         className={cn(
           "sticky top-0 z-20 pt-safe transition-[background-color,box-shadow] duration-200",
-          collapsed ? "rounded-none glass" : "bg-background"
+          // transparent at rest so a tab background shows; glass once content scrolls under it
+          collapsed ? "rounded-none glass-bar" : "bg-transparent"
         )}
       >
-        <div className="grid min-h-11 grid-cols-[1fr_auto_1fr] items-center gap-2 px-safe-4">
+        <div className="mx-auto grid min-h-11 w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-safe-4">
           <div className="flex justify-start">{leading}</div>
           <p
             aria-hidden={large}
@@ -65,9 +72,13 @@ export function StackPage({
       </header>
       {shellBanners}
       {banner}
+      {/* a readable width on iPad and desktop; pushed pages start a little below the nav bar */}
       <main
         id="main"
-        className="flex-1 px-safe-4 pb-[calc(var(--k-safe-area-bottom)+96px)]"
+        className={cn(
+          "mx-auto w-full max-w-3xl flex-1 px-safe-4 pb-[calc(var(--k-safe-area-bottom)+96px)]",
+          !large && "pt-3"
+        )}
       >
         {large ? (
           <h1

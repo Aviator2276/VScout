@@ -3,6 +3,7 @@
 import { useDataRuntime } from "@/lib/db/react/data-runtime"
 import {
   useCollectionState,
+  useLiveOr,
   useRecordState,
 } from "@/lib/db/react/data-state-hooks"
 import type { DataState } from "@/lib/db/react/data-state"
@@ -135,6 +136,25 @@ export function useTeamPit(
     },
     explainMissing: async () => "not-scouted",
   })
+}
+
+/** The team's robot photos, newest first: the top of the team page (owner). */
+export function useTeamPhotos(
+  eventKey: string,
+  teamNumber: number
+): ReadonlyArray<MediaAssetRecord> {
+  const { db } = useDataRuntime()
+  return useLiveOr(
+    async () =>
+      (
+        await db.mediaAssets
+          .where("[eventKey+teamNumber]")
+          .equals([eventKey, teamNumber])
+          .toArray()
+      ).sort((a, b) => b.createdAt - a.createdAt),
+    [db, eventKey, teamNumber],
+    []
+  )
 }
 
 /** Post-match (post-scouting) entries for the team, newest first (BETA, scouting-forms.md). */

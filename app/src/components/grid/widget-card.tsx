@@ -23,18 +23,20 @@ export function WidgetCard({
       aria-label={title}
       className={cn(
         "relative flex h-full min-h-0 flex-col overflow-hidden rounded-[22px] bg-card shadow-xs",
+        // the widget's color (owner), set by the grid as --widget-tint; unset = a plain card
+        "before:pointer-events-none before:absolute before:inset-0 before:bg-(--widget-tint) before:opacity-15 dark:before:opacity-25",
         compact ? "p-[11px]" : "gap-2 p-4"
       )}
     >
       {compact ? null : (
-        <h2 className="flex items-center justify-between text-footnote font-semibold text-muted-foreground uppercase">
+        <h2 className="relative flex items-center justify-between text-footnote font-semibold text-muted-foreground uppercase">
           {href
             ? renderLink({ href, className: "min-h-8 py-1", children: title })
             : title}
         </h2>
       )}
       {/* a size container: content (DataView's inline states) adapts to the widget's width */}
-      <div className="@container/widget min-h-0 flex-1 overflow-hidden">
+      <div className="@container/widget relative min-h-0 flex-1 overflow-hidden">
         {children}
       </div>
     </section>

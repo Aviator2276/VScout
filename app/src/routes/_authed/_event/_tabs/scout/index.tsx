@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { TabRootActions } from "@/app/tab-root-actions"
+import { TabRootActions, TabRootLeading } from "@/app/tab-root-actions"
 import { StackPage } from "@/components/layout/stack-page"
 import { List } from "@/components/list/list"
 import {
@@ -48,7 +48,11 @@ function ScoutHome() {
   const now = useNow()
 
   return (
-    <StackPage title="Scout" trailing={<TabRootActions />}>
+    <StackPage
+      leading={<TabRootLeading />}
+      title="Scout"
+      trailing={<TabRootActions />}
+    >
       {canScout ? (
         <section aria-labelledby="needs-scouting" className="mt-2">
           <h2

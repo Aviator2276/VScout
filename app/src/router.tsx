@@ -17,7 +17,9 @@ export function getRouter() {
     defaultPreload: "intent",
     // loaders are cheap Dexie reads; Dexie is the cache
     defaultPreloadStaleTime: 0,
-    defaultPendingMs: 150,
+    // every page's code is preloaded after launch (TabShell): the old page stays up until the new
+    // one is ready, and the full-page skeleton only appears for a really slow load
+    defaultPendingMs: 800,
     defaultPendingMinMs: 300,
     defaultPendingComponent: RoutePending,
     defaultErrorComponent: RouteError,

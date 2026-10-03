@@ -12,6 +12,8 @@ export const CAPABILITY_KEYS = [
   "matchPush",
   "reactions",
   "demoSeed",
+  /** GET /sync/stream: Server-Sent Events of change envelopes for HTTP-only clients */
+  "changeStream",
 ] as const
 export type CapabilityKey = (typeof CAPABILITY_KEYS)[number]
 

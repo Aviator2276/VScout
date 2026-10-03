@@ -179,6 +179,7 @@ describe("meta, session and problems", () => {
       matchPush: false,
       reactions: false,
       demoSeed: false,
+      changeStream: false,
     })
   })
 

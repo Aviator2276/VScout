@@ -57,6 +57,7 @@ import { Route as AuthedEventTabsSettingsAdminIndexRouteImport } from './routes/
 import { Route as AuthedEventTabsSettingsAdminAllianceBoardRouteImport } from './routes/_authed/_event/_tabs/settings/admin/alliance-board'
 import { Route as AuthedEventTabsSettingsAdminAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/settings/admin/announcements'
 import { Route as AuthedEventTabsSettingsAdminDataQualityRouteImport } from './routes/_authed/_event/_tabs/settings/admin/data-quality'
+import { Route as AuthedEventTabsSettingsAdminDemoRouteImport } from './routes/_authed/_event/_tabs/settings/admin/demo'
 import { Route as AuthedEventTabsSettingsAdminEventRouteImport } from './routes/_authed/_event/_tabs/settings/admin/event'
 import { Route as AuthedEventTabsSettingsAdminExportRouteImport } from './routes/_authed/_event/_tabs/settings/admin/export'
 import { Route as AuthedEventTabsSettingsAdminGuestAccessRouteImport } from './routes/_authed/_event/_tabs/settings/admin/guest-access'
@@ -345,6 +346,12 @@ const AuthedEventTabsSettingsAdminDataQualityRoute =
     path: '/data-quality',
     getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
   } as any)
+const AuthedEventTabsSettingsAdminDemoRoute =
+  AuthedEventTabsSettingsAdminDemoRouteImport.update({
+    id: '/demo',
+    path: '/demo',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
 const AuthedEventTabsSettingsAdminEventRoute =
   AuthedEventTabsSettingsAdminEventRouteImport.update({
     id: '/event',
@@ -448,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
   '/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
   '/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
   '/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
   '/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
   '/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
   '/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
   '/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
   '/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
@@ -565,6 +574,7 @@ export interface FileRoutesById {
   '/_authed/_event/_tabs/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/_authed/_event/_tabs/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
   '/_authed/_event/_tabs/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/_authed/_event/_tabs/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
   '/_authed/_event/_tabs/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
   '/_authed/_event/_tabs/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
   '/_authed/_event/_tabs/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
@@ -624,6 +634,7 @@ export interface FileRouteTypes {
     | '/settings/admin/alliance-board'
     | '/settings/admin/announcements'
     | '/settings/admin/data-quality'
+    | '/settings/admin/demo'
     | '/settings/admin/event'
     | '/settings/admin/export'
     | '/settings/admin/guest-access'
@@ -680,6 +691,7 @@ export interface FileRouteTypes {
     | '/settings/admin/alliance-board'
     | '/settings/admin/announcements'
     | '/settings/admin/data-quality'
+    | '/settings/admin/demo'
     | '/settings/admin/event'
     | '/settings/admin/export'
     | '/settings/admin/guest-access'
@@ -740,6 +752,7 @@ export interface FileRouteTypes {
     | '/_authed/_event/_tabs/settings/admin/alliance-board'
     | '/_authed/_event/_tabs/settings/admin/announcements'
     | '/_authed/_event/_tabs/settings/admin/data-quality'
+    | '/_authed/_event/_tabs/settings/admin/demo'
     | '/_authed/_event/_tabs/settings/admin/event'
     | '/_authed/_event/_tabs/settings/admin/export'
     | '/_authed/_event/_tabs/settings/admin/guest-access'
@@ -1100,6 +1113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventTabsSettingsAdminDataQualityRouteImport
       parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
     }
+    '/_authed/_event/_tabs/settings/admin/demo': {
+      id: '/_authed/_event/_tabs/settings/admin/demo'
+      path: '/demo'
+      fullPath: '/settings/admin/demo'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminDemoRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
     '/_authed/_event/_tabs/settings/admin/event': {
       id: '/_authed/_event/_tabs/settings/admin/event'
       path: '/event'
@@ -1200,6 +1220,7 @@ interface AuthedEventTabsSettingsAdminRouteRouteChildren {
   AuthedEventTabsSettingsAdminAllianceBoardRoute: typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   AuthedEventTabsSettingsAdminAnnouncementsRoute: typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
   AuthedEventTabsSettingsAdminDataQualityRoute: typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  AuthedEventTabsSettingsAdminDemoRoute: typeof AuthedEventTabsSettingsAdminDemoRoute
   AuthedEventTabsSettingsAdminEventRoute: typeof AuthedEventTabsSettingsAdminEventRoute
   AuthedEventTabsSettingsAdminExportRoute: typeof AuthedEventTabsSettingsAdminExportRoute
   AuthedEventTabsSettingsAdminGuestAccessRoute: typeof AuthedEventTabsSettingsAdminGuestAccessRoute
@@ -1220,6 +1241,8 @@ const AuthedEventTabsSettingsAdminRouteRouteChildren: AuthedEventTabsSettingsAdm
       AuthedEventTabsSettingsAdminAnnouncementsRoute,
     AuthedEventTabsSettingsAdminDataQualityRoute:
       AuthedEventTabsSettingsAdminDataQualityRoute,
+    AuthedEventTabsSettingsAdminDemoRoute:
+      AuthedEventTabsSettingsAdminDemoRoute,
     AuthedEventTabsSettingsAdminEventRoute:
       AuthedEventTabsSettingsAdminEventRoute,
     AuthedEventTabsSettingsAdminExportRoute:

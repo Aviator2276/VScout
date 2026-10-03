@@ -3,7 +3,12 @@ import {
   DEFAULT_RECOMMENDER,
   recommenderConfig,
 } from "@/lib/contracts/event-settings"
-import { fnv1a, recommendSlots, segmentOf } from "../utils/recommend-slots"
+import {
+  fnv1a,
+  groupByMatch,
+  recommendSlots,
+  segmentOf,
+} from "../utils/recommend-slots"
 import type {
   RecEntry,
   RecMatch,
@@ -224,5 +229,37 @@ describe("performance (criterion 12)", () => {
     const r = recommendSlots(input({ matches, entries }), DEFAULT_RECOMMENDER)
     expect(performance.now() - t0).toBeLessThan(40)
     expect(r.primary).not.toBeNull()
+  })
+})
+
+describe("groupByMatch (Needs Scouting page order)", () => {
+  it("matches in schedule order, robots red 1–3 then blue 1–3", () => {
+    const slot = (
+      matchKey: string,
+      idx: number,
+      station: string,
+      team: number
+    ) =>
+      ({
+        matchKey,
+        idx,
+        station,
+        teamNumber: team,
+        score: team,
+        scouters: 0,
+        started: false,
+        reason: { kind: "deficit", covered: 0 },
+      }) as unknown as Parameters<typeof groupByMatch>[0][number]
+    const groups = groupByMatch([
+      slot("qm2", 1, "blue1", 4),
+      slot("qm1", 0, "blue3", 3),
+      slot("qm1", 0, "red2", 2),
+      slot("qm2", 1, "red1", 5),
+      slot("qm1", 0, "red1", 1),
+    ])
+    expect(groups.map(([k, s]) => [k, s.map((x) => x.station)])).toEqual([
+      ["qm1", ["red1", "red2", "blue3"]],
+      ["qm2", ["red1", "blue1"]],
+    ])
   })
 })

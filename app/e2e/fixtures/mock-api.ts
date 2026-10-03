@@ -123,7 +123,7 @@ export function session() {
       id: USER_ID,
       username: CREDENTIALS.username,
       displayName: "Alex",
-      role: "scouter",
+      role: "admin",
       teamNumber: 2276,
     },
   }

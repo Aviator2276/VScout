@@ -2,7 +2,8 @@
 // and returns to where you left it; tapping the active tab pops to its root, and tapping it at the
 // root scrolls to the top. The tab bar hides on immersive pages and while scrolling down.
 import { useRouter, useRouterState } from "@tanstack/react-router"
-import { useEffect } from "react"
+import type { AnyRoute } from "@tanstack/react-router"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 import {
   CalendarDays,
@@ -11,6 +12,7 @@ import {
   MessageCircle,
   UsersRound,
 } from "@/components/icons/icon"
+import { usePrefs } from "@/hooks/use-prefs"
 import { useTabBarHidden } from "@/hooks/use-tab-bar"
 import { scrollStep, tabBarStore } from "@/stores/tab-bar"
 import {
@@ -57,7 +59,9 @@ export function TabShell({
   const pathname = location.pathname
   const href = location.href
   const memory = getTabMemory()
-  const active = tabForPath(pathname)
+  // the tab the user is in: a link from a team to a match stays in Teams (owner)
+  useSyncExternalStore(memory.subscribe, memory.version, memory.version)
+  const active = memory.currentTab() ?? tabForPath(pathname)
   const hidden = useTabBarHidden()
 
   useEffect(() => {
@@ -70,6 +74,9 @@ export function TabShell({
     const preload = () => {
       for (const to of [...Object.values(TAB_ROOTS), "/settings"])
         void router.preloadRoute({ to }).catch(() => undefined)
+      // and every other page's code (team, match, settings pages…): no first-visit skeleton
+      for (const route of Object.values(router.routesById) as Array<AnyRoute>)
+        void router.loadRouteChunk(route)?.catch(() => undefined)
     }
     if (typeof requestIdleCallback === "function") {
       const id = requestIdleCallback(preload, { timeout: 2000 })
@@ -82,6 +89,25 @@ export function TabShell({
   // Scrolling down hides the bar, scrolling up brings it back (FX-11). A new page starts shown.
   // Only the user's own scrolling counts: a page jumping to "now" or restoring its scroll
   // position mustn't hide the bar.
+  // A new page shows the bar at once: sliding it back up after a scroll-hide looked like the bar
+  // flying in again (owner). Derived during render when the path changes, cleared two frames later.
+  const [instant, setInstant] = useState(false)
+  const [seenPath, setSeenPath] = useState(pathname)
+  if (seenPath !== pathname) {
+    setSeenPath(pathname)
+    if (hidden && !tabBarStore.heldByPage()) setInstant(true)
+  }
+  useEffect(() => {
+    if (!instant) return
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setInstant(false))
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
+  }, [instant])
   useEffect(() => {
     let state = { anchorY: window.scrollY, away: false }
     let lastInput = -Infinity
@@ -114,6 +140,18 @@ export function TabShell({
     }
   }, [pathname])
 
+  // The chosen background shows behind the tab screens only (owner), never on pushed pages.
+  const background = usePrefs().appBackground
+  const onRoot = isTabRoot(pathname)
+  useEffect(() => {
+    const root = document.documentElement
+    if (onRoot && background !== "none") root.dataset.appBg = background
+    else delete root.dataset.appBg
+    return () => {
+      delete root.dataset.appBg
+    }
+  }, [onRoot, background])
+
   // Bottom-fixed controls (composer, Record Pick, toasts) sit on --tabbar-offset (styles.css).
   useEffect(() => {
     const root = document.documentElement
@@ -145,7 +183,7 @@ export function TabShell({
         atTabRoot: isTabRoot(path),
       })
       start = null
-      const tab = tabForPath(path)
+      const tab = memory.currentTab() ?? tabForPath(path)
       if (!action || !tab) return
       if (action === "back") {
         if (standalone()) navigateBack(router)
@@ -153,7 +191,10 @@ export function TabShell({
       }
       const i = TABS.findIndex((t) => t.id === tab)
       const next = TABS[action === "next-tab" ? i + 1 : i - 1]
-      if (next) void router.navigate({ href: memory.hrefFor(next.id) })
+      if (next) {
+        memory.switchTo(next.id)
+        void router.navigate({ href: memory.hrefFor(next.id) })
+      }
     }
     const cancel = () => {
       start = null
@@ -170,13 +211,17 @@ export function TabShell({
 
   const select = (tab: TabId) => {
     if (tab !== active) {
+      memory.switchTo(tab)
       void router.navigate({ href: memory.hrefFor(tab) })
       return
     }
     if (isTabRoot(pathname)) {
       const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches
       window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" })
-    } else void router.navigate({ href: memory.rootFor(tab) })
+    } else {
+      memory.switchTo(tab)
+      void router.navigate({ href: memory.rootFor(tab) })
+    }
   }
 
   return (
@@ -191,6 +236,7 @@ export function TabShell({
         active={active}
         onSelect={select}
         hidden={hidden}
+        instant={instant}
       />
     </>
   )

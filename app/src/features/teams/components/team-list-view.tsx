@@ -1,12 +1,19 @@
 // The team list (teams.md T1): search, quick chips, the All · Recent 4 window, a footnote saying how
 // it's sorted, and virtualized rows with an Unranked group under a rank sort.
 import { useMemo } from "react"
+import type { ReactNode } from "react"
 import { ChipGroup } from "@/components/controls/chip-group"
 import { Segmented } from "@/components/controls/segmented"
 import { DataView } from "@/components/data-view/data-view"
 import { SkeletonRows } from "@/components/data-view/skeleton-rows"
 import { SearchField } from "@/components/form/search-field"
-import { SearchX, UsersRound } from "@/components/icons/icon"
+import {
+  ClipboardList,
+  SearchX,
+  Star,
+  StarOff,
+  UsersRound,
+} from "@/components/icons/icon"
 import { Button } from "@/components/controls/button"
 import { VirtualList } from "@/components/list/virtual-list"
 import { RefreshingIndicator } from "@/components/sync/sync-badge"
@@ -25,6 +32,7 @@ import {
 } from "../utils/team-list"
 import type { TeamRow as TeamRowData } from "../utils/team-list"
 import { TeamRow } from "./team-row"
+import { SwipeRow } from "@/components/list/swipe-row"
 
 export type TeamsPatch = Partial<TeamsSearch>
 
@@ -40,6 +48,12 @@ export interface TeamListViewProps {
   ourTeam: number | null
   watched: ReadonlySet<number>
   canScout: boolean
+  /** swipe right on a row (owner: swipe actions on lists) */
+  onToggleWatch?: (teamNumber: number) => void
+  /** swipe left on a row, scouters only */
+  onPitScout?: (teamNumber: number) => void
+  /** sort, columns and filter, beside the search field */
+  searchActions?: ReactNode
 }
 
 const NO_METRICS: ReadonlyMap<number, TeamMetrics> = new Map()
@@ -80,6 +94,9 @@ export function TeamListView({
   ourTeam,
   watched,
   canScout,
+  onToggleWatch,
+  onPitScout,
+  searchActions,
 }: TeamListViewProps) {
   const { query, deferred, setQuery } = useSearchQuery(search.q, (q) =>
     onSearchChange({ q })
@@ -198,9 +215,11 @@ export function TeamListView({
         footnote={
           parsed.noTeamNumber ? "No team number yet. Ask an admin." : undefined
         }
+        actions={searchActions}
       />
       <div className="flex flex-col gap-2 pb-2">
         <ChipGroup
+          compact
           label="Quick filters"
           options={[
             { value: "watched" as const, label: "Watched" },
@@ -286,19 +305,55 @@ export function TeamListView({
               estimateSize={(it) => (it.kind === "row" ? 64 : 32)}
               renderItem={(it) =>
                 it.kind === "row" ? (
-                  <TeamRow
-                    team={it.team}
-                    metrics={byTeam.get(it.team.teamNumber)}
-                    columns={columns}
-                    badges={badges}
-                    drivetrainLabel={drivetrainName(
-                      byTeam.get(it.team.teamNumber)?.drivetrain
-                    )}
-                    watched={watched.has(it.team.teamNumber)}
-                    showPit={canScout}
-                    position={it.position}
-                    setSize={count}
-                  />
+                  <SwipeRow
+                    leading={
+                      onToggleWatch
+                        ? [
+                            watched.has(it.team.teamNumber)
+                              ? {
+                                  label: "Unwatch",
+                                  icon: StarOff,
+                                  tone: "warning",
+                                  onAction: () =>
+                                    onToggleWatch(it.team.teamNumber),
+                                }
+                              : {
+                                  label: "Watch",
+                                  icon: Star,
+                                  tone: "warning",
+                                  onAction: () =>
+                                    onToggleWatch(it.team.teamNumber),
+                                },
+                          ]
+                        : []
+                    }
+                    trailing={
+                      onPitScout && canScout
+                        ? [
+                            {
+                              label: "Pit Scout",
+                              icon: ClipboardList,
+                              tone: "primary",
+                              onAction: () => onPitScout(it.team.teamNumber),
+                            },
+                          ]
+                        : []
+                    }
+                  >
+                    <TeamRow
+                      team={it.team}
+                      metrics={byTeam.get(it.team.teamNumber)}
+                      columns={columns}
+                      badges={badges}
+                      drivetrainLabel={drivetrainName(
+                        byTeam.get(it.team.teamNumber)?.drivetrain
+                      )}
+                      watched={watched.has(it.team.teamNumber)}
+                      showPit={canScout}
+                      position={it.position}
+                      setSize={count}
+                    />
+                  </SwipeRow>
                 ) : (
                   <div className="flex h-8 items-center bg-background/95 px-1 text-footnote text-muted-foreground uppercase backdrop-blur">
                     {it.title}

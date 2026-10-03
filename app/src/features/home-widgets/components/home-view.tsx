@@ -30,8 +30,15 @@ import { List } from "@/components/list/list"
 import { ActionSheet } from "@/components/overlays/action-sheet"
 import { Sheet } from "@/components/overlays/sheet"
 import { useToast } from "@/components/overlays/toaster"
-import { WIDGETS, widgetMeta } from "@/config/widget-catalog"
-import type { WidgetRole } from "@/types/widget"
+import {
+  WIDGETS,
+  settingCount,
+  settingOn,
+  widgetMeta,
+} from "@/config/widget-catalog"
+import { cn } from "@/lib/utils"
+import { WIDGET_COLORS } from "@/types/widget"
+import type { WidgetColor, WidgetRole } from "@/types/widget"
 import { useHomeLayout, useSaveHomeLayout } from "../api/use-home-layout"
 import type { CustomLists } from "../api/use-home-layout"
 import { templateList, templateName, templatesFor } from "../utils/templates"
@@ -39,7 +46,11 @@ import { templateList, templateName, templatesFor } from "../utils/templates"
 export interface HomeViewProps {
   role: WidgetRole
   editing: boolean
-  onEditingChange: (editing: boolean) => void
+  /** `then` opens a sheet in the same navigation (the long-press menu's Widget Settings) */
+  onEditingChange: (
+    editing: boolean,
+    then?: { sheet: "edit-widget"; id: string }
+  ) => void
   sheet: "add-widget" | "edit-widget" | "layout" | undefined
   sheetId: string | undefined
   onSheet: (sheet: HomeViewProps["sheet"], id?: string) => void
@@ -77,11 +88,19 @@ export function HomeView(p: HomeViewProps) {
   }, [draft, usingTemplate, layout.newer, layout.custom, templateId, p.role])
   const current = listFor(lists, bp)?.items ?? []
 
-  const startEditing = () => {
-    if (layout.newer) return
+  /** false when editing can't start right away (an update is needed, or the fork question) */
+  const startEditing = (then?: {
+    sheet: "edit-widget"
+    id: string
+  }): boolean => {
+    if (layout.newer) return false
+    if (p.editing) {
+      if (then) p.onSheet(then.sheet, then.id)
+      return true
+    }
     if (usingTemplate && Object.keys(layout.custom).length > 0) {
       setAskFork(true)
-      return
+      return false
     }
     // a template forks into Custom on edit: all three lists copied (H4)
     const base: CustomLists = {}
@@ -90,7 +109,8 @@ export function HomeView(p: HomeViewProps) {
     if (!usingTemplate)
       for (const b of BREAKPOINTS) if (!layout.custom[b]) delete base[b]
     setDraft(base)
-    p.onEditingChange(true)
+    p.onEditingChange(true, then)
+    return true
   }
   const forkFrom = (source: "template" | "custom") => {
     setAskFork(false)
@@ -150,6 +170,14 @@ export function HomeView(p: HomeViewProps) {
       action: { label: "Undo", onAction: () => setDraft(snapshot) },
     })
   }
+  /** a widget's settings and color apply on every screen size (they're about the widget) */
+  const updateItem = (id: string, patch: (item: GridItem) => GridItem) =>
+    everyList((l) => l.map((i) => (i.id === id ? patch(i) : i)))
+  const [menuId, setMenuId] = useState<string | null>(null)
+  const menuTitle =
+    widgetMeta(current.find((i) => i.id === menuId)?.widget ?? "")?.title ??
+    "Widget"
+
   const add = (type: string) => {
     const meta = widgetMeta(type)
     if (!meta) return
@@ -248,6 +276,7 @@ export function HomeView(p: HomeViewProps) {
           onChange={setCurrent}
           onRemove={remove}
           onEdit={(id) => p.onSheet("edit-widget", id)}
+          onMenu={layout.newer ? undefined : setMenuId}
         />
       )}
 
@@ -262,7 +291,7 @@ export function HomeView(p: HomeViewProps) {
         <div className="flex flex-col items-center">
           <Button
             variant="plain"
-            onClick={startEditing}
+            onClick={() => startEditing()}
             disabled={layout.newer}
           >
             Edit Home
@@ -330,6 +359,62 @@ export function HomeView(p: HomeViewProps) {
                     >
                       {on ? <Check aria-hidden size={14} /> : null}
                       {sizeLabel(editItem.widget, w, h)}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+            <WidgetSettingsSection
+              item={editItem}
+              onChange={(config) =>
+                updateItem(editItem.id, (i) => ({ ...i, config }))
+              }
+            />
+            <section aria-labelledby="ew-color" className="mt-4">
+              <h3
+                id="ew-color"
+                className="mb-2 text-footnote text-muted-foreground uppercase"
+              >
+                Color
+              </h3>
+              <div
+                role="radiogroup"
+                aria-label="Color"
+                className="flex flex-wrap gap-1"
+              >
+                {[undefined, ...WIDGET_COLORS].map((c) => {
+                  const on = (editItem.color ?? undefined) === c
+                  return (
+                    <button
+                      key={c ?? "none"}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={c ? capitalize(c) : "Default"}
+                      onClick={() =>
+                        updateItem(editItem.id, (i) => {
+                          const { color: _drop, ...rest } = i
+                          return c ? { ...rest, color: c } : rest
+                        })
+                      }
+                      className="flex size-11 items-center justify-center"
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-full border border-border",
+                          c ? TINT_SWATCH[c] : "bg-card",
+                          on &&
+                            "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )}
+                      >
+                        {on ? (
+                          <Check
+                            size={16}
+                            className={c ? "text-white" : "text-foreground"}
+                          />
+                        ) : null}
+                      </span>
                     </button>
                   )
                 })}
@@ -480,6 +565,33 @@ export function HomeView(p: HomeViewProps) {
         </Sheet.Content>
       </Sheet>
 
+      {/* the long-press widget menu (owner) */}
+      <ActionSheet
+        open={menuId !== null}
+        onOpenChange={(o) => {
+          if (!o) setMenuId(null)
+        }}
+        title={menuTitle}
+        actions={[
+          { label: "Edit Home Screen", onSelect: () => startEditing() },
+          {
+            label: "Widget Settings",
+            onSelect: () => {
+              const id = menuId
+              if (id) startEditing({ sheet: "edit-widget", id })
+            },
+          },
+          {
+            label: "Remove Widget",
+            destructive: true,
+            onSelect: () => {
+              const id = menuId
+              if (id && startEditing()) remove(id)
+            },
+          },
+        ]}
+      />
+
       <ActionSheet
         open={askFork}
         onOpenChange={setAskFork}
@@ -497,5 +609,108 @@ export function HomeView(p: HomeViewProps) {
         ]}
       />
     </div>
+  )
+}
+
+const TINT_SWATCH: Record<WidgetColor, string> = {
+  blue: "bg-tile-blue",
+  green: "bg-tile-green",
+  orange: "bg-tile-orange",
+  red: "bg-tile-red",
+  purple: "bg-tile-purple",
+  teal: "bg-tile-teal",
+  indigo: "bg-tile-indigo",
+}
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** The catalog's per-widget settings (owner: clock seconds, rankings rows…), stored in `config`. */
+function WidgetSettingsSection({
+  item,
+  onChange,
+}: {
+  item: GridItem
+  onChange: (config: Record<string, unknown>) => void
+}) {
+  const settings = widgetMeta(item.widget)?.settings ?? []
+  if (settings.length === 0) return null
+  const config = item.config ?? {}
+  const set = (key: string, value: unknown) =>
+    onChange({ ...config, [key]: value })
+  return (
+    <section aria-label="Widget settings" className="mt-4">
+      <List.Section title="Settings">
+        {settings.map((def) =>
+          def.kind === "toggle" ? (
+            <List.Toggle
+              key={def.key}
+              title={def.label}
+              checked={settingOn(item.widget, config, def.key)}
+              onCheckedChange={(v) => set(def.key, v)}
+            />
+          ) : (
+            <List.Row
+              key={def.key}
+              title={def.label}
+              detail={
+                <InlineStepper
+                  label={def.label}
+                  value={settingCount(item.widget, config, def.key)}
+                  min={def.min}
+                  max={def.max}
+                  onValueChange={(v) => set(def.key, v)}
+                />
+              }
+            />
+          )
+        )}
+      </List.Section>
+    </section>
+  )
+}
+
+/** A compact −/+ for a settings row (CountStepper is sized for scouting with gloves). */
+function InlineStepper({
+  label,
+  value,
+  min,
+  max,
+  onValueChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  onValueChange: (value: number) => void
+}) {
+  const btn =
+    "flex size-9 items-center justify-center rounded-full bg-muted text-headline text-foreground disabled:opacity-40"
+  return (
+    <span role="group" aria-label={label} className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label={`Fewer ${label.toLowerCase()}`}
+        disabled={value <= min}
+        onClick={() => onValueChange(value - 1)}
+        className={btn}
+      >
+        −
+      </button>
+      <output
+        aria-live="polite"
+        className="min-w-6 text-center text-body text-foreground tabular-nums"
+      >
+        {value}
+      </output>
+      <button
+        type="button"
+        aria-label={`More ${label.toLowerCase()}`}
+        disabled={value >= max}
+        onClick={() => onValueChange(value + 1)}
+        className={btn}
+      >
+        +
+      </button>
+    </span>
   )
 }

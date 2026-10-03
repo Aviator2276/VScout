@@ -27,6 +27,7 @@ export type SyncReason =
   | "online"
   | "mqtt-reconnect"
   | "mqtt-control"
+  | "stream-reconnect"
   | "interval"
   | "write"
   | "push"

@@ -261,11 +261,8 @@ test("notifications: a teammate's message rings the bell, and opening it reads i
   await expect(page.getByRole("list", { name: "Messages" })).toContainText(
     "Q14 queue moved"
   )
-  // back on the tab root, the message's notification is read
-  await page
-    .getByRole("banner")
-    .getByRole("button", { name: "Messages" })
-    .click()
+  // Back returns to the tab it was opened from (the bell on Scout), and the message is read
+  await page.getByRole("banner").getByRole("button", { name: /^Back/ }).click()
   await page.getByRole("button", { name: /^Notifications/ }).click()
   await expect(
     page.getByRole("button", { name: /^Messages: .* in #2026casj$/ })

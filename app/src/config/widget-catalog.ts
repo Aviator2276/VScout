@@ -15,9 +15,10 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     type: "ourNextMatch",
     title: "Our Next Match",
     description: "When we play next, with partners and opponents",
-    sizes: fixed([2, 2], [4, 2], [4, 4], [8, 4]),
+    sizes: fixed([4, 1], [2, 2], [4, 2], [4, 4], [8, 4]),
     defaultSize: [4, 2],
     sizeLabels: {
+      "4x1": "Strip",
       "2x2": "Small",
       "4x2": "Medium",
       "4x4": "Large",
@@ -29,25 +30,57 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     type: "needsScouting",
     title: "Needs Scouting",
     description: "The robot to scout next",
-    sizes: fixed([2, 2], [4, 2], [4, 3]),
+    sizes: fixed([4, 1], [2, 2], [4, 2], [4, 3]),
     defaultSize: [4, 2],
-    sizeLabels: { "2x2": "Small", "4x2": "Medium", "4x3": "Tall" },
+    sizeLabels: {
+      "4x1": "Strip",
+      "2x2": "Small",
+      "4x2": "Medium",
+      "4x3": "Tall",
+    },
     roles: SCOUTING,
   },
   {
     type: "clock",
     title: "Clock",
     description: "The time and the event day",
-    sizes: fixed([1, 1], [2, 1], [2, 2]),
+    sizes: fixed([1, 1], [2, 1], [1, 2], [2, 2], [4, 1]),
     defaultSize: [2, 1],
-    sizeLabels: { "1x1": "Tiny", "2x1": "Small", "2x2": "Square" },
+    sizeLabels: {
+      "1x1": "Tiny",
+      "2x1": "Small",
+      "1x2": "Tall",
+      "2x2": "Square",
+      "4x1": "Strip",
+    },
+    settings: [
+      { kind: "toggle", key: "seconds", label: "Show Seconds", default: false },
+      { kind: "toggle", key: "hour24", label: "24-Hour Time", default: false },
+      { kind: "toggle", key: "showDay", label: "Show the Day", default: true },
+    ],
     roles: ALL,
   },
   {
     type: "announcements",
     title: "Announcements",
     description: "Latest from your admins",
-    sizes: range(2, 8, 2, 6),
+    sizes: range(2, 8, 1, 6),
+    settings: [
+      {
+        kind: "count",
+        key: "count",
+        label: "Show Up To",
+        min: 1,
+        max: 10,
+        default: 10,
+      },
+      {
+        kind: "toggle",
+        key: "urgentOnly",
+        label: "Urgent Only",
+        default: false,
+      },
+    ],
     defaultSize: [4, 2],
     roles: ALL,
   },
@@ -64,6 +97,17 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     title: "Rankings",
     description: "The event’s standings",
     sizes: range(2, 8, 2, 8),
+    settings: [
+      {
+        kind: "count",
+        key: "rows",
+        label: "Show Up To",
+        min: 3,
+        max: 24,
+        default: 24,
+      },
+      { kind: "toggle", key: "showNames", label: "Team Names", default: true },
+    ],
     defaultSize: [4, 3],
     roles: ALL,
   },
@@ -71,7 +115,7 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     type: "watchedTeams",
     title: "Watched Teams",
     description: "Next match for each team you watch",
-    sizes: range(2, 8, 2, 6),
+    sizes: range(2, 8, 1, 6),
     defaultSize: [4, 2],
     roles: ALL,
   },
@@ -79,7 +123,17 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     type: "recentMessages",
     title: "Recent Messages",
     description: "The latest in event chat",
-    sizes: range(2, 8, 2, 6),
+    sizes: range(2, 8, 1, 6),
+    settings: [
+      {
+        kind: "count",
+        key: "count",
+        label: "Show Up To",
+        min: 1,
+        max: 12,
+        default: 12,
+      },
+    ],
     defaultSize: [4, 2],
     roles: SCOUTING,
   },
@@ -103,7 +157,7 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
     type: "myCoverage",
     title: "My Coverage",
     description: "How many robots you scouted",
-    sizes: fixed([1, 1], [2, 1], [2, 2]),
+    sizes: fixed([1, 1], [2, 1], [1, 2], [2, 2]),
     defaultSize: [2, 1],
     roles: SCOUTING,
   },
@@ -127,4 +181,32 @@ export const WIDGETS: ReadonlyArray<WidgetMeta> = [
 
 export function widgetMeta(type: string): WidgetMeta | undefined {
   return WIDGETS.find((w) => w.type === type)
+}
+
+/** A widget's setting from its config, or the catalog default (bad values fall back too). */
+export function widgetSetting(
+  type: string,
+  config: Readonly<Record<string, unknown>> | undefined,
+  key: string
+): boolean | number | undefined {
+  const def = widgetMeta(type)?.settings?.find((d) => d.key === key)
+  if (!def) return undefined
+  const v = config?.[key]
+  if (def.kind === "toggle") return typeof v === "boolean" ? v : def.default
+  return typeof v === "number" && Number.isFinite(v)
+    ? Math.min(def.max, Math.max(def.min, Math.round(v)))
+    : def.default
+}
+export const settingOn = (
+  type: string,
+  config: Readonly<Record<string, unknown>> | undefined,
+  key: string
+) => widgetSetting(type, config, key) === true
+export const settingCount = (
+  type: string,
+  config: Readonly<Record<string, unknown>> | undefined,
+  key: string
+) => {
+  const v = widgetSetting(type, config, key)
+  return typeof v === "number" ? v : Infinity
 }

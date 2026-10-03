@@ -8,6 +8,30 @@ export type WidgetSizes =
 
 export type WidgetRole = "admin" | "scouter" | "guest"
 
+/** A per-widget setting the Edit Widget sheet shows (owner: clock seconds, rankings rows…). */
+export type WidgetSetting =
+  | { kind: "toggle"; key: string; label: string; default: boolean }
+  | {
+      kind: "count"
+      key: string
+      label: string
+      min: number
+      max: number
+      default: number
+    }
+
+/** Widget tints (synced with the layout); `undefined` is the plain card. */
+export const WIDGET_COLORS = [
+  "blue",
+  "green",
+  "orange",
+  "red",
+  "purple",
+  "teal",
+  "indigo",
+] as const
+export type WidgetColor = (typeof WIDGET_COLORS)[number]
+
 export interface WidgetMeta<TConfig = unknown> {
   type: string
   title: string
@@ -17,6 +41,7 @@ export interface WidgetMeta<TConfig = unknown> {
   /** "2x2" → "Small" for the Edit Widget sheet */
   sizeLabels?: Readonly<Record<string, string>>
   configSchema?: ZodType<TConfig>
+  settings?: ReadonlyArray<WidgetSetting>
   defaultConfig?: TConfig
   roles: ReadonlyArray<WidgetRole>
 }

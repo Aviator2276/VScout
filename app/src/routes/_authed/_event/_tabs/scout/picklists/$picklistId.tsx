@@ -1,3 +1,4 @@
+import { TeamPreviewSheet } from "@/features/teams/components/team-preview-sheet"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { z } from "zod"
@@ -37,6 +38,7 @@ export const Route = createFileRoute(
 })
 
 function PicklistRoute() {
+  const [preview, setPreview] = useState<number | null>(null)
   const { picklistId } = Route.useParams()
   const { event, session } = Route.useRouteContext()
   const search = Route.useSearch()
@@ -145,6 +147,7 @@ function PicklistRoute() {
         onRemove={(row) => void remove(row)}
         onReason={(row) => setSheet("reason", row.teamNumber)}
         onAddTeams={() => setSheet("add-teams")}
+        onPreview={setPreview}
         onCopy={
           detail && !detail.mine && can(session, "picklist:create")
             ? () =>
@@ -209,6 +212,20 @@ function PicklistRoute() {
           />
         </>
       ) : null}
+      <TeamPreviewSheet
+        eventKey={event.key}
+        teamNumber={preview}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null)
+        }}
+        onViewTeam={(n) => {
+          setPreview(null)
+          void go({
+            to: "/teams/$teamNumber",
+            params: { teamNumber: String(n) },
+          })
+        }}
+      />
     </StackPage>
   )
 }

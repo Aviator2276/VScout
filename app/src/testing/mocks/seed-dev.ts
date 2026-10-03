@@ -43,11 +43,13 @@ const DEV_ACCOUNTS = [
 ] as const
 
 export function seedDevData(): void {
-  if (mockBackend.log.length > 0) return
   // no automatic sign-in: refresh works only after a login, like the real cookie; each device
   // keeps its own session (alex on one, sam on another, never mixed up)
   mockBackend.requireSignIn = true
   mockBackend.perDeviceSessions = true
+  mockBackend.realClock = true
+  // a restored state (FX-61) already has everything
+  if (mockBackend.log.length > 0) return
   for (const a of DEV_ACCOUNTS) {
     mockBackend.accounts.set(a.username, {
       ...a,

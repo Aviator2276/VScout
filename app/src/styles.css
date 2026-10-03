@@ -215,6 +215,76 @@
   --tabbar-safe: 0px;
 }
 
+/* Tab-screen backgrounds (owner): soft mesh gradients, set by TabShell as data-app-bg on <html>
+   while a tab root shows. Cards stay solid (bg-card), so text contrast is unchanged. */
+:root {
+  --app-bg-aurora:
+    radial-gradient(at 15% 0%, oklch(0.88 0.09 265 / 0.85), transparent 55%),
+    radial-gradient(at 95% 15%, oklch(0.9 0.08 195 / 0.75), transparent 50%),
+    radial-gradient(at 50% 100%, oklch(0.92 0.07 320 / 0.6), transparent 60%);
+  --app-bg-sunset:
+    radial-gradient(at 0% 0%, oklch(0.9 0.09 55 / 0.85), transparent 55%),
+    radial-gradient(at 100% 10%, oklch(0.88 0.1 15 / 0.7), transparent 50%),
+    radial-gradient(at 60% 100%, oklch(0.92 0.07 320 / 0.55), transparent 60%);
+  --app-bg-ocean:
+    radial-gradient(at 10% 0%, oklch(0.88 0.08 225 / 0.85), transparent 55%),
+    radial-gradient(at 90% 30%, oklch(0.9 0.07 190 / 0.7), transparent 55%),
+    radial-gradient(at 40% 100%, oklch(0.9 0.06 250 / 0.6), transparent 60%);
+  --app-bg-mint:
+    radial-gradient(at 0% 10%, oklch(0.92 0.08 160 / 0.85), transparent 55%),
+    radial-gradient(at 100% 0%, oklch(0.93 0.07 120 / 0.65), transparent 50%),
+    radial-gradient(at 50% 100%, oklch(0.92 0.05 200 / 0.55), transparent 60%);
+  --app-bg-graphite:
+    radial-gradient(at 20% 0%, oklch(0.85 0.01 250 / 0.9), transparent 60%),
+    radial-gradient(at 90% 100%, oklch(0.88 0.01 220 / 0.7), transparent 60%);
+}
+.dark {
+  --app-bg-aurora:
+    radial-gradient(at 15% 0%, oklch(0.36 0.12 265 / 0.8), transparent 55%),
+    radial-gradient(at 95% 15%, oklch(0.34 0.09 195 / 0.7), transparent 50%),
+    radial-gradient(at 50% 100%, oklch(0.32 0.1 320 / 0.6), transparent 60%);
+  --app-bg-sunset:
+    radial-gradient(at 0% 0%, oklch(0.38 0.1 55 / 0.75), transparent 55%),
+    radial-gradient(at 100% 10%, oklch(0.34 0.12 15 / 0.65), transparent 50%),
+    radial-gradient(at 60% 100%, oklch(0.3 0.09 320 / 0.55), transparent 60%);
+  --app-bg-ocean:
+    radial-gradient(at 10% 0%, oklch(0.34 0.1 225 / 0.8), transparent 55%),
+    radial-gradient(at 90% 30%, oklch(0.32 0.08 190 / 0.65), transparent 55%),
+    radial-gradient(at 40% 100%, oklch(0.3 0.08 250 / 0.6), transparent 60%);
+  --app-bg-mint:
+    radial-gradient(at 0% 10%, oklch(0.36 0.09 160 / 0.75), transparent 55%),
+    radial-gradient(at 100% 0%, oklch(0.34 0.08 120 / 0.55), transparent 50%),
+    radial-gradient(at 50% 100%, oklch(0.32 0.06 200 / 0.5), transparent 60%);
+  --app-bg-graphite:
+    radial-gradient(at 20% 0%, oklch(0.32 0.01 250 / 0.9), transparent 60%),
+    radial-gradient(at 90% 100%, oklch(0.28 0.01 220 / 0.7), transparent 60%);
+}
+:root[data-app-bg="aurora"] .k-app,
+:root[data-app-bg="aurora"] body {
+  background: var(--app-bg-aurora), var(--background);
+  background-attachment: fixed;
+}
+:root[data-app-bg="sunset"] .k-app,
+:root[data-app-bg="sunset"] body {
+  background: var(--app-bg-sunset), var(--background);
+  background-attachment: fixed;
+}
+:root[data-app-bg="ocean"] .k-app,
+:root[data-app-bg="ocean"] body {
+  background: var(--app-bg-ocean), var(--background);
+  background-attachment: fixed;
+}
+:root[data-app-bg="mint"] .k-app,
+:root[data-app-bg="mint"] body {
+  background: var(--app-bg-mint), var(--background);
+  background-attachment: fixed;
+}
+:root[data-app-bg="graphite"] .k-app,
+:root[data-app-bg="graphite"] body {
+  background: var(--app-bg-graphite), var(--background);
+  background-attachment: fixed;
+}
+
 /* Inset-list separators (FX-4): Konsta's start at the text but run into the card's right edge.
    Inset them on both sides so the line sits evenly inside the card. */
 .vs-list .k-list-item .hairline-b::after {
@@ -317,6 +387,29 @@
     inset 0 1px 0 0 var(--glass-edge),
     inset 0 0 0 0.5px var(--glass-hairline),
     var(--glass-shadow);
+}
+
+/* The nav bar's glass when content scrolls under it: a bottom hairline like iOS, no shadow (the
+   32 px glass shadow read as a blurry gradient at the top of the app, owner). */
+@utility glass-bar {
+  background-color: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: 0 0.5px 0 0 var(--glass-hairline);
+}
+
+/* Liquid glass for small controls (owner, iOS 26): the nav-bar Back capsule and icon buttons.
+   The same material as `glass`, with a light shadow; content stays solid. */
+@utility glass-button {
+  background-color: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-edge),
+    inset 0 0 0 0.5px var(--glass-hairline),
+    0 1px 4px rgb(0 0 0 / 0.08);
 }
 
 /* A 56 pt hit area for scouting-form controls (gloves, §6.4) */

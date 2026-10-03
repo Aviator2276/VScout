@@ -24,7 +24,7 @@ export function ToolbarButton({
       aria-label={badge > 0 ? `${label}, ${badge} on` : label}
       aria-pressed={pressed}
       onClick={onClick}
-      className="relative inline-flex size-11 items-center justify-center rounded-full text-primary active:opacity-60"
+      className="hit-44 relative inline-flex size-9 items-center justify-center rounded-full glass-button text-primary transition-[scale] active:scale-90"
     >
       {children}
       {badge > 0 ? (

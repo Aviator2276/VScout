@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { App } from "konsta/react"
 import { describe, expect, it, vi } from "vitest"
 import type { NotificationRow } from "@/lib/db/types"
+import { notify } from "../api/notifications-store"
 import { createTestRuntime } from "@/testing/data-runtime"
 import {
   NotificationBell,
@@ -175,5 +176,26 @@ describe("notification center (notifications-center.md N3)", () => {
     expect(await screen.findByText("The switches")).toBeInTheDocument()
     await userEvent.click(screen.getByRole("button", { name: "Notifications" }))
     expect(await screen.findByText("You’re all caught up")).toBeInTheDocument()
+  })
+
+  it("a new notification slides in as a banner; tapping it opens its target (owner)", async () => {
+    const { t, onNavigate } = await setup([])
+    await notify(
+      t.db,
+      {
+        key: "msg:dm1",
+        category: "messages",
+        priority: "normal",
+        title: "Sam Chen",
+        body: "Can you take 254?",
+        href: "/messages/dm:a:b",
+        group: "dm:a:b",
+      },
+      { now: Date.now(), ids: { newId: () => "banner-1" } }
+    )
+    const banner = await screen.findByRole("status")
+    expect(banner).toHaveTextContent("Sam Chen")
+    await userEvent.click(within(banner).getByRole("button"))
+    expect(onNavigate).toHaveBeenCalledWith("/messages/dm:a:b")
   })
 })

@@ -12,7 +12,7 @@ API_PORT ?= 8787
 WEB_PORT ?= 3000
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev phone mock web broker broker-down stack preview check e2e
+.PHONY: help install dev phone mock mock-reset web broker broker-down stack preview check e2e
 
 help: ## List the targets
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36mmake %-12s\033[0m %s\n", $$1, $$2}'
@@ -37,6 +37,9 @@ phone: ## Mock API + dev server on your LAN, for testing on a phone
 
 mock: ## Mock API only (:8787)
 	MOCK_API_PORT=$(API_PORT) $(PNPM) mock:api
+
+mock-reset: ## Forget the mock API's saved state (accounts, scouting, chat, demo events)
+	$(PNPM) mock:reset
 
 web: ## Dev server only (:3000); needs `make mock` running
 	$(PNPM) exec vite dev --port $(WEB_PORT)

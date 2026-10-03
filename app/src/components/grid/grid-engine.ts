@@ -9,6 +9,8 @@ export interface GridItem {
   w: number
   h: number
   config?: Record<string, unknown>
+  /** a tint for the card (owner), synced with the layout */
+  color?: string
 }
 
 export interface Placed extends GridItem {

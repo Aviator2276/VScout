@@ -1,12 +1,22 @@
 // Auth endpoints (http-api-contract §2) against fixed mock credentials.
 import { http, HttpResponse } from "msw"
 import { guestLoginRequest, loginRequest } from "@/lib/contracts/auth"
-import { testId, testTime } from "../../factories/ids"
+import { testId } from "../../factories/ids"
 import { TEST_EVENT, wireSession } from "../../factories/wire"
 import { MOCK_GUEST_CODE, mockBackend } from "../mock-backend"
 import { activeGuestCode } from "./admin"
 import { clearCookie, newSession, sessionFromCookie } from "./sessions"
 import { problemResponse } from "./problem"
+
+/** Dev server: a session valid from now (the fixed test dates are long past). */
+function sessionTimes() {
+  return mockBackend.realClock
+    ? {
+        accessExpiresAt: mockBackend.at(15),
+        refreshExpiresAt: mockBackend.at(30 * 24 * 60),
+      }
+    : {}
+}
 
 /** The single-caller refresh the unit and e2e tests use. */
 function refreshAnswer() {
@@ -64,7 +74,12 @@ export const authHandlers = [
     if (mockBackend.perDeviceSessions) {
       const s = newSession(user.id, "guest", user)
       return HttpResponse.json(
-        wireSession({ eventKey: TEST_EVENT, user, accessToken: s.accessToken }),
+        wireSession({
+          eventKey: TEST_EVENT,
+          user,
+          accessToken: s.accessToken,
+          ...sessionTimes(),
+        }),
         { headers: { "Set-Cookie": s.cookie } }
       )
     }
@@ -85,6 +100,7 @@ export const authHandlers = [
             typeof mockBackend.sessionUser
           >,
           accessToken: `mock-access.${session.sid}`,
+          ...sessionTimes(),
           ...(session.role === "guest" ? { eventKey: TEST_EVENT } : {}),
         })
       )
@@ -109,7 +125,7 @@ export const authHandlers = [
     const s = wireSession({ user: mockBackend.sessionUser() })
     return HttpResponse.json({
       user: s.user,
-      serverTime: testTime(),
+      serverTime: mockBackend.at(),
       refreshExpiresAt: s.refreshExpiresAt,
     })
   }),

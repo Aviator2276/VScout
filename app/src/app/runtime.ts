@@ -13,6 +13,8 @@ import {
   patchUser,
   refreshAudit,
   refreshUsers,
+  createDemoEvent,
+  deleteDemoEvent,
   revokeSessions,
   saveGuestAccess,
 } from "@/lib/sync/admin-actions"
@@ -38,6 +40,7 @@ import { migrateDrafts } from "@/lib/db/drafts"
 import { getKv, setKv } from "@/lib/db/kv"
 import type { DataRuntime } from "@/lib/db/react/data-runtime"
 import { clearLiveCache } from "@/lib/db/react/use-live"
+import { createChangeStream } from "@/lib/sync/change-stream"
 import type { VScoutDB } from "@/lib/db/schema"
 import type { DeviceSettingsRow, EventRecord } from "@/lib/db/types"
 import { uuidIds } from "@/lib/ids"
@@ -400,6 +403,53 @@ export function createAppRuntime(o: RuntimeOptions) {
   }
 
   /**
+   * Live changes over HTTP (capabilities.changeStream) while MQTT isn't connected: messages and
+   * announcements arrive at once instead of on the next sync (owner). Re-evaluated whenever the
+   * capability, MQTT, the active event, the token or the connection changes.
+   */
+  function attachChangeStream(): () => void {
+    const stream = createChangeStream({
+      baseUrl: o.apiUrl,
+      ingest: (raws) => engine.ingestMany(raws),
+      requestSync: (reason) => engine.requestSync(reason),
+    })
+    const update = () => {
+      const session = auth.getSession()
+      const token = tokens.get()
+      const event = activeEventKey.getSnapshot()
+      const live =
+        capabilities.get().changeStream &&
+        mqttStatus.getSnapshot()?.state !== "connected" &&
+        session?.status === "active" &&
+        token !== null &&
+        o.isOnline()
+      if (!live) {
+        stream.stop()
+        return
+      }
+      stream.start({
+        scopes: ["global", "user", ...(event ? [`event:${event}`] : [])],
+        token,
+      })
+    }
+    const offs = [
+      capabilities.subscribe(update),
+      mqttStatus.subscribe(update),
+      activeEventKey.subscribe(update),
+      tokens.subscribe(update),
+    ]
+    o.window.addEventListener("online", update)
+    o.window.addEventListener("offline", update)
+    update()
+    return () => {
+      for (const off of offs) off()
+      o.window.removeEventListener("online", update)
+      o.window.removeEventListener("offline", update)
+      stream.stop()
+    }
+  }
+
+  /**
    * <SessionRuntime> boot order (routing-auth §7.2): refresh → sync → MQTT. Offline, each step
    * no-ops and the triggers retry on `online` and `visible`. Returns the teardown.
    */
@@ -420,9 +470,11 @@ export function createAppRuntime(o: RuntimeOptions) {
       document: o.document,
     })
     const disconnect = connectMqtt(await deviceId())
+    const detachStream = attachChangeStream()
     void push.reconcile()
     return async () => {
       detachTriggers()
+      detachStream()
       disconnect()
       await stopTransports()
     }
@@ -570,6 +622,17 @@ export function createAppRuntime(o: RuntimeOptions) {
       patchEventSettings: (eventKey, patch) =>
         patchEventSettings(writer, eventKey, patch),
       setTeamNumber: (n) => setTeamNumber(writer, n),
+      // the new (or removed) event arrives through the change feed; pull it now
+      createDemoEvent: async (options) => {
+        const r = await createDemoEvent(liveDeps(), options)
+        if (r.kind === "ok") engine.requestSync("manual", { force: true })
+        return r
+      },
+      deleteDemoEvent: async (eventKey) => {
+        const r = await deleteDemoEvent(liveDeps(), eventKey)
+        if (r.kind === "ok") engine.requestSync("manual", { force: true })
+        return r
+      },
     },
   }
 

@@ -9,6 +9,10 @@ import type { MutateDeps } from "@/lib/sync/mutate"
 import type { BoardActionResult, OnlineResult } from "@/lib/sync/live-actions"
 import type { BoardAction } from "@/lib/contracts/alliance-board"
 import type { VideoManager } from "@/lib/media/videos"
+import type {
+  DemoEventCreated,
+  DemoEventOptions,
+} from "@/lib/contracts/demo-events"
 import type { UserPatch } from "@/lib/sync/admin-actions"
 import type { EventSettingsPatch } from "@/lib/sync/admin-writes"
 import type { ZodType } from "zod"
@@ -55,6 +59,13 @@ export interface AdminActions {
     patch: EventSettingsPatch
   ) => Promise<void>
   setTeamNumber: (teamNumber: number | null) => Promise<void>
+  createDemoEvent: (
+    options: DemoEventOptions
+  ) => Promise<
+    | { kind: "ok"; created: DemoEventCreated }
+    | Exclude<OnlineResult, { kind: "ok" }>
+  >
+  deleteDemoEvent: (eventKey: string) => Promise<OnlineResult>
 }
 
 /** Who is reading: per-user queries (my entries, my prefs) and UX-only RBAC. */

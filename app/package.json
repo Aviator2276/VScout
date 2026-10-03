@@ -26,6 +26,7 @@
     "stack:up": "docker compose -f dev-stack/docker-compose.yml up -d",
     "stack:down": "docker compose -f dev-stack/docker-compose.yml down",
     "mock:api": "node dev-stack/mock-api/serve.mjs",
+    "mock:reset": "node -e \"require('node:fs').rmSync('dev-stack/mock-api/.state.json',{force:true});console.log('[mock-api] state cleared')\"",
     "test:nginx": "sh scripts/nginx-smoke.sh"
   },
   "lint-staged": {

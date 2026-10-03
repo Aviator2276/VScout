@@ -64,20 +64,23 @@ function Content({
           : "bg-surface-grouped"
       )}
     >
-      <DrawerHeader className="flex flex-row items-center gap-3 px-4 pt-2 pb-3">
-        <div className="min-w-0 flex-1">
-          <DrawerTitle className="font-heading text-title-3 text-foreground">
+      {/* iOS sheet header: the title centered over the sheet, a close button on the trailing
+          side and an equal spacer on the leading side so it stays centered (owner) */}
+      <DrawerHeader className="grid grid-cols-[4.5rem_1fr_4.5rem] items-center gap-2 px-4 pt-2 pb-3">
+        <span aria-hidden />
+        <div className="min-w-0 text-center">
+          <DrawerTitle className="truncate font-heading text-title-3 text-foreground">
             {title}
           </DrawerTitle>
           {description ? (
-            <DrawerDescription className="text-subhead text-muted-foreground">
+            <DrawerDescription className="truncate text-subhead text-muted-foreground">
               {description}
             </DrawerDescription>
           ) : null}
         </div>
         <DrawerClose
           aria-label={closeLabel === "Done" ? undefined : "Close"}
-          className="hit-44 flex min-h-11 min-w-11 items-center justify-center rounded-full text-headline text-primary"
+          className="hit-44 flex min-h-11 min-w-11 items-center justify-center justify-self-end rounded-full text-headline text-primary"
         >
           {closeLabel === "Done" ? "Done" : <X aria-hidden size={22} />}
         </DrawerClose>

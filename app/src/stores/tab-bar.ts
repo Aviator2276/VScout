@@ -19,6 +19,10 @@ export const tabBarStore = {
   hidden(): boolean {
     return pageHolds.size > 0 || scrolledAway
   },
+  /** an immersive page hides the bar (not scrolling) */
+  heldByPage(): boolean {
+    return pageHolds.size > 0
+  },
   reason(): Reason | null {
     return pageHolds.size > 0 ? "page" : scrolledAway ? "scroll" : null
   },

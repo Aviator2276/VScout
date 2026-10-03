@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { z } from "zod"
 import { renderHomeWidget } from "@/app/home-widgets"
-import { TabRootActions } from "@/app/tab-root-actions"
+import { TabRootActions, TabRootLeading } from "@/app/tab-root-actions"
 import { StackPage } from "@/components/layout/stack-page"
 import { HomeView } from "@/features/home-widgets/components/home-view"
 import { uuidIds } from "@/lib/ids"
@@ -26,6 +26,7 @@ function Home() {
   const render = useMemo(() => renderHomeWidget(event.key), [event.key])
   return (
     <StackPage
+      leading={<TabRootLeading />}
       title="Home"
       trailing={search.edit ? undefined : <TabRootActions profile />}
     >
@@ -33,9 +34,9 @@ function Home() {
       <HomeView
         role={session.role}
         editing={search.edit === true}
-        onEditingChange={(edit) =>
+        onEditingChange={(edit, then) =>
           void navigate({
-            search: (p) => ({ ...p, edit: edit || undefined }),
+            search: (p) => ({ ...p, ...then, edit: edit || undefined }),
             replace: true,
           })
         }
