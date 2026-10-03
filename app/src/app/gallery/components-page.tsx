@@ -12,7 +12,11 @@ import { TextArea, TextField } from "@/components/form/text-field"
 import { House } from "@/components/icons/icon"
 import { Logo } from "@/components/icons/logo"
 import { ComingSoon } from "@/components/layout/coming-soon"
-import { OfflineBanner } from "@/components/layout/offline-banner"
+import { ConnectionGlyph } from "@/components/sync/connection-glyph"
+import type { ConnectionShown } from "@/components/sync/connection-glyph"
+import { StatusNotch } from "@/components/sync/status-notch"
+import { TransmitGlyph } from "@/components/sync/transmit-glyph"
+import type { TransmitMode } from "@/components/sync/transmit-glyph"
 import {
   ForcedUpdateBanner,
   UpdateReadyBanner,
@@ -29,6 +33,55 @@ import {
 import { SyncPill } from "@/components/sync/sync-pill"
 import type { SyncPillState } from "@/components/sync/sync-pill"
 import { GallerySection } from "./gallery-section"
+
+const NOTCHES: ReadonlyArray<{
+  label: string
+  down: TransmitMode
+  up: TransmitMode
+  center: ConnectionShown
+  waiting?: boolean
+  attached?: boolean
+}> = [
+  {
+    label: "connecting",
+    down: "off",
+    up: "off",
+    center: { kind: "bars", quality: 0, sweeping: true },
+  },
+  {
+    label: "connected, strong signal",
+    down: "idle",
+    up: "idle",
+    center: { kind: "bars", quality: 4, sweeping: false },
+  },
+  {
+    label: "downloading, fair signal",
+    down: "active",
+    up: "idle",
+    center: { kind: "bars", quality: 2, sweeping: false },
+  },
+  {
+    label: "uploading, 3 waiting",
+    down: "idle",
+    up: "active",
+    center: { kind: "bars", quality: 3, sweeping: false },
+    waiting: true,
+  },
+  {
+    label: "1 change needs attention",
+    down: "idle",
+    up: "idle",
+    center: { kind: "attention" },
+    attached: true,
+  },
+  {
+    label: "offline",
+    down: "off",
+    up: "off",
+    center: { kind: "offline" },
+    waiting: true,
+  },
+]
 
 const PILLS: ReadonlyArray<SyncPillState> = [
   { kind: "synced" },
@@ -190,8 +243,45 @@ export function ComponentsPage({ now }: { now: number }) {
         </div>
       </GallerySection>
 
+      <GallerySection title="Notch states">
+        <div className="flex flex-col gap-3">
+          {NOTCHES.map((n) => (
+            <div key={n.label} className="flex items-center gap-3">
+              <div
+                className={
+                  n.attached ? "relative h-20 w-28" : "relative h-11 w-28"
+                }
+              >
+                <StatusNotch
+                  attached={n.attached ?? false}
+                  label={`Sync status: ${n.label}`}
+                  onSelect={() => undefined}
+                >
+                  <TransmitGlyph
+                    direction="down"
+                    mode={n.down}
+                    loopSeconds={0.6}
+                    color="var(--notch-down)"
+                  />
+                  <ConnectionGlyph shown={n.center} />
+                  <TransmitGlyph
+                    direction="up"
+                    mode={n.up}
+                    loopSeconds={1.2}
+                    waiting={n.waiting ?? false}
+                    color="var(--notch-up)"
+                  />
+                </StatusNotch>
+              </div>
+              <span className="text-subhead text-muted-foreground">
+                {n.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </GallerySection>
+
       <GallerySection title="Banners">
-        <OfflineBanner />
         <UpdateReadyBanner
           version="2.0.1"
           onUpdate={() => undefined}

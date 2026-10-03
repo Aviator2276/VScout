@@ -22,7 +22,7 @@ function PostScoutingRoute() {
   const navigate = Route.useNavigate()
   const online = useOnline()
   const settings = useScoutingSettings(event.key)
-  const parent = `/teams/${teamNumber}?view=post`
+  const parent = `/teams/${teamNumber}`
   const finish = useScoutingFinish(parent)
   return (
     <ScoutingPage title={`Post · ${teamNumber}`} parentHref={parent}>

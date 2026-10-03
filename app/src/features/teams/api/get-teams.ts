@@ -12,6 +12,7 @@ import type {
   MediaAssetRecord,
   PitScoutingRecord,
   PostScoutingRecord,
+  ScoutEntryRecord,
 } from "@/lib/db/types"
 import type { TeamRow } from "../utils/team-list"
 
@@ -105,6 +106,23 @@ export function useTeamMatches(
 }
 
 const LEVEL = { qm: 0, ef: 1, qf: 2, sf: 3, f: 4 } as const
+
+/** Every match-scouting entry on the team at this event (T2 Matches table, ADR-078). */
+export function useTeamEntries(
+  eventKey: string,
+  teamNumber: number
+): ReadonlyArray<ScoutEntryRecord> {
+  const { db } = useDataRuntime()
+  return useLiveOr(
+    () =>
+      db.scoutEntries
+        .where("[eventKey+teamNumber]")
+        .equals([eventKey, teamNumber])
+        .toArray(),
+    [db, eventKey, teamNumber],
+    []
+  )
+}
 
 export interface TeamPit {
   entry: PitScoutingRecord

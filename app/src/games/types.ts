@@ -34,6 +34,8 @@ export interface GameDefinition {
   validations: ReadonlyArray<ValidationDef>
   teamListColumns: ReadonlyArray<ColumnDef>
   prematchCard: ReadonlyArray<PrematchSectionDef>
+  /** team and match page hints (ADR-078); without them the pages show results only */
+  detailPage?: DetailPageHints
   picklistHints: PicklistHints
   assets: GameAssets
   labels: Record<Locale, Record<LabelKey, string>>
@@ -331,6 +333,12 @@ export interface ColumnDef {
   label: LabelKey
   source: { metric: string } | { capability: string } | { external: string }
   defaultVisible: boolean
+}
+export interface DetailPageHints {
+  /** per-robot, per-match columns (T2 Matches, M2 played line); `label` is a short column name */
+  matchSummary: ReadonlyArray<{ field: FieldId; label: LabelKey }>
+  /** an external stat (scoringKeys.statbotics.teamEvent key) summed per alliance for a prediction */
+  prediction?: { external: string }
 }
 export interface PrematchSectionDef {
   id: string

@@ -7,6 +7,7 @@ import { DataView } from "@/components/data-view/data-view"
 import { SkeletonRows } from "@/components/data-view/skeleton-rows"
 import { CalendarDays } from "@/components/icons/icon"
 import { ListLinkContext } from "@/components/list/list"
+import { capabilityValueLabel } from "@/games/kit/capability-label"
 import { t } from "@/games/kit/labels"
 import type { GameDefinition } from "@/games/types"
 import type { DataState } from "@/lib/db/react/data-state"
@@ -183,11 +184,10 @@ function TeamCard({
                   label = cap ? t(game, cap.label) : item.capability
                   const v = metrics?.capabilityValues[item.capability]
                   const s = metrics?.capabilities[item.capability]
+                  const shown = cap ? capabilityValueLabel(game, cap, v) : null
                   value =
-                    v !== undefined && v !== null
-                      ? typeof v === "string"
-                        ? t(game, v)
-                        : String(v)
+                    shown !== null
+                      ? shown
                       : s?.observed
                         ? "Seen in a match"
                         : s?.claimed

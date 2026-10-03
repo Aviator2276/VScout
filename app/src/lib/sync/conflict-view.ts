@@ -79,6 +79,7 @@ export function entityName(entity: string): string {
       picklist: "picklist",
       picklistEntry: "picklist entry",
       reaction: "reaction",
+      mediaAsset: "photo",
     }[entity] ?? entity
   )
 }

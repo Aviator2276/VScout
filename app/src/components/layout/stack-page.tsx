@@ -4,7 +4,9 @@ import { use, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { getTabMemory } from "@/stores/tab-memory"
+import { BAR_EASE } from "@/components/sync/status-notch"
 import { ShellBannersContext } from "./shell-banners"
+import { ShellNotchContext } from "./shell-notch"
 
 export interface StackPageProps {
   title: string
@@ -28,6 +30,7 @@ export function StackPage({
 }: StackPageProps) {
   const large = titleMode === "large"
   const shellBanners = use(ShellBannersContext)
+  const notch = use(ShellNotchContext)
   // the next page's Back button is labelled with this title (no router needed: this runs after
   // the navigation has committed, so the address is the page's own)
   useEffect(() => {
@@ -49,26 +52,37 @@ export function StackPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header
-        className={cn(
-          "sticky top-0 z-20 pt-safe transition-[background-color,box-shadow] duration-200",
-          // transparent at rest so a tab background shows; glass once content scrolls under it
-          collapsed ? "rounded-none glass-bar" : "bg-transparent"
-        )}
-      >
-        <div className="mx-auto grid min-h-11 w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-safe-4">
+      <header className="sticky top-0 z-20 pt-safe">
+        {/* transparent at rest so a tab background shows; once content scrolls under it the glass
+            bar slides down 33 pt as it fades in (ADR-079), and the Sync Status notch rides its bottom edge */}
+        <div
+          aria-hidden
+          className={cn(
+            "absolute inset-0 glass-bar transition-[translate,opacity]",
+            BAR_EASE,
+            // the same 33 pt as the notch, so its bottom edge carries the notch on every frame
+            collapsed
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-[33px] opacity-0"
+          )}
+        />
+        <div className="relative mx-auto grid min-h-11 w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-safe-4">
           <div className="flex justify-start">{leading}</div>
           <p
             aria-hidden={large}
             className={cn(
-              "truncate text-headline transition-opacity duration-200",
-              collapsed ? "opacity-100" : "opacity-0"
+              "truncate text-headline transition-[opacity,translate] motion-reduce:translate-y-0",
+              BAR_EASE,
+              collapsed
+                ? "translate-y-0 opacity-100"
+                : "-translate-y-2 opacity-0"
             )}
           >
             {title}
           </p>
           <div className="flex justify-end gap-1">{trailing}</div>
         </div>
+        {notch?.(collapsed)}
       </header>
       {shellBanners}
       {banner}

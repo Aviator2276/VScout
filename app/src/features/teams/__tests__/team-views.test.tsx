@@ -5,12 +5,15 @@ import { describe, expect, it, vi } from "vitest"
 import { game } from "@/games/__fixtures__/test-game/definition"
 import type { TeamMetrics } from "@/lib/metrics/event-team-metrics"
 import { toDomain } from "@/testing/factories/records"
-import { wirePitScouting } from "@/testing/factories/wire"
 import {
-  TeamDetailView,
-  TeamOverview,
-  TeamPitView,
-} from "../components/team-detail-view"
+  TEST_EVENT,
+  wireMatch,
+  wirePitScouting,
+  wirePostScouting,
+  wireScoutEntry,
+} from "@/testing/factories/wire"
+import { TeamDetailView, TeamMatches } from "../components/team-detail-view"
+import { TeamOverview } from "../components/team-overview"
 import { TeamListView } from "../components/team-list-view"
 import type { TeamListViewProps } from "../components/team-list-view"
 import { teamsSearchFor } from "../types/teams-search"
@@ -197,7 +200,7 @@ describe("TeamDetailView (teams.md T2)", () => {
     expect(screen.getByText("Team list not downloaded yet")).toBeInTheDocument()
   })
 
-  it("header and sub-view switcher", async () => {
+  it("header and sub-view switcher: Overview · Matches · Notes", async () => {
     const onViewChange = vi.fn()
     render(
       <App theme="ios">
@@ -212,43 +215,330 @@ describe("TeamDetailView (teams.md T2)", () => {
       </App>
     )
     expect(screen.getByText("Rank 1 · 9-1-0 · San Jose")).toBeInTheDocument()
+    expect(
+      screen
+        .getAllByRole("radio")
+        .map((r) => r.getAttribute("aria-label") ?? r.textContent)
+    ).toHaveLength(3)
+    expect(screen.queryByRole("radio", { name: "Pit" })).toBeNull()
     await userEvent.click(screen.getByRole("radio", { name: "Notes" }))
     expect(onViewChange).toHaveBeenCalledWith("notes")
   })
 
-  it("overview: sample sizes, not-enough-data, and claimed vs observed (round-1 criterion 5)", () => {
-    render(
+  it("no photo placeholder without a photo; a thumbnail with one (criterion 17)", () => {
+    const { rerender } = render(
       <App theme="ios">
-        <TeamOverview game={game} team={detail} metrics={metrics(254)} />
+        <TeamDetailView
+          state={{ status: "success", data: detail }}
+          teamNumber={254}
+          view="overview"
+          onViewChange={vi.fn()}
+        >
+          {null}
+        </TeamDetailView>
+      </App>
+    )
+    expect(screen.queryByRole("img")).toBeNull()
+    expect(screen.queryByText(/No robot photo/)).toBeNull()
+    rerender(
+      <App theme="ios">
+        <TeamDetailView
+          state={{ status: "success", data: detail }}
+          teamNumber={254}
+          view="overview"
+          onViewChange={vi.fn()}
+          photoUrl="/robot.jpg"
+        >
+          {null}
+        </TeamDetailView>
       </App>
     )
     expect(
-      screen.getByText("6 matches · Medium confidence")
-    ).toBeInTheDocument()
-    expect(screen.getByText("Not enough data (1 match)")).toBeInTheDocument()
-    expect(screen.getByText("Pit says yes")).toBeInTheDocument()
+      screen.getByRole("img", { name: "Team 254’s robot. Show photos" })
+    ).toHaveAttribute("src", "/robot.jpg")
+  })
+})
+
+describe("TeamOverview (teams.md T2, ADR-078)", () => {
+  const detail = {
+    teamNumber: 254,
+    nickname: "The Cheesy Poofs",
+    city: "San Jose",
+    rank: 1,
+    rookieYear: 1999,
+    record: { wins: 9, losses: 1, ties: 0 },
+    rankingPoints: null,
+    pitLocation: "A12",
+  }
+  const cell = (value: number | null, sampleSize = 6) => ({
+    value,
+    sampleSize,
+    confidence: "medium" as const,
+  })
+  const team = (n: number, reliability: number | null, auto: number | null) =>
+    metrics(n, {
+      metrics: {
+        reliability: cell(reliability, reliability === null ? 1 : 6),
+        autoEffectiveness: cell(auto),
+      },
+    })
+  const byTeam = new Map([
+    [254, team(254, 0.8, 3.0)],
+    [1678, team(1678, 0.9, 4.0)],
+    [9999, team(9999, 0.8, null)],
+    [604, team(604, null, 2.0)],
+  ])
+
+  function overview(o: Partial<Parameters<typeof TeamOverview>[0]> = {}) {
+    const props: Parameters<typeof TeamOverview>[0] = {
+      game,
+      team: detail,
+      window: "all",
+      onWindowChange: vi.fn(),
+      metrics: byTeam.get(254),
+      recent: team(254, 0.8, 3.6),
+      byTeam,
+      pit: { status: "missing", reason: "not-scouted" },
+      post: { status: "empty" },
+      notes: { status: "empty" },
+      onAllNotes: vi.fn(),
+      ...o,
+    }
+    render(
+      <App theme="ios">
+        <TeamOverview {...props} />
+      </App>
+    )
+    return props
+  }
+  const tile = (name: RegExp) =>
+    screen
+      .getAllByRole("listitem")
+      .find((li) => name.test(li.getAttribute("aria-label") ?? ""))
+
+  it("tiles: rank among teams with a value, ties shared, sample size (criterion 18)", () => {
+    overview()
+    expect(tile(/^Reliability/)).toHaveTextContent("80%")
+    expect(tile(/^Reliability/)).toHaveTextContent("2nd of 3 · 6 matches")
+    expect(tile(/^Reliability/)).toHaveAccessibleName(/medium confidence/)
+    // consistency has no data for anyone
+    expect(tile(/^Consistency/)).toHaveTextContent("—")
+    expect(tile(/^Consistency/)).toHaveTextContent("No data")
   })
 
-  it("pit: not scouted yet, then the robot and answers", () => {
-    const { rerender } = render(
-      <App theme="ios">
-        <TeamPitView
-          game={game}
-          state={{ status: "missing", reason: "not-scouted" }}
-        />
-      </App>
-    )
+  it("not enough data reads —, with the sample size (criterion 18)", () => {
+    overview({ metrics: byTeam.get(604) })
+    expect(tile(/^Reliability/)).toHaveTextContent("Not enough data (1 match)")
+  })
+
+  it("a trend line with All Matches; none with Last 4 (criterion 19)", async () => {
+    const props = overview()
+    expect(tile(/^Auto/)).toHaveTextContent("Up 0.6 in last 4")
+    expect(
+      within(tile(/^Auto/) as HTMLElement).getByText("Up 0.6 in last 4")
+    ).toHaveClass("text-success")
+    await userEvent.click(screen.getByRole("radio", { name: "Last 4" }))
+    expect(props.onWindowChange).toHaveBeenCalledWith("recent")
+  })
+
+  it("Last 4 hides the trend", () => {
+    overview({ window: "recent" })
+    expect(screen.queryByText(/in last 4/)).toBeNull()
+  })
+
+  it("capability chips: claimed vs observed, unknown is muted (round-1 criterion 5)", () => {
+    overview({
+      metrics: metrics(254, {
+        capabilities: { grabber: { claimed: true, observed: true } },
+      }),
+    })
+    expect(
+      screen.getByRole("listitem", {
+        name: "Grabber, pit says so, seen in a match",
+      })
+    ).toBeInTheDocument()
+  })
+
+  it("an unknown capability says so", () => {
+    overview({
+      metrics: metrics(254, {
+        capabilities: { grabber: { claimed: false, observed: false } },
+      }),
+    })
+    expect(
+      screen.getByRole("listitem", { name: "Grabber · Unknown" })
+    ).toBeInTheDocument()
+  })
+
+  it("the robot: not pit scouted yet, with the scout actions", () => {
+    overview({ robotActions: <li>Pit Scout row</li> })
     expect(screen.getByText("Not pit scouted yet")).toBeInTheDocument()
+    expect(screen.getByText("Pit Scout row")).toBeInTheDocument()
+  })
+
+  it("the robot: drivetrain, pit answers behind a disclosure, latest post-scouting (criterion 21)", async () => {
     const entry = toDomain("pitScouting", wirePitScouting())
-    rerender(
+    const post = [
+      toDomain(
+        "postScouting",
+        wirePostScouting({ data: { "postForm.willingDefense": true } })
+      ),
+      toDomain(
+        "postScouting",
+        wirePostScouting({ data: { "postForm.willingDefense": false } })
+      ),
+    ]
+    overview({
+      pit: { status: "success", data: { entry, photos: [] } },
+      post: { status: "success", data: post },
+    })
+    expect(screen.getByText("Swerve")).toBeInTheDocument()
+    expect(screen.queryByText("Claw")).toBeNull()
+    await userEvent.click(screen.getByText("Pit Answers"))
+    expect(screen.getByText("Claw")).toBeInTheDocument()
+    expect(screen.getByText("Post-Scouting")).toBeInTheDocument()
+    expect(screen.getByText("Earlier Post-Scouting")).toBeInTheDocument()
+  })
+
+  it("a pit question nobody answered isn't a row", () => {
+    const entry = toDomain(
+      "pitScouting",
+      wirePitScouting({ data: { "pit.gizmoGrabber": null } })
+    )
+    overview({ pit: { status: "success", data: { entry, photos: [] } } })
+    expect(screen.getByText("Swerve")).toBeInTheDocument()
+    expect(screen.queryByText("Pit Answers")).toBeNull()
+  })
+
+  it("notes preview: the newest 2 and All Notes (criterion 23)", async () => {
+    const note = (i: number) => ({
+      id: `n${i}`,
+      body: `note ${i}`,
+      authorName: "Sam",
+      createdAt: 10 - i,
+      private: false,
+      syncState: "synced" as const,
+    })
+    const props = overview({
+      notes: { status: "success", data: [1, 2, 3, 4, 5].map(note) },
+    })
+    expect(screen.getByText("note 1")).toBeInTheDocument()
+    expect(screen.getByText("note 2")).toBeInTheDocument()
+    expect(screen.queryByText("note 3")).toBeNull()
+    await userEvent.click(screen.getByRole("button", { name: "All Notes (5)" }))
+    expect(props.onAllNotes).toHaveBeenCalled()
+  })
+
+  it("only rows with values: no Ranking Points row, no External without values", () => {
+    overview({ metrics: metrics(254, { external: { epa: null } }) })
+    expect(screen.getByText("A12")).toBeInTheDocument()
+    expect(screen.queryByText("Ranking Points")).toBeNull()
+    expect(screen.queryByText("External")).toBeNull()
+  })
+
+  it("external values show when there are some", () => {
+    overview()
+    expect(screen.getByText("External")).toBeInTheDocument()
+    expect(screen.getByText("31.5")).toBeInTheDocument()
+  })
+})
+
+describe("TeamMatches (teams.md T2 criterion 22)", () => {
+  const match = (n: number, played: boolean) =>
+    toDomain(
+      "match",
+      wireMatch({
+        matchNumber: n,
+        status: played ? "played" : "scheduled",
+        winningAlliance: played ? (n === 2 ? "blue" : "red") : null,
+        alliances: {
+          red: {
+            teamNumbers: n === 2 ? [1, 2, 3] : [254, 2, 3],
+            score: played ? 80 : null,
+            surrogates: [],
+            dqs: [],
+          },
+          blue: {
+            teamNumbers: n === 2 ? [254, 5, 6] : [4, 5, 6],
+            score: played ? (n === 2 ? 90 : 70) : null,
+            surrogates: [],
+            dqs: [],
+          },
+        },
+      })
+    )
+  const entry = (n: number, data: Record<string, unknown>) =>
+    toDomain(
+      "scoutEntry",
+      wireScoutEntry({
+        matchKey: `${TEST_EVENT}_qm${n}`,
+        teamNumber: 254,
+        data,
+      })
+    )
+  const matches = [
+    match(1, true),
+    match(2, true),
+    match(3, true),
+    match(4, false),
+    match(5, false),
+  ]
+  const entries = [
+    entry(1, {
+      "auto.effectiveness": 4,
+      "teleop.widgetRating": 3,
+      incidents: [],
+    }),
+    entry(2, {
+      "auto.effectiveness": 2,
+      "teleop.widgetRating": 5,
+      incidents: [{}],
+    }),
+  ]
+
+  function table(onScout?: (key: string) => void) {
+    render(
       <App theme="ios">
-        <TeamPitView
+        <TeamMatches
           game={game}
-          state={{ status: "success", data: { entry, photos: [] } }}
+          state={{ status: "success", data: matches }}
+          teamNumber={254}
+          entries={entries}
+          {...(onScout ? { onScout } : {})}
         />
       </App>
     )
-    expect(screen.getByText("Swerve")).toBeInTheDocument()
-    expect(screen.getByText("No robot photos yet")).toBeInTheDocument()
+  }
+
+  it("played: the game's columns, values, results and Not scouted", () => {
+    table(vi.fn())
+    const played = screen.getByRole("table")
+    expect(
+      within(played)
+        .getAllByRole("columnheader")
+        .map((h) => h.textContent)
+    ).toEqual(["Match", "Auto", "Widgets", "Stops"])
+    const rows = within(played).getAllByRole("row").slice(1)
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toHaveTextContent("W 80–70")
+    expect(rows[0]).toHaveTextContent(/4\s*3\s*0/)
+    expect(rows[1]).toHaveTextContent("W 90–80")
+    expect(rows[1]).toHaveTextContent(/2\s*5\s*1/)
+    expect(rows[2]).toHaveTextContent("Not scouted")
+  })
+
+  it("upcoming: Scout buttons for scouters, none for guests", async () => {
+    const onScout = vi.fn()
+    table(onScout)
+    const scout = screen.getAllByRole("button", { name: /^Scout 254 in/ })
+    expect(scout).toHaveLength(2)
+    await userEvent.click(scout[0] as HTMLElement)
+    expect(onScout).toHaveBeenCalledWith(`${TEST_EVENT}_qm4`)
+  })
+
+  it("guests get no Scout buttons", () => {
+    table()
+    expect(screen.queryByRole("button", { name: /^Scout/ })).toBeNull()
+    expect(screen.getByText("Upcoming")).toBeInTheDocument()
   })
 })
