@@ -15,6 +15,7 @@ import { useOurTeam } from "@/hooks/use-our-team"
 import { usePrefs, useSetPrefs } from "@/hooks/use-prefs"
 import { useSession } from "@/hooks/use-session"
 import { can } from "@/lib/authorization"
+import { useNotificationCenter } from "@/features/notifications/components/notification-center"
 import { initials } from "@/utils/initials"
 
 export const Route = createFileRoute("/_authed/_event/_tabs/settings/")({
@@ -43,6 +44,7 @@ function Settings() {
   const ourTeam = useOurTeam()
   const layout = useHomeLayout()
   const push = usePushState(runtime)
+  const center = useNotificationCenter()
   const open = useOpenConflicts()
   const conflicts = open.status === "success" ? open.data.length : 0
   const guest = session?.role === "guest"
@@ -102,10 +104,13 @@ function Settings() {
           detail={THEME_LABEL[prefs.theme]}
           href="/settings/appearance"
         />
+        {/* opens the notification center on its settings view (notifications-center.md N3) */}
         <List.Row
           title="Notifications"
           detail={PUSH_LABEL[push]}
-          href="/settings/notifications"
+          {...(center
+            ? { onSelect: () => center.open("settings") }
+            : { href: "/settings/notifications" })}
         />
         <List.Row
           title="Home Layout"

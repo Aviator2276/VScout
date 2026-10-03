@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger"
 import { createTestDb } from "@/testing/db"
 import { createDb } from "../db"
 import { deleteDraft, openDraft } from "../drafts"
+import { LATEST_VERSION } from "../migrations/register"
 import { attachLogStore } from "../log-store"
 
 describe("db lifecycle", () => {
@@ -12,7 +13,7 @@ describe("db lifecycle", () => {
     const db = createDb(name)
     await db.open()
     const newer = new Dexie(name)
-    newer.version(2).stores({ kv: "key" })
+    newer.version(LATEST_VERSION + 1).stores({ kv: "key" })
     await newer.open()
     expect(db.isOpen()).toBe(false)
     newer.close()

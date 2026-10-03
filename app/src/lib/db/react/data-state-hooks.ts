@@ -165,6 +165,33 @@ export function useCollectionState<TRow>(
     : { status: "missing", reason: "not-synced" }
 }
 
+/**
+ * A collection that lives only on this device (notifications): no sync scope, so it's loading
+ * until the first read, then empty or success. Same remount cache and error handling.
+ */
+export function useLocalCollectionState<TRow>(opts: {
+  enabled: boolean
+  query: () => Promise<ReadonlyArray<TRow>>
+  deps: DependencyList
+}): DataState<ReadonlyArray<TRow>> {
+  const { db } = useDataRuntime()
+  const { key, retry } = useRetry()
+  const { query } = opts
+  const result = useLive(
+    opts.enabled ? query : null,
+    [...opts.deps, key],
+    liveCacheKey(query, [db, "local", ...opts.deps])
+  )
+  useLogError(result)
+  if (!opts.enabled) return { status: "idle" }
+  if (!result) return { status: "loading" }
+  if (result.kind === "error") return errorState(result.error, retry)
+  const rows = result.kind === "ok" ? result.value : []
+  return rows.length > 0
+    ? { status: "success", data: rows }
+    : { status: "empty" }
+}
+
 export interface RecordOptions<TRecord> {
   enabled: boolean
   source: ScopeRef

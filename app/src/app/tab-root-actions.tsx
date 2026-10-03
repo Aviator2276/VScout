@@ -1,15 +1,15 @@
-// Trailing nav-bar actions on tab roots (ui-patterns §7.1): the sync pill, and on Home the
-// help ("?", glossary-help.md §4) and profile buttons.
+// Trailing nav-bar actions on tab roots (ui-patterns §7.1): the notification bell (it replaced the
+// sync pill, FX-15), and on Home the help ("?", glossary-help.md §4) and profile buttons.
 import { Link } from "@tanstack/react-router"
 import { useGlossary } from "@/components/glossary/glossary-provider"
 import { CircleHelp, CircleUser } from "@/components/icons/icon"
-import { SyncStatusButton } from "@/features/sync-status/components/sync-status-button"
+import { NotificationBell } from "@/features/notifications/components/notification-center"
 
 export function TabRootActions({ profile = false }: { profile?: boolean }) {
   const glossary = useGlossary()
   return (
     <>
-      <SyncStatusButton />
+      <NotificationBell />
       {profile && glossary ? (
         <button
           type="button"

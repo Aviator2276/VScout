@@ -91,7 +91,7 @@ export function NotificationSettings({
         <>
           <List.Section
             title="Send me"
-            footer="These follow you to every device you sign in on."
+            footer="In the app’s notification list and as push notifications. These follow you to every device you sign in on."
           >
             <List.Toggle
               title="Announcements"
@@ -114,6 +114,11 @@ export function NotificationSettings({
               onCheckedChange={(watchedMatchQueue) =>
                 onChange({ watchedMatchQueue })
               }
+            />
+            <List.Toggle
+              title="Our match results"
+              checked={prefs.matchResults}
+              onCheckedChange={(matchResults) => onChange({ matchResults })}
             />
           </List.Section>
           <section className="mt-4 flex flex-col gap-2">

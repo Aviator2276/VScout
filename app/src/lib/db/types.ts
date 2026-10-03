@@ -333,6 +333,25 @@ export interface DraftRow {
   updatedAt: number
 }
 
+/** An in-app notification, on this device only (features/notifications-center.md N1). */
+export interface NotificationRow {
+  id: string
+  /** dedupe key, unique: msg:{id}, match-soon:{matchKey}, system:reauth, … */
+  key: string
+  category: "messages" | "events" | "system"
+  priority: "low" | "normal" | "high" | "critical"
+  title: string
+  body: string
+  href?: string
+  /** instead of href: what tapping does */
+  action?: "update"
+  /** bulk read: the channel id for messages */
+  group?: string
+  createdAt: number
+  readAt?: number
+  dismissedAt?: number
+}
+
 export interface LogRow {
   id?: number
   at: number

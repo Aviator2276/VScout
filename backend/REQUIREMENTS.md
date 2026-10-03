@@ -819,6 +819,7 @@ default:
 | `directMessages` | `true` | DMs |
 | `announcements` | `true` | announcements |
 | `ourMatchQueue` / `watchedMatchQueue` | `true` / `false` | "match coming up" for our team / watched teams |
+| `matchResults` | `true` | in-app only (the app's notification center); store it, no push uses it |
 | `matchLeadMinutes` | `10` | lead time for "match coming up" (2–30) |
 
 | Kind | When | Audience | TTL / Urgency / Topic |

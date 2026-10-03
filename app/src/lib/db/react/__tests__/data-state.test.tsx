@@ -2,7 +2,11 @@ import { renderHook, waitFor } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import { createTestRuntime } from "@/testing/data-runtime"
 import { useDataRuntime } from "../data-runtime"
-import { useCollectionState, useRecordState } from "../data-state-hooks"
+import {
+  useCollectionState,
+  useLocalCollectionState,
+  useRecordState,
+} from "../data-state-hooks"
 
 const EV = "event:2026casj"
 const match = (n: number) =>
@@ -321,5 +325,32 @@ describe("useRecordState (data-layer §9.2.1)", () => {
         error: { code: "closed" },
       })
     )
+  })
+})
+
+describe("useLocalCollectionState (device-only tables)", () => {
+  it("loads, then is empty or success without any sync scope", async () => {
+    const t = createTestRuntime()
+    const { result } = renderHook(
+      () =>
+        useLocalCollectionState({
+          enabled: true,
+          deps: [],
+          query: () => t.db.notifications.toArray(),
+        }),
+      { wrapper: t.wrapper }
+    )
+    expect(result.current).toEqual({ status: "loading" })
+    await waitFor(() => expect(result.current).toEqual({ status: "empty" }))
+    await t.db.notifications.put({
+      id: "n1",
+      key: "k",
+      category: "system",
+      priority: "normal",
+      title: "T",
+      body: "",
+      createdAt: 1,
+    })
+    await waitFor(() => expect(result.current.status).toBe("success"))
   })
 })

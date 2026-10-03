@@ -4,6 +4,7 @@ export {
   ArrowDown,
   ArrowDownUp,
   ArrowUpCircle,
+  Bell,
   CalendarDays,
   Camera,
   Check,
@@ -56,5 +57,7 @@ export {
   Play,
   WifiOff,
   X,
+  Settings,
+  Smartphone,
 } from "lucide-react"
 export type { LucideIcon, LucideProps } from "lucide-react"

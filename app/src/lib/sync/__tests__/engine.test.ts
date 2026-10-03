@@ -315,6 +315,7 @@ describe("sync engine: response handling", () => {
         ourMatchQueue: true,
         watchedMatchQueue: false,
         matchLeadMinutes: 10,
+        matchResults: true,
       },
       celebrate: false,
       dismissedTips: [],

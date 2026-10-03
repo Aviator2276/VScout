@@ -3,7 +3,9 @@ import { TEST_USER, createTestDb } from "@/testing/db"
 import { TEST_GAME } from "@/testing/factories/wire"
 import { listDrafts, openDraft, saveDraft } from "../drafts"
 import { getKv, setKv } from "../kv"
+import { LATEST_VERSION } from "../migrations/register"
 import { stores } from "../migrations/v001"
+import { stores as storesV2 } from "../migrations/v002"
 import {
   purgeEvent,
   purgeOldTombstones,
@@ -11,15 +13,20 @@ import {
 } from "../retention"
 import { DB_NAME, getDb } from "../db"
 
-describe("schema v1", () => {
-  it("declares the frozen v1 stores (edit a shipped version → this fails; add v002 instead)", async () => {
+describe("schema versions", () => {
+  it("declares the frozen v1 stores (edit a shipped version → this fails; add v002 instead)", () => {
+    expect(stores).toMatchSnapshot()
+  })
+
+  it("v2 adds the device-only notifications table, and the database opens at the latest", async () => {
+    expect(storesV2).toMatchSnapshot()
     const db = createTestDb()
     await db.open()
-    expect(db.verno).toBe(1)
-    expect(Object.keys(stores).sort()).toEqual(
+    expect(db.verno).toBe(LATEST_VERSION)
+    expect(LATEST_VERSION).toBe(2)
+    expect([...Object.keys(stores), ...Object.keys(storesV2)].sort()).toEqual(
       db.tables.map((t) => t.name).sort()
     )
-    expect(stores).toMatchSnapshot()
   })
 
   it("opens the v2 database name lazily", () => {

@@ -4,11 +4,13 @@ import { expect, test } from "@playwright/test"
 import type { Browser, BrowserContext, Page } from "@playwright/test"
 import {
   CREDENTIALS,
+  backend,
   seedBackend,
   seedBoard,
   serverRecords,
   useBackend,
 } from "./fixtures/backend"
+import { iso } from "./fixtures/mock-api"
 
 async function signIn(page: Page, to = "/scout") {
   await page.goto(to)
@@ -206,5 +208,66 @@ test("guests: Messages shows announcements only, and a chat says no access", asy
   await expect(page).toHaveURL(/\/messages\/event(:|%3A)2026casj$/)
   await expect(
     page.getByText("You don't have access", { exact: false })
+  ).toBeVisible()
+})
+
+test("notifications: a teammate's message rings the bell, and opening it reads it", async ({
+  page,
+  context,
+}) => {
+  seedBackend()
+  await useBackend(context)
+  await signIn(page, "/scout")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Scout" })
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Notifications", exact: true })
+  ).toBeVisible()
+  // a message from someone else, newer than when this device started watching
+  const at = iso(60_000)
+  const message = {
+    id: "01900000-0000-7000-8000-0000000d0001",
+    rev: 1,
+    updatedAt: at,
+    createdAt: at,
+    eventKey: "2026casj",
+    authorId: "01900000-0000-7000-8000-000000009999",
+    channelId: "event:2026casj",
+    kind: "message",
+    priority: "normal",
+    body: "Q14 queue moved to field 2",
+  }
+  backend.records.set(`message:${message.id}`, message)
+  backend.append("event:2026casj", "message", {
+    v: 1,
+    entity: "message",
+    op: "upsert",
+    id: message.id,
+    rev: 1,
+    eventKey: "2026casj",
+    ts: at,
+    data: message,
+  })
+  await syncNow(page)
+  // our team's match coming up may notify too: any unread count
+  await page
+    .getByRole("button", { name: /^Notifications, \d+ unread$/ })
+    .click()
+  await page
+    .getByRole("button", { name: /^Unread\. Messages: .* in #2026casj$/ })
+    .click()
+  await expect(page).toHaveURL(/\/messages\/event(:|%3A)2026casj$/)
+  await expect(page.getByRole("list", { name: "Messages" })).toContainText(
+    "Q14 queue moved"
+  )
+  // back on the tab root, the message's notification is read
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: "Messages" })
+    .click()
+  await page.getByRole("button", { name: /^Notifications/ }).click()
+  await expect(
+    page.getByRole("button", { name: /^Messages: .* in #2026casj$/ })
   ).toBeVisible()
 })

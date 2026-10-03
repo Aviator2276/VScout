@@ -1,11 +1,10 @@
 // App updates in the running app (pwa-offline §6–§8): registers the service worker (production
 // only), applies a waiting update on a safe navigation or when backgrounded, and shows the banners.
 import { useRouter, useRouterState } from "@tanstack/react-router"
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 import {
   ForcedUpdateBanner,
-  UpdateReadyBanner,
   UpdatedElsewhereBanner,
 } from "@/components/layout/update-banner"
 import type { ForcedUpdateCopy } from "@/components/layout/update-banner"
@@ -22,8 +21,6 @@ import {
   workboxPort,
 } from "@/lib/pwa/sw-client"
 import type { AppRuntime } from "./runtime"
-
-const BANNER_DELAY_MS = 2 * 60_000
 
 let controller: UpdateController | null = null
 /** null until the browser registers the SW (never during the prerender or in dev) */
@@ -108,6 +105,19 @@ const IDLE_STATE: UpdateState = {
 const noop = () => () => undefined
 
 /** The update banners for the current screen; rendered with the session banners. */
+/** A waiting (not forced) update, for the System notification (notifications-center.md N4). */
+export function useAppUpdate(): { ready: string | null; apply: () => void } {
+  const c = useController()
+  const state = useSyncExternalStore(
+    c?.state.subscribe ?? noop,
+    c?.state.getSnapshot ?? (() => IDLE_STATE),
+    () => IDLE_STATE
+  )
+  const ready =
+    state.status === "ready" && !state.forced ? (state.available ?? "") : null
+  return { ready, apply: () => c?.apply() }
+}
+
 export function AppUpdateBanner() {
   const c = useController()
   const state = useSyncExternalStore(
@@ -117,16 +127,6 @@ export function AppUpdateBanner() {
   )
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const online = useOnline()
-  const [later, setLater] = useState(false)
-  const [due, setDue] = useState(false)
-
-  useEffect(() => {
-    if (state.status !== "ready" || state.readyAt === undefined) return
-    const wait = state.readyAt + BANNER_DELAY_MS - Date.now()
-    const t = setTimeout(() => setDue(true), Math.max(0, wait))
-    return () => clearTimeout(t)
-  }, [state.status, state.readyAt])
-
   const forced = state.forced ? forcedCopy(state, pathname, online) : null
   useEffect(() => {
     // §8: a required update applies as soon as it's ready and safe
@@ -137,14 +137,7 @@ export function AppUpdateBanner() {
   if (state.updatedElsewhere)
     return <UpdatedElsewhereBanner onReload={() => location.reload()} />
   if (forced) return <ForcedUpdateBanner copy={forced} />
-  if (state.status === "ready" && due && !later && !isScoutingPath(pathname))
-    return (
-      <UpdateReadyBanner
-        version={state.available}
-        onUpdate={() => c.apply()}
-        onLater={() => setLater(true)}
-      />
-    )
+  // a plain "update ready" is a System notification (notifications-center.md N4)
   return null
 }
 

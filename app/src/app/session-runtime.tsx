@@ -9,6 +9,7 @@ import { DataRuntimeContext } from "@/lib/db/react/data-runtime"
 import { getTabMemory } from "@/stores/tab-memory"
 import type { AppRuntime } from "./runtime"
 import { SessionHelpSettings } from "./help-runtime"
+import { NotificationCenterRuntime } from "./notification-center-runtime"
 import { SessionBanners } from "./session-banners"
 import { useAppearance } from "./use-appearance"
 import { usePushMessages } from "./use-push-messages"
@@ -55,8 +56,10 @@ export function SessionRuntime({
   return (
     <DataRuntimeContext value={app.dataRuntime}>
       <SessionEffects />
-      <ShellBannersContext value={<SessionBanners auth={app.auth} />}>
-        {children}
+      <ShellBannersContext value={<SessionBanners />}>
+        <NotificationCenterRuntime app={app}>
+          {children}
+        </NotificationCenterRuntime>
       </ShellBannersContext>
     </DataRuntimeContext>
   )

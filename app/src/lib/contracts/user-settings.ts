@@ -12,6 +12,8 @@ export const notificationSettings = z.looseObject({
   ourMatchQueue: z.boolean().default(true),
   watchedMatchQueue: z.boolean().default(false),
   matchLeadMinutes: z.number().int().min(2).max(30).default(10),
+  /** in-app: our match results (notifications-center.md N2) */
+  matchResults: z.boolean().default(true),
 })
 
 export const helpSettings = z.looseObject({

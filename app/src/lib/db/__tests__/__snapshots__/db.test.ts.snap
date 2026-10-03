@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`schema v1 > declares the frozen v1 stores (edit a shipped version → this fails; add v002 instead) 1`] = `
+exports[`schema versions > declares the frozen v1 stores (edit a shipped version → this fails; add v002 instead) 1`] = `
 {
   "adminAudit": "id, eventKey, [eventKey+at]",
   "allianceBoards": "eventKey",
@@ -34,5 +34,11 @@ exports[`schema v1 > declares the frozen v1 stores (edit a shipped version → t
   "tombstones": "[entity+id], deletedAt, eventKey",
   "userSettings": "userId",
   "users": "id, teamNumber",
+}
+`;
+
+exports[`schema versions > v2 adds the device-only notifications table, and the database opens at the latest 1`] = `
+{
+  "notifications": "id, &key, createdAt",
 }
 `;

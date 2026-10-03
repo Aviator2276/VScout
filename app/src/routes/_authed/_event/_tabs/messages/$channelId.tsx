@@ -12,6 +12,7 @@ import {
   useThread,
 } from "@/features/messages/api/get-messages"
 import { ThreadView } from "@/features/messages/components/chat-views"
+import { useNotificationActions } from "@/features/notifications/api/get-notifications"
 import { useHideTabBar } from "@/hooks/use-tab-bar"
 
 // Chat and DMs: never for guests (ADR-066). Rendered as "You don't have access" (routing-auth §5.3).
@@ -43,6 +44,11 @@ function Thread() {
   useEffect(() => {
     if (newest) void markRead(newest)
   }, [newest, markRead])
+  // reading the thread reads its in-app notifications (notifications-center.md criterion 14)
+  const { markGroupRead } = useNotificationActions()
+  useEffect(() => {
+    void markGroupRead(channelId)
+  }, [channelId, newest, markGroupRead])
   return (
     <StackPage
       title={title}

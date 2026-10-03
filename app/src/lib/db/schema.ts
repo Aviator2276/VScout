@@ -19,6 +19,7 @@ import type {
   MatchRecord,
   MediaAssetRecord,
   MessageRecord,
+  NotificationRow,
   OutboxOp,
   PicklistEntryRecord,
   PicklistRecord,
@@ -75,6 +76,7 @@ export class VScoutDB extends Dexie {
   conflicts!: Table<ConflictRow, string>
   drafts!: Table<DraftRow, string>
   logs!: Table<LogRow, number>
+  notifications!: Table<NotificationRow, string>
 
   constructor(name: string) {
     super(name)

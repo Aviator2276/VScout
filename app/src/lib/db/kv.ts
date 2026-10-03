@@ -22,6 +22,10 @@ export interface KvKeys {
   [key: `gameSchemaApplied:${string}`]: number
   /** validation flags an admin marked reviewed (features/admin.md AD4), this device only */
   [key: `reviewedFlags:${string}`]: Array<string>
+  /** in-app notifications: only records newer than this notify (no history flood, N2) */
+  [key: `notifySince:${string}`]: number
+  /** the event's "schedule published" notification was handled */
+  [key: `notifySchedule:${string}`]: boolean
   /** the event's pit map (http-api-contract §5.3), cached for offline */
   [key: `pitMap:${string}`]: { map: WirePitMap | null; fetchedAt: number }
 }

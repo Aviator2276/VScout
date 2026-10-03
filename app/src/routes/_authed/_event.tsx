@@ -1,4 +1,5 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
+import { NotificationProducers } from "@/app/notification-producers"
 import { UnsupportedSeasonError } from "@/components/errors/app-errors"
 
 export const Route = createFileRoute("/_authed/_event")({
@@ -14,5 +15,16 @@ export const Route = createFileRoute("/_authed/_event")({
       throw new UnsupportedSeasonError(event.year)
     return { event }
   },
-  component: Outlet,
+  component: EventLayout,
 })
+
+// In-app notifications are produced for the active event on every page, scouting forms included.
+function EventLayout() {
+  const { app, event } = Route.useRouteContext()
+  return (
+    <>
+      <NotificationProducers app={app()} eventKey={event.key} />
+      <Outlet />
+    </>
+  )
+}
