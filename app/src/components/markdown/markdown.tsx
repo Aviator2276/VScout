@@ -19,10 +19,14 @@ const OVERRIDES = {
   },
 }
 
+// forceBlock: a one-paragraph body still renders as a <p>. Bare inline nodes inside a flex parent
+// (the term detail) became separate flex items, breaking the line after every linked term.
 export function Markdown({ children }: { children: string }) {
   return (
     <Md
       options={{
+        forceBlock: true,
+        forceWrapper: true,
         overrides: OVERRIDES,
         renderRule(next, node, _children, state) {
           if (node.type === RuleType.text)

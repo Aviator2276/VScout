@@ -8,7 +8,8 @@ import { endgameSection } from "./fields/endgame"
 import { postSection } from "./fields/post"
 import { preSection } from "./fields/pre"
 import { teleopSection } from "./fields/teleop"
-import { glossary } from "./glossary"
+import { glossary } from "./help/glossary"
+import { guides } from "./help/guides"
 import { incidents } from "./incidents"
 import { en } from "./labels/en"
 import { metrics } from "./metrics"
@@ -119,6 +120,7 @@ export const game = defineGame({
   migrations,
   bannedTerms: terms.terms,
   glossary,
+  guides,
   eventOverridesSchema,
   defaultsByEventType,
 })

@@ -5,9 +5,30 @@ export const coreGuides: ReadonlyArray<GuideMeta> = [
   {
     id: "first-match",
     title: "Scouting your first match",
-    summary: "From picking a match to submitting your entry.",
+    summary: "From picking a robot to submitting your entry.",
     audience: "new",
     load: () => import("./first-match.md?raw"),
+  },
+  {
+    id: "pit-scouting",
+    title: "Pit scouting",
+    summary: "Asking teams about their robots before matches.",
+    audience: "new",
+    load: () => import("./pit-scouting.md?raw"),
+  },
+  {
+    id: "picklists",
+    title: "Building a picklist",
+    summary: "Ranking teams for alliance selection.",
+    audience: "all",
+    load: () => import("./picklists.md?raw"),
+  },
+  {
+    id: "offline",
+    title: "Working offline",
+    summary: "How your entries are saved and synced.",
+    audience: "all",
+    load: () => import("./offline.md?raw"),
   },
   {
     id: "install-iphone",

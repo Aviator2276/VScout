@@ -43,6 +43,7 @@ const SetSessionHelp = createContext<(s: SessionHelp | null) => void>(
 const TERMS = mergeTerms(coreGlossary, activeGame.glossary)
 const MATCHER = createMatcher(TERMS)
 const BY_ID = new Map(TERMS.map((t) => [t.id, t]))
+const GUIDES = [...coreGuides, ...(activeGame.guides ?? [])]
 const SCOUTING = /^\/scouting(\/|$)/
 
 export function HelpRuntime({ children }: { children: ReactNode }) {
@@ -103,7 +104,7 @@ export function HelpRuntime({ children }: { children: ReactNode }) {
             <HelpPanel
               target={target}
               terms={TERMS}
-              guides={coreGuides}
+              guides={GUIDES}
               onTarget={setTarget}
               onBack={() => router.history.back()}
               {...(session

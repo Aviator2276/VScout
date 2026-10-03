@@ -16,7 +16,8 @@ export interface GlossaryTerm {
   category: GlossaryCategory
   related?: ReadonlyArray<string>
   seeAlsoGuide?: string
-  image?: { src: string; alt: string }
+  /** a figure: `srcDark` is shown under the dark theme; `animated` plays once and offers Replay */
+  image?: { src: string; srcDark?: string; alt: string; animated?: boolean }
   /** for acronyms like 'EPA' vs the word 'epa' */
   caseSensitive?: boolean
   source: "core" | "game" | "team"

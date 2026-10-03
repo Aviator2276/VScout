@@ -15,6 +15,7 @@ import type {
   GlossaryTerm,
   GuideMeta,
 } from "@/types/glossary"
+import { TermFigure } from "./term-figure"
 
 export interface HelpPanelProps {
   target: string | undefined
@@ -238,10 +239,8 @@ function TermDetail({
         {CATEGORY_LABEL[term.category]}
       </span>
       <p className="text-headline">{term.short}</p>
+      {term.image ? <TermFigure image={term.image} /> : null}
       {term.body ? <Markdown>{term.body}</Markdown> : null}
-      {term.image ? (
-        <img src={term.image.src} alt={term.image.alt} className="rounded-xl" />
-      ) : null}
       {related.length > 0 ? (
         <List.Section title="Related terms">
           {related.map((t) => (

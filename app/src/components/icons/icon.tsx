@@ -80,5 +80,6 @@ export {
   StarOff,
   Swords,
   FlaskConical,
+  RotateCcw,
 } from "lucide-react"
 export type { LucideIcon, LucideProps } from "lucide-react"
