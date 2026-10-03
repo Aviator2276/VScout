@@ -10,6 +10,7 @@ import { getTabMemory } from "@/stores/tab-memory"
 import type { AppRuntime } from "./runtime"
 import { SessionHelpSettings } from "./help-runtime"
 import { NotificationCenterRuntime } from "./notification-center-runtime"
+import { FeedbackProvider } from "@/features/feedback/components/feedback-sheet"
 import { SessionBanners } from "./session-banners"
 import { useAppearance } from "./use-appearance"
 import { usePushMessages } from "./use-push-messages"
@@ -58,7 +59,7 @@ export function SessionRuntime({
       <SessionEffects />
       <ShellBannersContext value={<SessionBanners />}>
         <NotificationCenterRuntime app={app}>
-          {children}
+          <FeedbackProvider>{children}</FeedbackProvider>
         </NotificationCenterRuntime>
       </ShellBannersContext>
     </DataRuntimeContext>

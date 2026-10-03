@@ -6,6 +6,7 @@ import { createContext, use } from "react"
 import type { ReactNode } from "react"
 import { Switch } from "@/components/controls/switch"
 import { ChevronRight } from "@/components/icons/icon"
+import type { LucideIcon } from "@/components/icons/icon"
 import { cn } from "@/lib/utils"
 
 /** The app shell provides the router Link; tests and the gallery fall back to <a>. */
@@ -205,4 +206,41 @@ function ListRoot({ children }: { children: ReactNode }) {
   )
 }
 
-export const List = Object.assign(ListRoot, { Section, Row, Toggle: ToggleRow })
+const TILE = {
+  blue: "bg-tile-blue",
+  green: "bg-tile-green",
+  orange: "bg-tile-orange",
+  red: "bg-tile-red",
+  purple: "bg-tile-purple",
+  teal: "bg-tile-teal",
+  indigo: "bg-tile-indigo",
+  gray: "bg-tile-gray",
+} as const
+
+/** The iOS Settings icon: a white glyph on a small colored rounded square, for `leading`. */
+function RowIcon({
+  icon: Icon,
+  tone,
+}: {
+  icon: LucideIcon
+  tone: keyof typeof TILE
+}) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex size-7 items-center justify-center rounded-[7px] text-white",
+        TILE[tone]
+      )}
+    >
+      <Icon size={17} strokeWidth={2.25} />
+    </span>
+  )
+}
+
+export const List = Object.assign(ListRoot, {
+  Section,
+  Row,
+  Toggle: ToggleRow,
+  Icon: RowIcon,
+})

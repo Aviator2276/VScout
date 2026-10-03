@@ -93,7 +93,21 @@ test("Recently Deleted: a deleted note comes back with Restore", async ({
   page,
 }) => {
   await signIn(page)
-  await page.goto("/teams/254?view=notes")
+  // in-app navigation: a full reload right after sign-in can race the mocked API in WebKit
+  await page
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: "Teams" })
+    .click()
+  await page.getByLabel("Search teams").fill("254")
+  await page
+    .getByRole("list", { name: "Teams" })
+    .getByRole("link")
+    .first()
+    .click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "254" })
+  ).toBeVisible()
+  await page.getByRole("radio", { name: "Notes" }).click()
   await page.getByLabel("Add a note").fill("Strong climber, watch the battery")
   await page.getByRole("button", { name: "Add Note" }).click()
   await expect.poll(() => serverRecords("comment").length).toBe(1)
@@ -173,6 +187,7 @@ for (const scheme of ["light", "dark"] as const)
       ['a[href="/settings/storage"]', "Storage & Diagnostics"],
       ['a[href="/settings/recently-deleted"]', "Recently Deleted"],
       ['a[href="/settings/about"]', "About"],
+      ['a[href="/settings/help"]', "Help & Glossary"],
     ] as const) {
       await page.locator(link).click()
       await expect(
@@ -180,13 +195,21 @@ for (const scheme of ["light", "dark"] as const)
       ).toBeVisible()
       expect(await axe(page), heading).toEqual([])
       await page.getByRole("button", { name: "Settings" }).click()
+      // Settings restores its scroll position as it appears; wait before the next tap
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Settings" })
+      ).toBeVisible()
     }
-    await page.getByRole("button", { name: "Open Help" }).click()
+    await page.locator('a[href="/settings/help"]').click()
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Help & Glossary" })
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Glossary" }).click()
     await expect(page.getByRole("dialog", { name: "Help" })).toBeVisible()
     expect(await axe(page), "help").toEqual([])
   })
 
-test("Send Feedback: a testing build embeds the form, loaded only on that page", async ({
+test("Send Feedback: a testing build embeds the form in a sheet, loaded only when opened", async ({
   page,
   context,
 }) => {
@@ -201,9 +224,10 @@ test("Send Feedback: a testing build embeds the form, loaded only on that page",
   await signIn(page)
   await openSettings(page)
   expect(formRequests).toBe(0)
-  await page.getByRole("link", { name: "Send Feedback" }).click()
+  // a sheet now (FX-32), from Settings or the nav-bar button
+  await page.getByRole("button", { name: "Send Feedback" }).click()
   await expect(
-    page.getByRole("heading", { level: 1, name: "Send Feedback" })
+    page.getByRole("dialog", { name: "Send Feedback" })
   ).toBeVisible()
   const frame = page.locator('iframe[title="VScout feedback form"]')
   await expect(frame).toHaveAttribute(

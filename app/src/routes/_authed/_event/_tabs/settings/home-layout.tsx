@@ -27,7 +27,7 @@ function HomeLayout() {
   )
   return (
     <StackPage
-      title="Home Layout"
+      title="Home Screen"
       leading={<NavBackButton parentHref="/settings" label="Settings" />}
     >
       <List.Section footer="Switching never deletes your custom arrangement.">

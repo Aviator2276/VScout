@@ -1,18 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useSyncExternalStore } from "react"
 import { usePushState } from "@/app/use-push-state"
-import { Segmented } from "@/components/controls/segmented"
-import { useGlossary } from "@/components/glossary/glossary-provider"
 import { NavBackButton } from "@/components/layout/nav-back-button"
 import { StackPage } from "@/components/layout/stack-page"
+import {
+  Bell,
+  CalendarDays,
+  CircleHelp,
+  ClipboardList,
+  HardDrive,
+  Info,
+  LayoutGrid,
+  MessageSquareText,
+  Palette,
+  ShieldCheck,
+  Trash2,
+  TriangleAlert,
+} from "@/components/icons/icon"
 import { List } from "@/components/list/list"
-import { FEEDBACK_ENABLED } from "@/config/feedback"
+import { useFeedback } from "@/features/feedback/components/feedback-sheet"
 import { APP_VERSION } from "@/config/version"
 import { useHomeLayout } from "@/features/home-widgets/api/use-home-layout"
 import { templateName } from "@/features/home-widgets/utils/templates"
 import { useOpenConflicts } from "@/hooks/use-conflicts"
 import { useOurTeam } from "@/hooks/use-our-team"
-import { usePrefs, useSetPrefs } from "@/hooks/use-prefs"
+import { usePrefs } from "@/hooks/use-prefs"
 import { useSession } from "@/hooks/use-session"
 import { can } from "@/lib/authorization"
 import { useNotificationCenter } from "@/features/notifications/components/notification-center"
@@ -34,17 +46,18 @@ const PUSH_LABEL = {
   unsupported: "Not available",
 } as const
 
-// Settings (features/settings.md S0): one row per section with its current value.
+// Settings (features/settings.md S0, reorganized FX-30): iOS-style groups with icon tiles, one row
+// per section with its current value; details live one level down.
 function Settings() {
   const { app, event } = Route.useRouteContext()
   const runtime = app()
   const session = useSession(runtime.auth)
   const prefs = usePrefs()
-  const setPrefs = useSetPrefs()
   const ourTeam = useOurTeam()
   const layout = useHomeLayout()
   const push = usePushState(runtime)
   const center = useNotificationCenter()
+  const feedback = useFeedback()
   const open = useOpenConflicts()
   const conflicts = open.status === "success" ? open.data.length : 0
   const guest = session?.role === "guest"
@@ -53,12 +66,6 @@ function Settings() {
     () => runtime.sync.status.getSnapshot().phase,
     () => "idle"
   )
-  const glossary = useGlossary()
-  const help = prefs.help ?? {
-    underline: "all",
-    openWith: "long-press",
-    completedGuides: [],
-  }
 
   return (
     <StackPage
@@ -71,12 +78,12 @@ function Settings() {
           subtitle={
             guest
               ? "Guest · this device"
-              : `${session ? ROLE_LABEL[session.role] : ""}${ourTeam ? ` · ${ourTeam}` : ""}`
+              : `${session ? ROLE_LABEL[session.role] : ""}${ourTeam ? ` · Team ${ourTeam}` : ""}`
           }
           leading={
             <span
               aria-hidden
-              className="flex size-11 items-center justify-center rounded-full bg-primary text-headline text-primary-foreground"
+              className="flex size-12 items-center justify-center rounded-full bg-primary text-headline text-primary-foreground"
             >
               {initials(session?.displayName ?? "?")}
             </span>
@@ -84,120 +91,107 @@ function Settings() {
           href="/settings/account"
         />
       </List.Section>
+
       <List.Section title="Event">
-        <List.Row title="Event" detail={event.name} href="/settings/event" />
+        <List.Row
+          title="Event"
+          detail={event.name}
+          leading={<List.Icon icon={CalendarDays} tone="blue" />}
+          href="/settings/event"
+        />
       </List.Section>
+
       <List.Section title="Preferences">
         {guest ? null : (
           <List.Row
             title="Scouting"
-            detail={
-              prefs.scouterLevel === "new"
-                ? "Experience: New"
-                : "Experience: Experienced"
-            }
+            detail={prefs.scouterLevel === "new" ? "New" : "Experienced"}
+            leading={<List.Icon icon={ClipboardList} tone="green" />}
             href="/settings/scouting"
           />
         )}
-        <List.Row
-          title="Appearance"
-          detail={THEME_LABEL[prefs.theme]}
-          href="/settings/appearance"
-        />
         {/* opens the notification center on its settings view (notifications-center.md N3) */}
         <List.Row
           title="Notifications"
           detail={PUSH_LABEL[push]}
+          leading={<List.Icon icon={Bell} tone="red" />}
           {...(center
             ? { onSelect: () => center.open("settings") }
             : { href: "/settings/notifications" })}
         />
         <List.Row
-          title="Home Layout"
+          title="Appearance"
+          detail={THEME_LABEL[prefs.theme]}
+          leading={<List.Icon icon={Palette} tone="indigo" />}
+          href="/settings/appearance"
+        />
+        <List.Row
+          title="Home Screen"
           detail={
             layout.active.kind === "template"
               ? templateName(layout.active.templateId)
               : "Custom"
           }
+          leading={<List.Icon icon={LayoutGrid} tone="purple" />}
           href="/settings/home-layout"
         />
       </List.Section>
-      <List.Section title="Help & Glossary">
-        <li className="flex flex-col gap-2 px-4 py-2">
-          <span className="text-subhead text-muted-foreground">
-            Underline glossary words
-          </span>
-          <Segmented
-            label="Underline glossary words"
-            value={help.underline ?? "all"}
-            onValueChange={(underline) =>
-              void setPrefs({ help: { ...help, underline } })
-            }
-            options={[
-              { value: "all", label: "All" },
-              { value: "first", label: "First" },
-              { value: "off", label: "Off" },
-            ]}
-          />
-          <span className="text-subhead text-muted-foreground">
-            Open glossary with
-          </span>
-          <Segmented
-            label="Open glossary with"
-            value={help.openWith}
-            onValueChange={(openWith) =>
-              void setPrefs({ help: { ...help, openWith } })
-            }
-            options={[
-              { value: "long-press", label: "Long Press" },
-              { value: "tap", label: "Tap" },
-            ]}
-          />
-        </li>
+
+      <List.Section title="Help & Feedback">
         <List.Row
-          title="Open Help"
-          onSelect={() => glossary?.open("glossary")}
+          title="Help & Glossary"
+          leading={<List.Icon icon={CircleHelp} tone="teal" />}
+          href="/settings/help"
+        />
+        {feedback ? (
+          <List.Row
+            title="Send Feedback"
+            leading={<List.Icon icon={MessageSquareText} tone="orange" />}
+            onSelect={feedback.open}
+          />
+        ) : null}
+        <List.Row
+          title="About VScout"
+          detail={APP_VERSION}
+          leading={<List.Icon icon={Info} tone="gray" />}
+          href="/settings/about"
         />
       </List.Section>
-      <List.Section title="Storage & Diagnostics">
+
+      <List.Section title="Data & Storage">
         <List.Row
           title="Storage & Diagnostics"
           detail={pending === "offline" ? "Offline" : undefined}
+          leading={<List.Icon icon={HardDrive} tone="gray" />}
           href="/settings/storage"
         />
         {conflicts > 0 ? (
           <List.Row
             title="Sync Conflicts"
             detail={String(conflicts)}
+            leading={<List.Icon icon={TriangleAlert} tone="orange" />}
             href="/settings/conflicts"
           />
         ) : null}
         {guest ? null : (
           <List.Row
             title="Recently Deleted"
+            leading={<List.Icon icon={Trash2} tone="gray" />}
             href="/settings/recently-deleted"
           />
         )}
       </List.Section>
-      <List.Section title="About">
-        <List.Row
-          title="About VScout"
-          detail={APP_VERSION}
-          href="/settings/about"
-        />
-        {FEEDBACK_ENABLED ? (
-          <List.Row title="Send Feedback" href="/settings/feedback" />
-        ) : null}
-      </List.Section>
+
       {session && can(session, "admin:access") ? (
-        <List.Section title="Admin">
-          <List.Row title="Admin Overview" href="/settings/admin" />
-          <List.Row title="Event Setup" href="/settings/admin/event" />
+        <List.Section
+          title="Admin"
+          footer="Event setup, users and roles, announcements, data quality and more."
+        >
           <List.Row
-            title="Announcements"
-            href="/settings/admin/announcements"
+            title="Admin"
+            leading={<List.Icon icon={ShieldCheck} tone="blue" />}
+            href="/settings/admin"
           />
-          <List.Row title="Users & Roles" href="/settings/admin/users" />
         </List.Section>
       ) : null}
     </StackPage>

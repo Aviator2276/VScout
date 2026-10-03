@@ -23,7 +23,7 @@ async function signIn(page: Page) {
 
 async function openAdmin(page: Page, row: string) {
   await page.getByRole("link", { name: "Settings" }).first().click()
-  await page.getByRole("link", { name: "Admin Overview" }).click()
+  await page.getByRole("link", { name: "Admin", exact: true }).click()
   await expect(
     page.getByRole("heading", { level: 1, name: "Admin" })
   ).toBeVisible()
@@ -46,9 +46,9 @@ test("a scouter has no Admin group, and admin pages say no access (criterion 1)"
   await expect(
     page.getByRole("heading", { level: 1, name: "Settings" })
   ).toBeVisible()
-  await expect(page.getByRole("link", { name: "Admin Overview" })).toHaveCount(
-    0
-  )
+  await expect(
+    page.getByRole("link", { name: "Admin", exact: true })
+  ).toHaveCount(0)
   await page.evaluate(() => {
     history.pushState({}, "", "/settings/admin/users")
     dispatchEvent(new PopStateEvent("popstate"))
@@ -254,7 +254,7 @@ test("a11y: admin pages pass axe", async ({ page, context }) => {
   await useBackend(context)
   await signIn(page)
   await page.getByRole("link", { name: "Settings" }).first().click()
-  await page.getByRole("link", { name: "Admin Overview" }).click()
+  await page.getByRole("link", { name: "Admin", exact: true }).click()
   for (const row of [
     "Event Setup",
     "Team Number",

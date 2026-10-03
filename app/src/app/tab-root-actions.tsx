@@ -3,12 +3,14 @@
 import { Link } from "@tanstack/react-router"
 import { useGlossary } from "@/components/glossary/glossary-provider"
 import { CircleHelp, CircleUser } from "@/components/icons/icon"
+import { FeedbackButton } from "@/features/feedback/components/feedback-sheet"
 import { NotificationBell } from "@/features/notifications/components/notification-center"
 
 export function TabRootActions({ profile = false }: { profile?: boolean }) {
   const glossary = useGlossary()
   return (
     <>
+      <FeedbackButton />
       <NotificationBell />
       {profile && glossary ? (
         <button

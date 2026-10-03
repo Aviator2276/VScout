@@ -59,5 +59,12 @@ export {
   X,
   Settings,
   Smartphone,
+  Palette,
+  LayoutGrid,
+  MessageSquareText,
+  Info,
+  HardDrive,
+  ShieldCheck,
+  BookOpen,
 } from "lucide-react"
 export type { LucideIcon, LucideProps } from "lucide-react"

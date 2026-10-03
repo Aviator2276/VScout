@@ -55,7 +55,7 @@ describe("GlossaryText (glossary-help.md §7)", () => {
     expect(screen.getAllByRole("button")).toHaveLength(2)
   })
 
-  it("a 500 ms press opens the term; a short press or a move doesn't", () => {
+  it("a 500 ms press shows the definition in a tooltip; a short press or a move doesn't (FX-31)", async () => {
     vi.useFakeTimers()
     const open = mount("pinning")
     const term = screen.getByRole("button", { name: "pinning" })
@@ -67,38 +67,40 @@ describe("GlossaryText (glossary-help.md §7)", () => {
     act(() => {
       vi.advanceTimersByTime(500)
     })
-    expect(open).not.toHaveBeenCalled()
+    expect(screen.queryByText("Trapping a robot")).not.toBeInTheDocument()
     fireEvent.pointerDown(term, { button: 0, clientX: 0, clientY: 0 })
     fireEvent.pointerMove(term, { clientX: 20, clientY: 0 })
     act(() => {
       vi.advanceTimersByTime(600)
     })
-    expect(open).not.toHaveBeenCalled()
+    expect(screen.queryByText("Trapping a robot")).not.toBeInTheDocument()
     fireEvent.pointerDown(term, { button: 0, clientX: 0, clientY: 0 })
     act(() => {
       vi.advanceTimersByTime(500)
     })
+    vi.useRealTimers()
+    expect(await screen.findByText("Trapping a robot")).toBeInTheDocument()
+    // the full entry is one more tap away, not forced on the user
+    expect(open).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole("button", { name: "More in Help" }))
     expect(open).toHaveBeenCalledWith("term:pinning")
   })
 
-  it("keyboard Enter and assistive-tech clicks open it in long-press mode; a mouse click doesn't", async () => {
-    const open = mount("pinning")
+  it("keyboard Enter and assistive-tech clicks show it in long-press mode; a mouse click doesn't", async () => {
+    mount("pinning")
     const term = screen.getByRole("button", { name: "pinning" })
     fireEvent.click(term, { detail: 1 })
-    expect(open).not.toHaveBeenCalled()
+    expect(screen.queryByText("Trapping a robot")).not.toBeInTheDocument()
     fireEvent.click(term, { detail: 0 })
-    expect(open).toHaveBeenCalledTimes(1)
-    term.focus()
-    await userEvent.keyboard("{Enter}")
-    expect(open).toHaveBeenCalledTimes(2)
+    expect(await screen.findByText("Trapping a robot")).toBeInTheDocument()
   })
 
-  it("tap mode opens on a click", () => {
-    const open = mount("pinning", { openWith: "tap" })
+  it("tap mode shows it on a click", async () => {
+    mount("pinning", { openWith: "tap" })
     fireEvent.click(screen.getByRole("button", { name: "pinning" }), {
       detail: 1,
     })
-    expect(open).toHaveBeenCalledWith("term:pinning")
+    expect(await screen.findByText("Trapping a robot")).toBeInTheDocument()
   })
 
   it("Off renders plain text; First per paragraph links only the first", () => {

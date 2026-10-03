@@ -84,6 +84,15 @@
   /* alliances: never the destructive red, always labelled (§5.3) */
   --alliance-red: oklch(0.56 0.2 18);
   --alliance-red-foreground: oklch(0.985 0.01 18);
+  /* Settings icon tiles (iOS system colors; white glyph on top, contrast ≥ 3:1) */
+  --tile-blue: oklch(0.55 0.2 255);
+  --tile-green: oklch(0.58 0.15 150);
+  --tile-orange: oklch(0.66 0.17 55);
+  --tile-red: oklch(0.58 0.21 25);
+  --tile-purple: oklch(0.52 0.2 300);
+  --tile-teal: oklch(0.58 0.1 200);
+  --tile-indigo: oklch(0.48 0.18 275);
+  --tile-gray: oklch(0.55 0.01 250);
   --alliance-red-muted: oklch(0.95 0.03 18);
   --alliance-blue: oklch(0.5 0.17 258);
   --alliance-blue-foreground: oklch(0.985 0.01 258);
@@ -257,6 +266,14 @@
   --color-info-foreground: var(--info-foreground);
   --color-alliance-red: var(--alliance-red);
   --color-alliance-red-foreground: var(--alliance-red-foreground);
+  --color-tile-blue: var(--tile-blue);
+  --color-tile-green: var(--tile-green);
+  --color-tile-orange: var(--tile-orange);
+  --color-tile-red: var(--tile-red);
+  --color-tile-purple: var(--tile-purple);
+  --color-tile-teal: var(--tile-teal);
+  --color-tile-indigo: var(--tile-indigo);
+  --color-tile-gray: var(--tile-gray);
   --color-alliance-red-muted: var(--alliance-red-muted);
   --color-alliance-blue: var(--alliance-blue);
   --color-alliance-blue-foreground: var(--alliance-blue-foreground);

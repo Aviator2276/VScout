@@ -36,6 +36,7 @@ import { Route as AuthedEventTabsSettingsAppearanceRouteImport } from './routes/
 import { Route as AuthedEventTabsSettingsConflictsRouteImport } from './routes/_authed/_event/_tabs/settings/conflicts'
 import { Route as AuthedEventTabsSettingsEventRouteImport } from './routes/_authed/_event/_tabs/settings/event'
 import { Route as AuthedEventTabsSettingsFeedbackRouteImport } from './routes/_authed/_event/_tabs/settings/feedback'
+import { Route as AuthedEventTabsSettingsHelpRouteImport } from './routes/_authed/_event/_tabs/settings/help'
 import { Route as AuthedEventTabsSettingsHomeLayoutRouteImport } from './routes/_authed/_event/_tabs/settings/home-layout'
 import { Route as AuthedEventTabsSettingsNotificationsRouteImport } from './routes/_authed/_event/_tabs/settings/notifications'
 import { Route as AuthedEventTabsSettingsRecentlyDeletedRouteImport } from './routes/_authed/_event/_tabs/settings/recently-deleted'
@@ -216,6 +217,12 @@ const AuthedEventTabsSettingsFeedbackRoute =
   AuthedEventTabsSettingsFeedbackRouteImport.update({
     id: '/settings/feedback',
     path: '/settings/feedback',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsHelpRoute =
+  AuthedEventTabsSettingsHelpRouteImport.update({
+    id: '/settings/help',
+    path: '/settings/help',
     getParentRoute: () => AuthedEventTabsRoute,
   } as any)
 const AuthedEventTabsSettingsHomeLayoutRoute =
@@ -420,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
   '/settings/event': typeof AuthedEventTabsSettingsEventRoute
   '/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/settings/help': typeof AuthedEventTabsSettingsHelpRoute
   '/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
   '/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
   '/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
@@ -475,6 +483,7 @@ export interface FileRoutesByTo {
   '/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
   '/settings/event': typeof AuthedEventTabsSettingsEventRoute
   '/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/settings/help': typeof AuthedEventTabsSettingsHelpRoute
   '/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
   '/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
   '/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
@@ -535,6 +544,7 @@ export interface FileRoutesById {
   '/_authed/_event/_tabs/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
   '/_authed/_event/_tabs/settings/event': typeof AuthedEventTabsSettingsEventRoute
   '/_authed/_event/_tabs/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/_authed/_event/_tabs/settings/help': typeof AuthedEventTabsSettingsHelpRoute
   '/_authed/_event/_tabs/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
   '/_authed/_event/_tabs/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
   '/_authed/_event/_tabs/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/settings/conflicts'
     | '/settings/event'
     | '/settings/feedback'
+    | '/settings/help'
     | '/settings/home-layout'
     | '/settings/notifications'
     | '/settings/recently-deleted'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/settings/conflicts'
     | '/settings/event'
     | '/settings/feedback'
+    | '/settings/help'
     | '/settings/home-layout'
     | '/settings/notifications'
     | '/settings/recently-deleted'
@@ -707,6 +719,7 @@ export interface FileRouteTypes {
     | '/_authed/_event/_tabs/settings/conflicts'
     | '/_authed/_event/_tabs/settings/event'
     | '/_authed/_event/_tabs/settings/feedback'
+    | '/_authed/_event/_tabs/settings/help'
     | '/_authed/_event/_tabs/settings/home-layout'
     | '/_authed/_event/_tabs/settings/notifications'
     | '/_authed/_event/_tabs/settings/recently-deleted'
@@ -938,6 +951,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/feedback'
       fullPath: '/settings/feedback'
       preLoaderRoute: typeof AuthedEventTabsSettingsFeedbackRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/help': {
+      id: '/_authed/_event/_tabs/settings/help'
+      path: '/settings/help'
+      fullPath: '/settings/help'
+      preLoaderRoute: typeof AuthedEventTabsSettingsHelpRouteImport
       parentRoute: typeof AuthedEventTabsRoute
     }
     '/_authed/_event/_tabs/settings/home-layout': {
@@ -1243,6 +1263,7 @@ interface AuthedEventTabsRouteChildren {
   AuthedEventTabsSettingsConflictsRoute: typeof AuthedEventTabsSettingsConflictsRoute
   AuthedEventTabsSettingsEventRoute: typeof AuthedEventTabsSettingsEventRoute
   AuthedEventTabsSettingsFeedbackRoute: typeof AuthedEventTabsSettingsFeedbackRoute
+  AuthedEventTabsSettingsHelpRoute: typeof AuthedEventTabsSettingsHelpRoute
   AuthedEventTabsSettingsHomeLayoutRoute: typeof AuthedEventTabsSettingsHomeLayoutRoute
   AuthedEventTabsSettingsNotificationsRoute: typeof AuthedEventTabsSettingsNotificationsRoute
   AuthedEventTabsSettingsRecentlyDeletedRoute: typeof AuthedEventTabsSettingsRecentlyDeletedRoute
@@ -1285,6 +1306,7 @@ const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
   AuthedEventTabsSettingsConflictsRoute: AuthedEventTabsSettingsConflictsRoute,
   AuthedEventTabsSettingsEventRoute: AuthedEventTabsSettingsEventRoute,
   AuthedEventTabsSettingsFeedbackRoute: AuthedEventTabsSettingsFeedbackRoute,
+  AuthedEventTabsSettingsHelpRoute: AuthedEventTabsSettingsHelpRoute,
   AuthedEventTabsSettingsHomeLayoutRoute:
     AuthedEventTabsSettingsHomeLayoutRoute,
   AuthedEventTabsSettingsNotificationsRoute:
