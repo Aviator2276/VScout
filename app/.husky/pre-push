@@ -1,0 +1,33 @@
+# Runs from the git root (husky v9). The npm package lives in app/.
+# 1. typecheck, plus unit tests once app/package.json has a "test" script (Phase 0)
+# 2. version: a WARNING only (PV-7). Work happens on dev; PRs into dev never bump the version.
+#    The PR from dev into main bumps it (`pnpm version:bump`), and CI (version-check.yml) enforces that.
+cd app
+
+z40=0000000000000000000000000000000000000000
+shas=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$z40" ] && continue # branch deletion
+  case "$local_ref" in refs/heads/*) ;; *) continue ;; esac # tags, notes
+  case "$remote_ref" in refs/heads/main) continue ;; esac # main: CI enforces
+  shas="$shas $local_sha"
+done
+
+[ -z "$shas" ] && exit 0
+
+echo "[pre-push] typecheck (tsc --noEmit)"
+tsc --noEmit
+
+if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+  echo "[pre-push] unit tests (vitest run)"
+  vitest run --passWithNoTests
+fi
+
+fetch="--fetch"
+for sha in $shas; do
+  if ! node scripts/bump-version.mjs --check --quiet $fetch --ref "$sha" 2>/dev/null; then
+    echo "[pre-push] note: the version isn't above main's yet. Fine for dev; run 'pnpm version:bump' before the PR into main."
+  fi
+  fetch=""
+done
+exit 0

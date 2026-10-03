@@ -1,0 +1,14 @@
+{
+  "apiVersion": 1,
+  "minClientVersion": "2.0.0",
+  "serverTime": "2026-03-20T15:00:00.000Z",
+  "activeGameId": "2026-rebuilt",
+  "gameSchemaVersions": { "2026-rebuilt": [1] },
+  "capabilities": {
+    "mqttRpc": true,
+    "readMarkers": true,
+    "batchPush": false,
+    "teleport": true
+  },
+  "region": "us-west"
+}

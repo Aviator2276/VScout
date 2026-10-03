@@ -8,59 +8,1401 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root"
-import { Route as IndexRouteImport } from "./routes/index"
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedEventRouteImport } from './routes/_authed/_event'
+import { Route as AuthedOnboardingRouteImport } from './routes/_authed/onboarding'
+import { Route as DevGalleryRouteImport } from './routes/dev/gallery'
+import { Route as AuthedEventTabsRouteImport } from './routes/_authed/_event/_tabs'
+import { Route as AuthedEventScoutingRouteRouteImport } from './routes/_authed/_event/scouting/route'
+import { Route as AuthedEventTabsIndexRouteImport } from './routes/_authed/_event/_tabs/index'
+import { Route as AuthedEventScoutingMineRouteImport } from './routes/_authed/_event/scouting/mine'
+import { Route as AuthedEventTabsMatchesIndexRouteImport } from './routes/_authed/_event/_tabs/matches/index'
+import { Route as AuthedEventTabsMatchesMatchKeyRouteImport } from './routes/_authed/_event/_tabs/matches/$matchKey'
+import { Route as AuthedEventTabsMatchesVideosRouteImport } from './routes/_authed/_event/_tabs/matches/videos'
+import { Route as AuthedEventTabsMessagesIndexRouteImport } from './routes/_authed/_event/_tabs/messages/index'
+import { Route as AuthedEventTabsMessagesChannelIdRouteImport } from './routes/_authed/_event/_tabs/messages/$channelId'
+import { Route as AuthedEventTabsMessagesAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/messages/announcements'
+import { Route as AuthedEventTabsScoutIndexRouteImport } from './routes/_authed/_event/_tabs/scout/index'
+import { Route as AuthedEventTabsScoutAllianceSelectionRouteImport } from './routes/_authed/_event/_tabs/scout/alliance-selection'
+import { Route as AuthedEventTabsScoutAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/scout/announcements'
+import { Route as AuthedEventTabsScoutNeedsScoutingRouteImport } from './routes/_authed/_event/_tabs/scout/needs-scouting'
+import { Route as AuthedEventTabsSettingsIndexRouteImport } from './routes/_authed/_event/_tabs/settings/index'
+import { Route as AuthedEventTabsSettingsAboutRouteImport } from './routes/_authed/_event/_tabs/settings/about'
+import { Route as AuthedEventTabsSettingsAccountRouteImport } from './routes/_authed/_event/_tabs/settings/account'
+import { Route as AuthedEventTabsSettingsAdminRouteRouteImport } from './routes/_authed/_event/_tabs/settings/admin/route'
+import { Route as AuthedEventTabsSettingsAppearanceRouteImport } from './routes/_authed/_event/_tabs/settings/appearance'
+import { Route as AuthedEventTabsSettingsConflictsRouteImport } from './routes/_authed/_event/_tabs/settings/conflicts'
+import { Route as AuthedEventTabsSettingsEventRouteImport } from './routes/_authed/_event/_tabs/settings/event'
+import { Route as AuthedEventTabsSettingsFeedbackRouteImport } from './routes/_authed/_event/_tabs/settings/feedback'
+import { Route as AuthedEventTabsSettingsHelpRouteImport } from './routes/_authed/_event/_tabs/settings/help'
+import { Route as AuthedEventTabsSettingsHomeLayoutRouteImport } from './routes/_authed/_event/_tabs/settings/home-layout'
+import { Route as AuthedEventTabsSettingsNotificationsRouteImport } from './routes/_authed/_event/_tabs/settings/notifications'
+import { Route as AuthedEventTabsSettingsRecentlyDeletedRouteImport } from './routes/_authed/_event/_tabs/settings/recently-deleted'
+import { Route as AuthedEventTabsSettingsScoutingRouteImport } from './routes/_authed/_event/_tabs/settings/scouting'
+import { Route as AuthedEventTabsSettingsStorageRouteImport } from './routes/_authed/_event/_tabs/settings/storage'
+import { Route as AuthedEventTabsTeamsIndexRouteImport } from './routes/_authed/_event/_tabs/teams/index'
+import { Route as AuthedEventTabsTeamsTeamNumberRouteImport } from './routes/_authed/_event/_tabs/teams/$teamNumber'
+import { Route as AuthedEventScoutingPitTeamNumberRouteImport } from './routes/_authed/_event/scouting/pit/$teamNumber'
+import { Route as AuthedEventScoutingPostTeamNumberRouteImport } from './routes/_authed/_event/scouting/post/$teamNumber'
+import { Route as AuthedEventTabsScoutMessagesIndexRouteImport } from './routes/_authed/_event/_tabs/scout/messages/index'
+import { Route as AuthedEventTabsScoutMessagesChannelIdRouteImport } from './routes/_authed/_event/_tabs/scout/messages/$channelId'
+import { Route as AuthedEventTabsScoutPicklistsIndexRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/index'
+import { Route as AuthedEventTabsScoutPicklistsPicklistIdRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/$picklistId'
+import { Route as AuthedEventTabsScoutPicklistsCombinedRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/combined'
+import { Route as AuthedEventTabsScoutStrategyIndexRouteImport } from './routes/_authed/_event/_tabs/scout/strategy/index'
+import { Route as AuthedEventTabsScoutStrategyMatchKeyRouteImport } from './routes/_authed/_event/_tabs/scout/strategy/$matchKey'
+import { Route as AuthedEventTabsSettingsAdminIndexRouteImport } from './routes/_authed/_event/_tabs/settings/admin/index'
+import { Route as AuthedEventTabsSettingsAdminAllianceBoardRouteImport } from './routes/_authed/_event/_tabs/settings/admin/alliance-board'
+import { Route as AuthedEventTabsSettingsAdminAnnouncementsRouteImport } from './routes/_authed/_event/_tabs/settings/admin/announcements'
+import { Route as AuthedEventTabsSettingsAdminDataQualityRouteImport } from './routes/_authed/_event/_tabs/settings/admin/data-quality'
+import { Route as AuthedEventTabsSettingsAdminDemoRouteImport } from './routes/_authed/_event/_tabs/settings/admin/demo'
+import { Route as AuthedEventTabsSettingsAdminEventRouteImport } from './routes/_authed/_event/_tabs/settings/admin/event'
+import { Route as AuthedEventTabsSettingsAdminExportRouteImport } from './routes/_authed/_event/_tabs/settings/admin/export'
+import { Route as AuthedEventTabsSettingsAdminGuestAccessRouteImport } from './routes/_authed/_event/_tabs/settings/admin/guest-access'
+import { Route as AuthedEventTabsSettingsAdminModerationRouteImport } from './routes/_authed/_event/_tabs/settings/admin/moderation'
+import { Route as AuthedEventTabsSettingsAdminPushRouteImport } from './routes/_authed/_event/_tabs/settings/admin/push'
+import { Route as AuthedEventTabsSettingsAdminSyncHealthRouteImport } from './routes/_authed/_event/_tabs/settings/admin/sync-health'
+import { Route as AuthedEventTabsSettingsAdminTeamRouteImport } from './routes/_authed/_event/_tabs/settings/admin/team'
+import { Route as AuthedEventScoutingMatchMatchKeyTeamNumberRouteImport } from './routes/_authed/_event/scouting/match/$matchKey/$teamNumber'
+import { Route as AuthedEventTabsSettingsAdminUsersIndexRouteImport } from './routes/_authed/_event/_tabs/settings/admin/users/index'
+import { Route as AuthedEventTabsSettingsAdminUsersUserIdRouteImport } from './routes/_authed/_event/_tabs/settings/admin/users/$userId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedEventRoute = AuthedEventRouteImport.update({
+  id: '/_event',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedOnboardingRoute = AuthedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const DevGalleryRoute = DevGalleryRouteImport.update({
+  id: '/dev/gallery',
+  path: '/dev/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedEventTabsRoute = AuthedEventTabsRouteImport.update({
+  id: '/_tabs',
+  getParentRoute: () => AuthedEventRoute,
+} as any)
+const AuthedEventScoutingRouteRoute =
+  AuthedEventScoutingRouteRouteImport.update({
+    id: '/scouting',
+    path: '/scouting',
+    getParentRoute: () => AuthedEventRoute,
+  } as any)
+const AuthedEventTabsIndexRoute = AuthedEventTabsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedEventTabsRoute,
+} as any)
+const AuthedEventScoutingMineRoute = AuthedEventScoutingMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => AuthedEventScoutingRouteRoute,
+} as any)
+const AuthedEventTabsMatchesIndexRoute =
+  AuthedEventTabsMatchesIndexRouteImport.update({
+    id: '/matches/',
+    path: '/matches/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMatchesMatchKeyRoute =
+  AuthedEventTabsMatchesMatchKeyRouteImport.update({
+    id: '/matches/$matchKey',
+    path: '/matches/$matchKey',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMatchesVideosRoute =
+  AuthedEventTabsMatchesVideosRouteImport.update({
+    id: '/matches/videos',
+    path: '/matches/videos',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMessagesIndexRoute =
+  AuthedEventTabsMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMessagesChannelIdRoute =
+  AuthedEventTabsMessagesChannelIdRouteImport.update({
+    id: '/messages/$channelId',
+    path: '/messages/$channelId',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsMessagesAnnouncementsRoute =
+  AuthedEventTabsMessagesAnnouncementsRouteImport.update({
+    id: '/messages/announcements',
+    path: '/messages/announcements',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutIndexRoute =
+  AuthedEventTabsScoutIndexRouteImport.update({
+    id: '/scout/',
+    path: '/scout/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutAllianceSelectionRoute =
+  AuthedEventTabsScoutAllianceSelectionRouteImport.update({
+    id: '/scout/alliance-selection',
+    path: '/scout/alliance-selection',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutAnnouncementsRoute =
+  AuthedEventTabsScoutAnnouncementsRouteImport.update({
+    id: '/scout/announcements',
+    path: '/scout/announcements',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutNeedsScoutingRoute =
+  AuthedEventTabsScoutNeedsScoutingRouteImport.update({
+    id: '/scout/needs-scouting',
+    path: '/scout/needs-scouting',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsIndexRoute =
+  AuthedEventTabsSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsAboutRoute =
+  AuthedEventTabsSettingsAboutRouteImport.update({
+    id: '/settings/about',
+    path: '/settings/about',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsAccountRoute =
+  AuthedEventTabsSettingsAccountRouteImport.update({
+    id: '/settings/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminRouteRoute =
+  AuthedEventTabsSettingsAdminRouteRouteImport.update({
+    id: '/settings/admin',
+    path: '/settings/admin',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsAppearanceRoute =
+  AuthedEventTabsSettingsAppearanceRouteImport.update({
+    id: '/settings/appearance',
+    path: '/settings/appearance',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsConflictsRoute =
+  AuthedEventTabsSettingsConflictsRouteImport.update({
+    id: '/settings/conflicts',
+    path: '/settings/conflicts',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsEventRoute =
+  AuthedEventTabsSettingsEventRouteImport.update({
+    id: '/settings/event',
+    path: '/settings/event',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsFeedbackRoute =
+  AuthedEventTabsSettingsFeedbackRouteImport.update({
+    id: '/settings/feedback',
+    path: '/settings/feedback',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsHelpRoute =
+  AuthedEventTabsSettingsHelpRouteImport.update({
+    id: '/settings/help',
+    path: '/settings/help',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsHomeLayoutRoute =
+  AuthedEventTabsSettingsHomeLayoutRouteImport.update({
+    id: '/settings/home-layout',
+    path: '/settings/home-layout',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsNotificationsRoute =
+  AuthedEventTabsSettingsNotificationsRouteImport.update({
+    id: '/settings/notifications',
+    path: '/settings/notifications',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsRecentlyDeletedRoute =
+  AuthedEventTabsSettingsRecentlyDeletedRouteImport.update({
+    id: '/settings/recently-deleted',
+    path: '/settings/recently-deleted',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsScoutingRoute =
+  AuthedEventTabsSettingsScoutingRouteImport.update({
+    id: '/settings/scouting',
+    path: '/settings/scouting',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsStorageRoute =
+  AuthedEventTabsSettingsStorageRouteImport.update({
+    id: '/settings/storage',
+    path: '/settings/storage',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsTeamsIndexRoute =
+  AuthedEventTabsTeamsIndexRouteImport.update({
+    id: '/teams/',
+    path: '/teams/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsTeamsTeamNumberRoute =
+  AuthedEventTabsTeamsTeamNumberRouteImport.update({
+    id: '/teams/$teamNumber',
+    path: '/teams/$teamNumber',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventScoutingPitTeamNumberRoute =
+  AuthedEventScoutingPitTeamNumberRouteImport.update({
+    id: '/pit/$teamNumber',
+    path: '/pit/$teamNumber',
+    getParentRoute: () => AuthedEventScoutingRouteRoute,
+  } as any)
+const AuthedEventScoutingPostTeamNumberRoute =
+  AuthedEventScoutingPostTeamNumberRouteImport.update({
+    id: '/post/$teamNumber',
+    path: '/post/$teamNumber',
+    getParentRoute: () => AuthedEventScoutingRouteRoute,
+  } as any)
+const AuthedEventTabsScoutMessagesIndexRoute =
+  AuthedEventTabsScoutMessagesIndexRouteImport.update({
+    id: '/scout/messages/',
+    path: '/scout/messages/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutMessagesChannelIdRoute =
+  AuthedEventTabsScoutMessagesChannelIdRouteImport.update({
+    id: '/scout/messages/$channelId',
+    path: '/scout/messages/$channelId',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutPicklistsIndexRoute =
+  AuthedEventTabsScoutPicklistsIndexRouteImport.update({
+    id: '/scout/picklists/',
+    path: '/scout/picklists/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutPicklistsPicklistIdRoute =
+  AuthedEventTabsScoutPicklistsPicklistIdRouteImport.update({
+    id: '/scout/picklists/$picklistId',
+    path: '/scout/picklists/$picklistId',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutPicklistsCombinedRoute =
+  AuthedEventTabsScoutPicklistsCombinedRouteImport.update({
+    id: '/scout/picklists/combined',
+    path: '/scout/picklists/combined',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutStrategyIndexRoute =
+  AuthedEventTabsScoutStrategyIndexRouteImport.update({
+    id: '/scout/strategy/',
+    path: '/scout/strategy/',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsScoutStrategyMatchKeyRoute =
+  AuthedEventTabsScoutStrategyMatchKeyRouteImport.update({
+    id: '/scout/strategy/$matchKey',
+    path: '/scout/strategy/$matchKey',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminIndexRoute =
+  AuthedEventTabsSettingsAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminAllianceBoardRoute =
+  AuthedEventTabsSettingsAdminAllianceBoardRouteImport.update({
+    id: '/alliance-board',
+    path: '/alliance-board',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminAnnouncementsRoute =
+  AuthedEventTabsSettingsAdminAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminDataQualityRoute =
+  AuthedEventTabsSettingsAdminDataQualityRouteImport.update({
+    id: '/data-quality',
+    path: '/data-quality',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminDemoRoute =
+  AuthedEventTabsSettingsAdminDemoRouteImport.update({
+    id: '/demo',
+    path: '/demo',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminEventRoute =
+  AuthedEventTabsSettingsAdminEventRouteImport.update({
+    id: '/event',
+    path: '/event',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminExportRoute =
+  AuthedEventTabsSettingsAdminExportRouteImport.update({
+    id: '/export',
+    path: '/export',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminGuestAccessRoute =
+  AuthedEventTabsSettingsAdminGuestAccessRouteImport.update({
+    id: '/guest-access',
+    path: '/guest-access',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminModerationRoute =
+  AuthedEventTabsSettingsAdminModerationRouteImport.update({
+    id: '/moderation',
+    path: '/moderation',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminPushRoute =
+  AuthedEventTabsSettingsAdminPushRouteImport.update({
+    id: '/push',
+    path: '/push',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminSyncHealthRoute =
+  AuthedEventTabsSettingsAdminSyncHealthRouteImport.update({
+    id: '/sync-health',
+    path: '/sync-health',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminTeamRoute =
+  AuthedEventTabsSettingsAdminTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventScoutingMatchMatchKeyTeamNumberRoute =
+  AuthedEventScoutingMatchMatchKeyTeamNumberRouteImport.update({
+    id: '/match/$matchKey/$teamNumber',
+    path: '/match/$matchKey/$teamNumber',
+    getParentRoute: () => AuthedEventScoutingRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminUsersIndexRoute =
+  AuthedEventTabsSettingsAdminUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
+const AuthedEventTabsSettingsAdminUsersUserIdRoute =
+  AuthedEventTabsSettingsAdminUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthedEventTabsSettingsAdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute
+  '/': typeof AuthedEventTabsIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
+  '/scouting': typeof AuthedEventScoutingRouteRouteWithChildren
+  '/scouting/mine': typeof AuthedEventScoutingMineRoute
+  '/settings/admin': typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
+  '/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
+  '/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
+  '/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
+  '/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
+  '/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
+  '/settings/about': typeof AuthedEventTabsSettingsAboutRoute
+  '/settings/account': typeof AuthedEventTabsSettingsAccountRoute
+  '/settings/appearance': typeof AuthedEventTabsSettingsAppearanceRoute
+  '/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
+  '/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/settings/help': typeof AuthedEventTabsSettingsHelpRoute
+  '/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
+  '/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
+  '/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
+  '/settings/scouting': typeof AuthedEventTabsSettingsScoutingRoute
+  '/settings/storage': typeof AuthedEventTabsSettingsStorageRoute
+  '/teams/$teamNumber': typeof AuthedEventTabsTeamsTeamNumberRoute
+  '/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
+  '/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
+  '/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/messages/': typeof AuthedEventTabsMessagesIndexRoute
+  '/scout/': typeof AuthedEventTabsScoutIndexRoute
+  '/settings/': typeof AuthedEventTabsSettingsIndexRoute
+  '/teams/': typeof AuthedEventTabsTeamsIndexRoute
+  '/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
+  '/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
+  '/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
+  '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
+  '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
+  '/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
+  '/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
+  '/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
+  '/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
+  '/settings/admin/moderation': typeof AuthedEventTabsSettingsAdminModerationRoute
+  '/settings/admin/push': typeof AuthedEventTabsSettingsAdminPushRoute
+  '/settings/admin/sync-health': typeof AuthedEventTabsSettingsAdminSyncHealthRoute
+  '/settings/admin/team': typeof AuthedEventTabsSettingsAdminTeamRoute
+  '/scouting/match/$matchKey/$teamNumber': typeof AuthedEventScoutingMatchMatchKeyTeamNumberRoute
+  '/scout/messages/': typeof AuthedEventTabsScoutMessagesIndexRoute
+  '/scout/picklists/': typeof AuthedEventTabsScoutPicklistsIndexRoute
+  '/scout/strategy/': typeof AuthedEventTabsScoutStrategyIndexRoute
+  '/settings/admin/': typeof AuthedEventTabsSettingsAdminIndexRoute
+  '/settings/admin/users/$userId': typeof AuthedEventTabsSettingsAdminUsersUserIdRoute
+  '/settings/admin/users/': typeof AuthedEventTabsSettingsAdminUsersIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute
+  '/': typeof AuthedEventTabsIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
+  '/scouting': typeof AuthedEventScoutingRouteRouteWithChildren
+  '/scouting/mine': typeof AuthedEventScoutingMineRoute
+  '/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
+  '/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
+  '/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
+  '/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
+  '/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
+  '/settings/about': typeof AuthedEventTabsSettingsAboutRoute
+  '/settings/account': typeof AuthedEventTabsSettingsAccountRoute
+  '/settings/appearance': typeof AuthedEventTabsSettingsAppearanceRoute
+  '/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
+  '/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/settings/help': typeof AuthedEventTabsSettingsHelpRoute
+  '/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
+  '/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
+  '/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
+  '/settings/scouting': typeof AuthedEventTabsSettingsScoutingRoute
+  '/settings/storage': typeof AuthedEventTabsSettingsStorageRoute
+  '/teams/$teamNumber': typeof AuthedEventTabsTeamsTeamNumberRoute
+  '/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
+  '/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
+  '/matches': typeof AuthedEventTabsMatchesIndexRoute
+  '/messages': typeof AuthedEventTabsMessagesIndexRoute
+  '/scout': typeof AuthedEventTabsScoutIndexRoute
+  '/settings': typeof AuthedEventTabsSettingsIndexRoute
+  '/teams': typeof AuthedEventTabsTeamsIndexRoute
+  '/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
+  '/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
+  '/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
+  '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
+  '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
+  '/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
+  '/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
+  '/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
+  '/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
+  '/settings/admin/moderation': typeof AuthedEventTabsSettingsAdminModerationRoute
+  '/settings/admin/push': typeof AuthedEventTabsSettingsAdminPushRoute
+  '/settings/admin/sync-health': typeof AuthedEventTabsSettingsAdminSyncHealthRoute
+  '/settings/admin/team': typeof AuthedEventTabsSettingsAdminTeamRoute
+  '/scouting/match/$matchKey/$teamNumber': typeof AuthedEventScoutingMatchMatchKeyTeamNumberRoute
+  '/scout/messages': typeof AuthedEventTabsScoutMessagesIndexRoute
+  '/scout/picklists': typeof AuthedEventTabsScoutPicklistsIndexRoute
+  '/scout/strategy': typeof AuthedEventTabsScoutStrategyIndexRoute
+  '/settings/admin': typeof AuthedEventTabsSettingsAdminIndexRoute
+  '/settings/admin/users/$userId': typeof AuthedEventTabsSettingsAdminUsersUserIdRoute
+  '/settings/admin/users': typeof AuthedEventTabsSettingsAdminUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  "/": typeof IndexRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authed/_event': typeof AuthedEventRouteWithChildren
+  '/_authed/onboarding': typeof AuthedOnboardingRoute
+  '/dev/gallery': typeof DevGalleryRoute
+  '/_authed/_event/scouting': typeof AuthedEventScoutingRouteRouteWithChildren
+  '/_authed/_event/_tabs': typeof AuthedEventTabsRouteWithChildren
+  '/_authed/_event/scouting/mine': typeof AuthedEventScoutingMineRoute
+  '/_authed/_event/_tabs/': typeof AuthedEventTabsIndexRoute
+  '/_authed/_event/_tabs/settings/admin': typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
+  '/_authed/_event/_tabs/matches/$matchKey': typeof AuthedEventTabsMatchesMatchKeyRoute
+  '/_authed/_event/_tabs/matches/videos': typeof AuthedEventTabsMatchesVideosRoute
+  '/_authed/_event/_tabs/messages/$channelId': typeof AuthedEventTabsMessagesChannelIdRoute
+  '/_authed/_event/_tabs/messages/announcements': typeof AuthedEventTabsMessagesAnnouncementsRoute
+  '/_authed/_event/_tabs/scout/alliance-selection': typeof AuthedEventTabsScoutAllianceSelectionRoute
+  '/_authed/_event/_tabs/scout/announcements': typeof AuthedEventTabsScoutAnnouncementsRoute
+  '/_authed/_event/_tabs/scout/needs-scouting': typeof AuthedEventTabsScoutNeedsScoutingRoute
+  '/_authed/_event/_tabs/settings/about': typeof AuthedEventTabsSettingsAboutRoute
+  '/_authed/_event/_tabs/settings/account': typeof AuthedEventTabsSettingsAccountRoute
+  '/_authed/_event/_tabs/settings/appearance': typeof AuthedEventTabsSettingsAppearanceRoute
+  '/_authed/_event/_tabs/settings/conflicts': typeof AuthedEventTabsSettingsConflictsRoute
+  '/_authed/_event/_tabs/settings/event': typeof AuthedEventTabsSettingsEventRoute
+  '/_authed/_event/_tabs/settings/feedback': typeof AuthedEventTabsSettingsFeedbackRoute
+  '/_authed/_event/_tabs/settings/help': typeof AuthedEventTabsSettingsHelpRoute
+  '/_authed/_event/_tabs/settings/home-layout': typeof AuthedEventTabsSettingsHomeLayoutRoute
+  '/_authed/_event/_tabs/settings/notifications': typeof AuthedEventTabsSettingsNotificationsRoute
+  '/_authed/_event/_tabs/settings/recently-deleted': typeof AuthedEventTabsSettingsRecentlyDeletedRoute
+  '/_authed/_event/_tabs/settings/scouting': typeof AuthedEventTabsSettingsScoutingRoute
+  '/_authed/_event/_tabs/settings/storage': typeof AuthedEventTabsSettingsStorageRoute
+  '/_authed/_event/_tabs/teams/$teamNumber': typeof AuthedEventTabsTeamsTeamNumberRoute
+  '/_authed/_event/scouting/pit/$teamNumber': typeof AuthedEventScoutingPitTeamNumberRoute
+  '/_authed/_event/scouting/post/$teamNumber': typeof AuthedEventScoutingPostTeamNumberRoute
+  '/_authed/_event/_tabs/matches/': typeof AuthedEventTabsMatchesIndexRoute
+  '/_authed/_event/_tabs/messages/': typeof AuthedEventTabsMessagesIndexRoute
+  '/_authed/_event/_tabs/scout/': typeof AuthedEventTabsScoutIndexRoute
+  '/_authed/_event/_tabs/settings/': typeof AuthedEventTabsSettingsIndexRoute
+  '/_authed/_event/_tabs/teams/': typeof AuthedEventTabsTeamsIndexRoute
+  '/_authed/_event/_tabs/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
+  '/_authed/_event/_tabs/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
+  '/_authed/_event/_tabs/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/_authed/_event/_tabs/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
+  '/_authed/_event/_tabs/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
+  '/_authed/_event/_tabs/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
+  '/_authed/_event/_tabs/settings/admin/data-quality': typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  '/_authed/_event/_tabs/settings/admin/demo': typeof AuthedEventTabsSettingsAdminDemoRoute
+  '/_authed/_event/_tabs/settings/admin/event': typeof AuthedEventTabsSettingsAdminEventRoute
+  '/_authed/_event/_tabs/settings/admin/export': typeof AuthedEventTabsSettingsAdminExportRoute
+  '/_authed/_event/_tabs/settings/admin/guest-access': typeof AuthedEventTabsSettingsAdminGuestAccessRoute
+  '/_authed/_event/_tabs/settings/admin/moderation': typeof AuthedEventTabsSettingsAdminModerationRoute
+  '/_authed/_event/_tabs/settings/admin/push': typeof AuthedEventTabsSettingsAdminPushRoute
+  '/_authed/_event/_tabs/settings/admin/sync-health': typeof AuthedEventTabsSettingsAdminSyncHealthRoute
+  '/_authed/_event/_tabs/settings/admin/team': typeof AuthedEventTabsSettingsAdminTeamRoute
+  '/_authed/_event/scouting/match/$matchKey/$teamNumber': typeof AuthedEventScoutingMatchMatchKeyTeamNumberRoute
+  '/_authed/_event/_tabs/scout/messages/': typeof AuthedEventTabsScoutMessagesIndexRoute
+  '/_authed/_event/_tabs/scout/picklists/': typeof AuthedEventTabsScoutPicklistsIndexRoute
+  '/_authed/_event/_tabs/scout/strategy/': typeof AuthedEventTabsScoutStrategyIndexRoute
+  '/_authed/_event/_tabs/settings/admin/': typeof AuthedEventTabsSettingsAdminIndexRoute
+  '/_authed/_event/_tabs/settings/admin/users/$userId': typeof AuthedEventTabsSettingsAdminUsersUserIdRoute
+  '/_authed/_event/_tabs/settings/admin/users/': typeof AuthedEventTabsSettingsAdminUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/"
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/dev/gallery'
+    | '/scouting'
+    | '/scouting/mine'
+    | '/settings/admin'
+    | '/matches/$matchKey'
+    | '/matches/videos'
+    | '/messages/$channelId'
+    | '/messages/announcements'
+    | '/scout/alliance-selection'
+    | '/scout/announcements'
+    | '/scout/needs-scouting'
+    | '/settings/about'
+    | '/settings/account'
+    | '/settings/appearance'
+    | '/settings/conflicts'
+    | '/settings/event'
+    | '/settings/feedback'
+    | '/settings/help'
+    | '/settings/home-layout'
+    | '/settings/notifications'
+    | '/settings/recently-deleted'
+    | '/settings/scouting'
+    | '/settings/storage'
+    | '/teams/$teamNumber'
+    | '/scouting/pit/$teamNumber'
+    | '/scouting/post/$teamNumber'
+    | '/matches/'
+    | '/messages/'
+    | '/scout/'
+    | '/settings/'
+    | '/teams/'
+    | '/scout/messages/$channelId'
+    | '/scout/picklists/$picklistId'
+    | '/scout/picklists/combined'
+    | '/scout/strategy/$matchKey'
+    | '/settings/admin/alliance-board'
+    | '/settings/admin/announcements'
+    | '/settings/admin/data-quality'
+    | '/settings/admin/demo'
+    | '/settings/admin/event'
+    | '/settings/admin/export'
+    | '/settings/admin/guest-access'
+    | '/settings/admin/moderation'
+    | '/settings/admin/push'
+    | '/settings/admin/sync-health'
+    | '/settings/admin/team'
+    | '/scouting/match/$matchKey/$teamNumber'
+    | '/scout/messages/'
+    | '/scout/picklists/'
+    | '/scout/strategy/'
+    | '/settings/admin/'
+    | '/settings/admin/users/$userId'
+    | '/settings/admin/users/'
   fileRoutesByTo: FileRoutesByTo
-  to: "/"
-  id: "__root__" | "/"
+  to:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/dev/gallery'
+    | '/scouting'
+    | '/scouting/mine'
+    | '/matches/$matchKey'
+    | '/matches/videos'
+    | '/messages/$channelId'
+    | '/messages/announcements'
+    | '/scout/alliance-selection'
+    | '/scout/announcements'
+    | '/scout/needs-scouting'
+    | '/settings/about'
+    | '/settings/account'
+    | '/settings/appearance'
+    | '/settings/conflicts'
+    | '/settings/event'
+    | '/settings/feedback'
+    | '/settings/help'
+    | '/settings/home-layout'
+    | '/settings/notifications'
+    | '/settings/recently-deleted'
+    | '/settings/scouting'
+    | '/settings/storage'
+    | '/teams/$teamNumber'
+    | '/scouting/pit/$teamNumber'
+    | '/scouting/post/$teamNumber'
+    | '/matches'
+    | '/messages'
+    | '/scout'
+    | '/settings'
+    | '/teams'
+    | '/scout/messages/$channelId'
+    | '/scout/picklists/$picklistId'
+    | '/scout/picklists/combined'
+    | '/scout/strategy/$matchKey'
+    | '/settings/admin/alliance-board'
+    | '/settings/admin/announcements'
+    | '/settings/admin/data-quality'
+    | '/settings/admin/demo'
+    | '/settings/admin/event'
+    | '/settings/admin/export'
+    | '/settings/admin/guest-access'
+    | '/settings/admin/moderation'
+    | '/settings/admin/push'
+    | '/settings/admin/sync-health'
+    | '/settings/admin/team'
+    | '/scouting/match/$matchKey/$teamNumber'
+    | '/scout/messages'
+    | '/scout/picklists'
+    | '/scout/strategy'
+    | '/settings/admin'
+    | '/settings/admin/users/$userId'
+    | '/settings/admin/users'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/login'
+    | '/_authed/_event'
+    | '/_authed/onboarding'
+    | '/dev/gallery'
+    | '/_authed/_event/scouting'
+    | '/_authed/_event/_tabs'
+    | '/_authed/_event/scouting/mine'
+    | '/_authed/_event/_tabs/'
+    | '/_authed/_event/_tabs/settings/admin'
+    | '/_authed/_event/_tabs/matches/$matchKey'
+    | '/_authed/_event/_tabs/matches/videos'
+    | '/_authed/_event/_tabs/messages/$channelId'
+    | '/_authed/_event/_tabs/messages/announcements'
+    | '/_authed/_event/_tabs/scout/alliance-selection'
+    | '/_authed/_event/_tabs/scout/announcements'
+    | '/_authed/_event/_tabs/scout/needs-scouting'
+    | '/_authed/_event/_tabs/settings/about'
+    | '/_authed/_event/_tabs/settings/account'
+    | '/_authed/_event/_tabs/settings/appearance'
+    | '/_authed/_event/_tabs/settings/conflicts'
+    | '/_authed/_event/_tabs/settings/event'
+    | '/_authed/_event/_tabs/settings/feedback'
+    | '/_authed/_event/_tabs/settings/help'
+    | '/_authed/_event/_tabs/settings/home-layout'
+    | '/_authed/_event/_tabs/settings/notifications'
+    | '/_authed/_event/_tabs/settings/recently-deleted'
+    | '/_authed/_event/_tabs/settings/scouting'
+    | '/_authed/_event/_tabs/settings/storage'
+    | '/_authed/_event/_tabs/teams/$teamNumber'
+    | '/_authed/_event/scouting/pit/$teamNumber'
+    | '/_authed/_event/scouting/post/$teamNumber'
+    | '/_authed/_event/_tabs/matches/'
+    | '/_authed/_event/_tabs/messages/'
+    | '/_authed/_event/_tabs/scout/'
+    | '/_authed/_event/_tabs/settings/'
+    | '/_authed/_event/_tabs/teams/'
+    | '/_authed/_event/_tabs/scout/messages/$channelId'
+    | '/_authed/_event/_tabs/scout/picklists/$picklistId'
+    | '/_authed/_event/_tabs/scout/picklists/combined'
+    | '/_authed/_event/_tabs/scout/strategy/$matchKey'
+    | '/_authed/_event/_tabs/settings/admin/alliance-board'
+    | '/_authed/_event/_tabs/settings/admin/announcements'
+    | '/_authed/_event/_tabs/settings/admin/data-quality'
+    | '/_authed/_event/_tabs/settings/admin/demo'
+    | '/_authed/_event/_tabs/settings/admin/event'
+    | '/_authed/_event/_tabs/settings/admin/export'
+    | '/_authed/_event/_tabs/settings/admin/guest-access'
+    | '/_authed/_event/_tabs/settings/admin/moderation'
+    | '/_authed/_event/_tabs/settings/admin/push'
+    | '/_authed/_event/_tabs/settings/admin/sync-health'
+    | '/_authed/_event/_tabs/settings/admin/team'
+    | '/_authed/_event/scouting/match/$matchKey/$teamNumber'
+    | '/_authed/_event/_tabs/scout/messages/'
+    | '/_authed/_event/_tabs/scout/picklists/'
+    | '/_authed/_event/_tabs/scout/strategy/'
+    | '/_authed/_event/_tabs/settings/admin/'
+    | '/_authed/_event/_tabs/settings/admin/users/$userId'
+    | '/_authed/_event/_tabs/settings/admin/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  DevGalleryRoute: typeof DevGalleryRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/"
-      path: "/"
-      fullPath: "/"
-      preLoaderRoute: typeof IndexRouteImport
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/_event': {
+      id: '/_authed/_event'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedEventRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/onboarding': {
+      id: '/_authed/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthedOnboardingRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/dev/gallery': {
+      id: '/dev/gallery'
+      path: '/dev/gallery'
+      fullPath: '/dev/gallery'
+      preLoaderRoute: typeof DevGalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/_event/_tabs': {
+      id: '/_authed/_event/_tabs'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedEventTabsRouteImport
+      parentRoute: typeof AuthedEventRoute
+    }
+    '/_authed/_event/scouting': {
+      id: '/_authed/_event/scouting'
+      path: '/scouting'
+      fullPath: '/scouting'
+      preLoaderRoute: typeof AuthedEventScoutingRouteRouteImport
+      parentRoute: typeof AuthedEventRoute
+    }
+    '/_authed/_event/_tabs/': {
+      id: '/_authed/_event/_tabs/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedEventTabsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/scouting/mine': {
+      id: '/_authed/_event/scouting/mine'
+      path: '/mine'
+      fullPath: '/scouting/mine'
+      preLoaderRoute: typeof AuthedEventScoutingMineRouteImport
+      parentRoute: typeof AuthedEventScoutingRouteRoute
+    }
+    '/_authed/_event/_tabs/matches/': {
+      id: '/_authed/_event/_tabs/matches/'
+      path: '/matches'
+      fullPath: '/matches/'
+      preLoaderRoute: typeof AuthedEventTabsMatchesIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/matches/$matchKey': {
+      id: '/_authed/_event/_tabs/matches/$matchKey'
+      path: '/matches/$matchKey'
+      fullPath: '/matches/$matchKey'
+      preLoaderRoute: typeof AuthedEventTabsMatchesMatchKeyRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/matches/videos': {
+      id: '/_authed/_event/_tabs/matches/videos'
+      path: '/matches/videos'
+      fullPath: '/matches/videos'
+      preLoaderRoute: typeof AuthedEventTabsMatchesVideosRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/messages/': {
+      id: '/_authed/_event/_tabs/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthedEventTabsMessagesIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/messages/$channelId': {
+      id: '/_authed/_event/_tabs/messages/$channelId'
+      path: '/messages/$channelId'
+      fullPath: '/messages/$channelId'
+      preLoaderRoute: typeof AuthedEventTabsMessagesChannelIdRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/messages/announcements': {
+      id: '/_authed/_event/_tabs/messages/announcements'
+      path: '/messages/announcements'
+      fullPath: '/messages/announcements'
+      preLoaderRoute: typeof AuthedEventTabsMessagesAnnouncementsRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/': {
+      id: '/_authed/_event/_tabs/scout/'
+      path: '/scout'
+      fullPath: '/scout/'
+      preLoaderRoute: typeof AuthedEventTabsScoutIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/alliance-selection': {
+      id: '/_authed/_event/_tabs/scout/alliance-selection'
+      path: '/scout/alliance-selection'
+      fullPath: '/scout/alliance-selection'
+      preLoaderRoute: typeof AuthedEventTabsScoutAllianceSelectionRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/announcements': {
+      id: '/_authed/_event/_tabs/scout/announcements'
+      path: '/scout/announcements'
+      fullPath: '/scout/announcements'
+      preLoaderRoute: typeof AuthedEventTabsScoutAnnouncementsRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/needs-scouting': {
+      id: '/_authed/_event/_tabs/scout/needs-scouting'
+      path: '/scout/needs-scouting'
+      fullPath: '/scout/needs-scouting'
+      preLoaderRoute: typeof AuthedEventTabsScoutNeedsScoutingRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/': {
+      id: '/_authed/_event/_tabs/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthedEventTabsSettingsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/about': {
+      id: '/_authed/_event/_tabs/settings/about'
+      path: '/settings/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAboutRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/account': {
+      id: '/_authed/_event/_tabs/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAccountRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/admin': {
+      id: '/_authed/_event/_tabs/settings/admin'
+      path: '/settings/admin'
+      fullPath: '/settings/admin'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminRouteRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/appearance': {
+      id: '/_authed/_event/_tabs/settings/appearance'
+      path: '/settings/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAppearanceRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/conflicts': {
+      id: '/_authed/_event/_tabs/settings/conflicts'
+      path: '/settings/conflicts'
+      fullPath: '/settings/conflicts'
+      preLoaderRoute: typeof AuthedEventTabsSettingsConflictsRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/event': {
+      id: '/_authed/_event/_tabs/settings/event'
+      path: '/settings/event'
+      fullPath: '/settings/event'
+      preLoaderRoute: typeof AuthedEventTabsSettingsEventRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/feedback': {
+      id: '/_authed/_event/_tabs/settings/feedback'
+      path: '/settings/feedback'
+      fullPath: '/settings/feedback'
+      preLoaderRoute: typeof AuthedEventTabsSettingsFeedbackRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/help': {
+      id: '/_authed/_event/_tabs/settings/help'
+      path: '/settings/help'
+      fullPath: '/settings/help'
+      preLoaderRoute: typeof AuthedEventTabsSettingsHelpRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/home-layout': {
+      id: '/_authed/_event/_tabs/settings/home-layout'
+      path: '/settings/home-layout'
+      fullPath: '/settings/home-layout'
+      preLoaderRoute: typeof AuthedEventTabsSettingsHomeLayoutRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/notifications': {
+      id: '/_authed/_event/_tabs/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthedEventTabsSettingsNotificationsRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/recently-deleted': {
+      id: '/_authed/_event/_tabs/settings/recently-deleted'
+      path: '/settings/recently-deleted'
+      fullPath: '/settings/recently-deleted'
+      preLoaderRoute: typeof AuthedEventTabsSettingsRecentlyDeletedRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/scouting': {
+      id: '/_authed/_event/_tabs/settings/scouting'
+      path: '/settings/scouting'
+      fullPath: '/settings/scouting'
+      preLoaderRoute: typeof AuthedEventTabsSettingsScoutingRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/storage': {
+      id: '/_authed/_event/_tabs/settings/storage'
+      path: '/settings/storage'
+      fullPath: '/settings/storage'
+      preLoaderRoute: typeof AuthedEventTabsSettingsStorageRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/teams/': {
+      id: '/_authed/_event/_tabs/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof AuthedEventTabsTeamsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/teams/$teamNumber': {
+      id: '/_authed/_event/_tabs/teams/$teamNumber'
+      path: '/teams/$teamNumber'
+      fullPath: '/teams/$teamNumber'
+      preLoaderRoute: typeof AuthedEventTabsTeamsTeamNumberRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/scouting/pit/$teamNumber': {
+      id: '/_authed/_event/scouting/pit/$teamNumber'
+      path: '/pit/$teamNumber'
+      fullPath: '/scouting/pit/$teamNumber'
+      preLoaderRoute: typeof AuthedEventScoutingPitTeamNumberRouteImport
+      parentRoute: typeof AuthedEventScoutingRouteRoute
+    }
+    '/_authed/_event/scouting/post/$teamNumber': {
+      id: '/_authed/_event/scouting/post/$teamNumber'
+      path: '/post/$teamNumber'
+      fullPath: '/scouting/post/$teamNumber'
+      preLoaderRoute: typeof AuthedEventScoutingPostTeamNumberRouteImport
+      parentRoute: typeof AuthedEventScoutingRouteRoute
+    }
+    '/_authed/_event/_tabs/scout/messages/': {
+      id: '/_authed/_event/_tabs/scout/messages/'
+      path: '/scout/messages'
+      fullPath: '/scout/messages/'
+      preLoaderRoute: typeof AuthedEventTabsScoutMessagesIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/messages/$channelId': {
+      id: '/_authed/_event/_tabs/scout/messages/$channelId'
+      path: '/scout/messages/$channelId'
+      fullPath: '/scout/messages/$channelId'
+      preLoaderRoute: typeof AuthedEventTabsScoutMessagesChannelIdRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/picklists/': {
+      id: '/_authed/_event/_tabs/scout/picklists/'
+      path: '/scout/picklists'
+      fullPath: '/scout/picklists/'
+      preLoaderRoute: typeof AuthedEventTabsScoutPicklistsIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/picklists/$picklistId': {
+      id: '/_authed/_event/_tabs/scout/picklists/$picklistId'
+      path: '/scout/picklists/$picklistId'
+      fullPath: '/scout/picklists/$picklistId'
+      preLoaderRoute: typeof AuthedEventTabsScoutPicklistsPicklistIdRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/picklists/combined': {
+      id: '/_authed/_event/_tabs/scout/picklists/combined'
+      path: '/scout/picklists/combined'
+      fullPath: '/scout/picklists/combined'
+      preLoaderRoute: typeof AuthedEventTabsScoutPicklistsCombinedRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/strategy/': {
+      id: '/_authed/_event/_tabs/scout/strategy/'
+      path: '/scout/strategy'
+      fullPath: '/scout/strategy/'
+      preLoaderRoute: typeof AuthedEventTabsScoutStrategyIndexRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/scout/strategy/$matchKey': {
+      id: '/_authed/_event/_tabs/scout/strategy/$matchKey'
+      path: '/scout/strategy/$matchKey'
+      fullPath: '/scout/strategy/$matchKey'
+      preLoaderRoute: typeof AuthedEventTabsScoutStrategyMatchKeyRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/': {
+      id: '/_authed/_event/_tabs/settings/admin/'
+      path: '/'
+      fullPath: '/settings/admin/'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminIndexRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/alliance-board': {
+      id: '/_authed/_event/_tabs/settings/admin/alliance-board'
+      path: '/alliance-board'
+      fullPath: '/settings/admin/alliance-board'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminAllianceBoardRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/announcements': {
+      id: '/_authed/_event/_tabs/settings/admin/announcements'
+      path: '/announcements'
+      fullPath: '/settings/admin/announcements'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminAnnouncementsRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/data-quality': {
+      id: '/_authed/_event/_tabs/settings/admin/data-quality'
+      path: '/data-quality'
+      fullPath: '/settings/admin/data-quality'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminDataQualityRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/demo': {
+      id: '/_authed/_event/_tabs/settings/admin/demo'
+      path: '/demo'
+      fullPath: '/settings/admin/demo'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminDemoRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/event': {
+      id: '/_authed/_event/_tabs/settings/admin/event'
+      path: '/event'
+      fullPath: '/settings/admin/event'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminEventRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/export': {
+      id: '/_authed/_event/_tabs/settings/admin/export'
+      path: '/export'
+      fullPath: '/settings/admin/export'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminExportRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/guest-access': {
+      id: '/_authed/_event/_tabs/settings/admin/guest-access'
+      path: '/guest-access'
+      fullPath: '/settings/admin/guest-access'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminGuestAccessRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/moderation': {
+      id: '/_authed/_event/_tabs/settings/admin/moderation'
+      path: '/moderation'
+      fullPath: '/settings/admin/moderation'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminModerationRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/push': {
+      id: '/_authed/_event/_tabs/settings/admin/push'
+      path: '/push'
+      fullPath: '/settings/admin/push'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminPushRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/sync-health': {
+      id: '/_authed/_event/_tabs/settings/admin/sync-health'
+      path: '/sync-health'
+      fullPath: '/settings/admin/sync-health'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminSyncHealthRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/team': {
+      id: '/_authed/_event/_tabs/settings/admin/team'
+      path: '/team'
+      fullPath: '/settings/admin/team'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminTeamRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/scouting/match/$matchKey/$teamNumber': {
+      id: '/_authed/_event/scouting/match/$matchKey/$teamNumber'
+      path: '/match/$matchKey/$teamNumber'
+      fullPath: '/scouting/match/$matchKey/$teamNumber'
+      preLoaderRoute: typeof AuthedEventScoutingMatchMatchKeyTeamNumberRouteImport
+      parentRoute: typeof AuthedEventScoutingRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/users/': {
+      id: '/_authed/_event/_tabs/settings/admin/users/'
+      path: '/users'
+      fullPath: '/settings/admin/users/'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminUsersIndexRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
+    }
+    '/_authed/_event/_tabs/settings/admin/users/$userId': {
+      id: '/_authed/_event/_tabs/settings/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/settings/admin/users/$userId'
+      preLoaderRoute: typeof AuthedEventTabsSettingsAdminUsersUserIdRouteImport
+      parentRoute: typeof AuthedEventTabsSettingsAdminRouteRoute
     }
   }
 }
 
+interface AuthedEventScoutingRouteRouteChildren {
+  AuthedEventScoutingMineRoute: typeof AuthedEventScoutingMineRoute
+  AuthedEventScoutingPitTeamNumberRoute: typeof AuthedEventScoutingPitTeamNumberRoute
+  AuthedEventScoutingPostTeamNumberRoute: typeof AuthedEventScoutingPostTeamNumberRoute
+  AuthedEventScoutingMatchMatchKeyTeamNumberRoute: typeof AuthedEventScoutingMatchMatchKeyTeamNumberRoute
+}
+
+const AuthedEventScoutingRouteRouteChildren: AuthedEventScoutingRouteRouteChildren =
+  {
+    AuthedEventScoutingMineRoute: AuthedEventScoutingMineRoute,
+    AuthedEventScoutingPitTeamNumberRoute:
+      AuthedEventScoutingPitTeamNumberRoute,
+    AuthedEventScoutingPostTeamNumberRoute:
+      AuthedEventScoutingPostTeamNumberRoute,
+    AuthedEventScoutingMatchMatchKeyTeamNumberRoute:
+      AuthedEventScoutingMatchMatchKeyTeamNumberRoute,
+  }
+
+const AuthedEventScoutingRouteRouteWithChildren =
+  AuthedEventScoutingRouteRoute._addFileChildren(
+    AuthedEventScoutingRouteRouteChildren,
+  )
+
+interface AuthedEventTabsSettingsAdminRouteRouteChildren {
+  AuthedEventTabsSettingsAdminAllianceBoardRoute: typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
+  AuthedEventTabsSettingsAdminAnnouncementsRoute: typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
+  AuthedEventTabsSettingsAdminDataQualityRoute: typeof AuthedEventTabsSettingsAdminDataQualityRoute
+  AuthedEventTabsSettingsAdminDemoRoute: typeof AuthedEventTabsSettingsAdminDemoRoute
+  AuthedEventTabsSettingsAdminEventRoute: typeof AuthedEventTabsSettingsAdminEventRoute
+  AuthedEventTabsSettingsAdminExportRoute: typeof AuthedEventTabsSettingsAdminExportRoute
+  AuthedEventTabsSettingsAdminGuestAccessRoute: typeof AuthedEventTabsSettingsAdminGuestAccessRoute
+  AuthedEventTabsSettingsAdminModerationRoute: typeof AuthedEventTabsSettingsAdminModerationRoute
+  AuthedEventTabsSettingsAdminPushRoute: typeof AuthedEventTabsSettingsAdminPushRoute
+  AuthedEventTabsSettingsAdminSyncHealthRoute: typeof AuthedEventTabsSettingsAdminSyncHealthRoute
+  AuthedEventTabsSettingsAdminTeamRoute: typeof AuthedEventTabsSettingsAdminTeamRoute
+  AuthedEventTabsSettingsAdminIndexRoute: typeof AuthedEventTabsSettingsAdminIndexRoute
+  AuthedEventTabsSettingsAdminUsersUserIdRoute: typeof AuthedEventTabsSettingsAdminUsersUserIdRoute
+  AuthedEventTabsSettingsAdminUsersIndexRoute: typeof AuthedEventTabsSettingsAdminUsersIndexRoute
+}
+
+const AuthedEventTabsSettingsAdminRouteRouteChildren: AuthedEventTabsSettingsAdminRouteRouteChildren =
+  {
+    AuthedEventTabsSettingsAdminAllianceBoardRoute:
+      AuthedEventTabsSettingsAdminAllianceBoardRoute,
+    AuthedEventTabsSettingsAdminAnnouncementsRoute:
+      AuthedEventTabsSettingsAdminAnnouncementsRoute,
+    AuthedEventTabsSettingsAdminDataQualityRoute:
+      AuthedEventTabsSettingsAdminDataQualityRoute,
+    AuthedEventTabsSettingsAdminDemoRoute:
+      AuthedEventTabsSettingsAdminDemoRoute,
+    AuthedEventTabsSettingsAdminEventRoute:
+      AuthedEventTabsSettingsAdminEventRoute,
+    AuthedEventTabsSettingsAdminExportRoute:
+      AuthedEventTabsSettingsAdminExportRoute,
+    AuthedEventTabsSettingsAdminGuestAccessRoute:
+      AuthedEventTabsSettingsAdminGuestAccessRoute,
+    AuthedEventTabsSettingsAdminModerationRoute:
+      AuthedEventTabsSettingsAdminModerationRoute,
+    AuthedEventTabsSettingsAdminPushRoute:
+      AuthedEventTabsSettingsAdminPushRoute,
+    AuthedEventTabsSettingsAdminSyncHealthRoute:
+      AuthedEventTabsSettingsAdminSyncHealthRoute,
+    AuthedEventTabsSettingsAdminTeamRoute:
+      AuthedEventTabsSettingsAdminTeamRoute,
+    AuthedEventTabsSettingsAdminIndexRoute:
+      AuthedEventTabsSettingsAdminIndexRoute,
+    AuthedEventTabsSettingsAdminUsersUserIdRoute:
+      AuthedEventTabsSettingsAdminUsersUserIdRoute,
+    AuthedEventTabsSettingsAdminUsersIndexRoute:
+      AuthedEventTabsSettingsAdminUsersIndexRoute,
+  }
+
+const AuthedEventTabsSettingsAdminRouteRouteWithChildren =
+  AuthedEventTabsSettingsAdminRouteRoute._addFileChildren(
+    AuthedEventTabsSettingsAdminRouteRouteChildren,
+  )
+
+interface AuthedEventTabsRouteChildren {
+  AuthedEventTabsIndexRoute: typeof AuthedEventTabsIndexRoute
+  AuthedEventTabsSettingsAdminRouteRoute: typeof AuthedEventTabsSettingsAdminRouteRouteWithChildren
+  AuthedEventTabsMatchesMatchKeyRoute: typeof AuthedEventTabsMatchesMatchKeyRoute
+  AuthedEventTabsMatchesVideosRoute: typeof AuthedEventTabsMatchesVideosRoute
+  AuthedEventTabsMessagesChannelIdRoute: typeof AuthedEventTabsMessagesChannelIdRoute
+  AuthedEventTabsMessagesAnnouncementsRoute: typeof AuthedEventTabsMessagesAnnouncementsRoute
+  AuthedEventTabsScoutAllianceSelectionRoute: typeof AuthedEventTabsScoutAllianceSelectionRoute
+  AuthedEventTabsScoutAnnouncementsRoute: typeof AuthedEventTabsScoutAnnouncementsRoute
+  AuthedEventTabsScoutNeedsScoutingRoute: typeof AuthedEventTabsScoutNeedsScoutingRoute
+  AuthedEventTabsSettingsAboutRoute: typeof AuthedEventTabsSettingsAboutRoute
+  AuthedEventTabsSettingsAccountRoute: typeof AuthedEventTabsSettingsAccountRoute
+  AuthedEventTabsSettingsAppearanceRoute: typeof AuthedEventTabsSettingsAppearanceRoute
+  AuthedEventTabsSettingsConflictsRoute: typeof AuthedEventTabsSettingsConflictsRoute
+  AuthedEventTabsSettingsEventRoute: typeof AuthedEventTabsSettingsEventRoute
+  AuthedEventTabsSettingsFeedbackRoute: typeof AuthedEventTabsSettingsFeedbackRoute
+  AuthedEventTabsSettingsHelpRoute: typeof AuthedEventTabsSettingsHelpRoute
+  AuthedEventTabsSettingsHomeLayoutRoute: typeof AuthedEventTabsSettingsHomeLayoutRoute
+  AuthedEventTabsSettingsNotificationsRoute: typeof AuthedEventTabsSettingsNotificationsRoute
+  AuthedEventTabsSettingsRecentlyDeletedRoute: typeof AuthedEventTabsSettingsRecentlyDeletedRoute
+  AuthedEventTabsSettingsScoutingRoute: typeof AuthedEventTabsSettingsScoutingRoute
+  AuthedEventTabsSettingsStorageRoute: typeof AuthedEventTabsSettingsStorageRoute
+  AuthedEventTabsTeamsTeamNumberRoute: typeof AuthedEventTabsTeamsTeamNumberRoute
+  AuthedEventTabsMatchesIndexRoute: typeof AuthedEventTabsMatchesIndexRoute
+  AuthedEventTabsMessagesIndexRoute: typeof AuthedEventTabsMessagesIndexRoute
+  AuthedEventTabsScoutIndexRoute: typeof AuthedEventTabsScoutIndexRoute
+  AuthedEventTabsSettingsIndexRoute: typeof AuthedEventTabsSettingsIndexRoute
+  AuthedEventTabsTeamsIndexRoute: typeof AuthedEventTabsTeamsIndexRoute
+  AuthedEventTabsScoutMessagesChannelIdRoute: typeof AuthedEventTabsScoutMessagesChannelIdRoute
+  AuthedEventTabsScoutPicklistsPicklistIdRoute: typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
+  AuthedEventTabsScoutPicklistsCombinedRoute: typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  AuthedEventTabsScoutStrategyMatchKeyRoute: typeof AuthedEventTabsScoutStrategyMatchKeyRoute
+  AuthedEventTabsScoutMessagesIndexRoute: typeof AuthedEventTabsScoutMessagesIndexRoute
+  AuthedEventTabsScoutPicklistsIndexRoute: typeof AuthedEventTabsScoutPicklistsIndexRoute
+  AuthedEventTabsScoutStrategyIndexRoute: typeof AuthedEventTabsScoutStrategyIndexRoute
+}
+
+const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
+  AuthedEventTabsIndexRoute: AuthedEventTabsIndexRoute,
+  AuthedEventTabsSettingsAdminRouteRoute:
+    AuthedEventTabsSettingsAdminRouteRouteWithChildren,
+  AuthedEventTabsMatchesMatchKeyRoute: AuthedEventTabsMatchesMatchKeyRoute,
+  AuthedEventTabsMatchesVideosRoute: AuthedEventTabsMatchesVideosRoute,
+  AuthedEventTabsMessagesChannelIdRoute: AuthedEventTabsMessagesChannelIdRoute,
+  AuthedEventTabsMessagesAnnouncementsRoute:
+    AuthedEventTabsMessagesAnnouncementsRoute,
+  AuthedEventTabsScoutAllianceSelectionRoute:
+    AuthedEventTabsScoutAllianceSelectionRoute,
+  AuthedEventTabsScoutAnnouncementsRoute:
+    AuthedEventTabsScoutAnnouncementsRoute,
+  AuthedEventTabsScoutNeedsScoutingRoute:
+    AuthedEventTabsScoutNeedsScoutingRoute,
+  AuthedEventTabsSettingsAboutRoute: AuthedEventTabsSettingsAboutRoute,
+  AuthedEventTabsSettingsAccountRoute: AuthedEventTabsSettingsAccountRoute,
+  AuthedEventTabsSettingsAppearanceRoute:
+    AuthedEventTabsSettingsAppearanceRoute,
+  AuthedEventTabsSettingsConflictsRoute: AuthedEventTabsSettingsConflictsRoute,
+  AuthedEventTabsSettingsEventRoute: AuthedEventTabsSettingsEventRoute,
+  AuthedEventTabsSettingsFeedbackRoute: AuthedEventTabsSettingsFeedbackRoute,
+  AuthedEventTabsSettingsHelpRoute: AuthedEventTabsSettingsHelpRoute,
+  AuthedEventTabsSettingsHomeLayoutRoute:
+    AuthedEventTabsSettingsHomeLayoutRoute,
+  AuthedEventTabsSettingsNotificationsRoute:
+    AuthedEventTabsSettingsNotificationsRoute,
+  AuthedEventTabsSettingsRecentlyDeletedRoute:
+    AuthedEventTabsSettingsRecentlyDeletedRoute,
+  AuthedEventTabsSettingsScoutingRoute: AuthedEventTabsSettingsScoutingRoute,
+  AuthedEventTabsSettingsStorageRoute: AuthedEventTabsSettingsStorageRoute,
+  AuthedEventTabsTeamsTeamNumberRoute: AuthedEventTabsTeamsTeamNumberRoute,
+  AuthedEventTabsMatchesIndexRoute: AuthedEventTabsMatchesIndexRoute,
+  AuthedEventTabsMessagesIndexRoute: AuthedEventTabsMessagesIndexRoute,
+  AuthedEventTabsScoutIndexRoute: AuthedEventTabsScoutIndexRoute,
+  AuthedEventTabsSettingsIndexRoute: AuthedEventTabsSettingsIndexRoute,
+  AuthedEventTabsTeamsIndexRoute: AuthedEventTabsTeamsIndexRoute,
+  AuthedEventTabsScoutMessagesChannelIdRoute:
+    AuthedEventTabsScoutMessagesChannelIdRoute,
+  AuthedEventTabsScoutPicklistsPicklistIdRoute:
+    AuthedEventTabsScoutPicklistsPicklistIdRoute,
+  AuthedEventTabsScoutPicklistsCombinedRoute:
+    AuthedEventTabsScoutPicklistsCombinedRoute,
+  AuthedEventTabsScoutStrategyMatchKeyRoute:
+    AuthedEventTabsScoutStrategyMatchKeyRoute,
+  AuthedEventTabsScoutMessagesIndexRoute:
+    AuthedEventTabsScoutMessagesIndexRoute,
+  AuthedEventTabsScoutPicklistsIndexRoute:
+    AuthedEventTabsScoutPicklistsIndexRoute,
+  AuthedEventTabsScoutStrategyIndexRoute:
+    AuthedEventTabsScoutStrategyIndexRoute,
+}
+
+const AuthedEventTabsRouteWithChildren = AuthedEventTabsRoute._addFileChildren(
+  AuthedEventTabsRouteChildren,
+)
+
+interface AuthedEventRouteChildren {
+  AuthedEventScoutingRouteRoute: typeof AuthedEventScoutingRouteRouteWithChildren
+  AuthedEventTabsRoute: typeof AuthedEventTabsRouteWithChildren
+}
+
+const AuthedEventRouteChildren: AuthedEventRouteChildren = {
+  AuthedEventScoutingRouteRoute: AuthedEventScoutingRouteRouteWithChildren,
+  AuthedEventTabsRoute: AuthedEventTabsRouteWithChildren,
+}
+
+const AuthedEventRouteWithChildren = AuthedEventRoute._addFileChildren(
+  AuthedEventRouteChildren,
+)
+
+interface AuthedRouteChildren {
+  AuthedEventRoute: typeof AuthedEventRouteWithChildren
+  AuthedOnboardingRoute: typeof AuthedOnboardingRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedEventRoute: AuthedEventRouteWithChildren,
+  AuthedOnboardingRoute: AuthedOnboardingRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  DevGalleryRoute: DevGalleryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx"
-import type { createStart } from "@tanstack/react-start"
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>

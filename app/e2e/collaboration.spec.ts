@@ -1,0 +1,270 @@
+// Phase 5 gate (roadmap): e2e coverage of each strategy and collaboration flow, against the
+// stateful mock backend. Push needs real devices (see the gate report).
+import { expect, test } from "@playwright/test"
+import type { Browser, BrowserContext, Page } from "@playwright/test"
+import {
+  CREDENTIALS,
+  backend,
+  seedBackend,
+  seedBoard,
+  serverRecords,
+  useBackend,
+} from "./fixtures/backend"
+import { iso } from "./fixtures/mock-api"
+
+async function signIn(page: Page, to = "/scout") {
+  await page.goto(to)
+  const username = page.getByLabel("Username")
+  const event = page.getByRole("button", { name: /Silicon Valley Regional/ })
+  await expect(username.or(event)).toBeVisible()
+  if (await username.isVisible()) {
+    await username.fill(CREDENTIALS.username)
+    await page.getByLabel("Password").fill(CREDENTIALS.password)
+    await page.getByRole("button", { name: "Sign In" }).click()
+  }
+  await event.click()
+}
+
+async function syncNow(page: Page) {
+  await page.evaluate(() => window.dispatchEvent(new Event("online")))
+}
+
+async function twoDevices(browser: Browser) {
+  const contexts: Array<BrowserContext> = [
+    await browser.newContext(),
+    await browser.newContext(),
+  ]
+  const devices = await Promise.all(contexts.map((c) => useBackend(c)))
+  const pages = await Promise.all(contexts.map((c) => c.newPage()))
+  return { contexts, devices, pages }
+}
+
+test("picklists: create, add teams, reorder; another device reads it with the owner's name", async ({
+  browser,
+}) => {
+  test.setTimeout(90_000)
+  seedBackend()
+  const { contexts, pages } = await twoDevices(browser)
+  const [a, b] = pages
+  if (!a || !b) throw new Error("no pages")
+  await signIn(a, "/scout")
+  await a.getByRole("link", { name: "Picklists" }).click()
+  await a.getByRole("button", { name: "New Picklist" }).click()
+  await a.getByLabel("Name").fill("Alex 1st")
+  await a.getByRole("button", { name: "Create Picklist" }).click()
+  await expect(a.getByText("No teams yet")).toBeVisible()
+  await a.getByRole("button", { name: "Add Teams" }).click()
+  const sheet = a.getByRole("dialog", { name: "Add Teams" })
+  await sheet.getByRole("button", { name: /^254/ }).click()
+  await sheet.getByRole("button", { name: /^1678/ }).click()
+  await sheet.getByRole("button", { name: "Add 2 Teams" }).click()
+  const rows = a
+    .getByRole("list", { name: /Alex 1st, in order/ })
+    .getByRole("listitem")
+  await expect(rows).toHaveCount(2)
+  await a.getByRole("button", { name: "Move 1678 up" }).click()
+  await expect(rows.first()).toContainText("1678")
+  await expect.poll(() => serverRecords("picklistEntry").length).toBe(2)
+
+  await signIn(b, "/scout")
+  await syncNow(b)
+  await b.getByRole("link", { name: "Picklists" }).click()
+  const list = b.getByRole("list", { name: "Picklists" })
+  await expect(list).toContainText("Alex 1st")
+  await expect(list).toContainText("You")
+  for (const c of contexts) await c.close()
+})
+
+test("live alliance board: record a pick, another device sees it, offline can't record", async ({
+  browser,
+}) => {
+  test.setTimeout(90_000)
+  seedBackend()
+  seedBoard()
+  const { contexts, devices, pages } = await twoDevices(browser)
+  const [a, b] = pages
+  if (!a || !b) throw new Error("no pages")
+  await signIn(a, "/scout")
+  await a.getByRole("link", { name: "Alliance Selection" }).click()
+  await expect(a.getByText("Round 1 · Alliance 1 picking")).toBeVisible()
+  await a.getByRole("button", { name: "Record Pick", exact: true }).click()
+  const sheet = a.getByRole("dialog", { name: "Alliance 1" })
+  await sheet.getByRole("button", { name: /^3000/ }).click()
+  await sheet
+    .getByRole("button", { name: "Record 3000 for Alliance 1" })
+    .click()
+  await expect(a.getByRole("listitem", { name: "Alliance 1" })).toContainText(
+    "3000"
+  )
+  await expect(a.getByText("Round 1 · Alliance 2 picking")).toBeVisible()
+
+  await signIn(b, "/scout")
+  await syncNow(b)
+  await b.getByRole("link", { name: "Alliance Selection" }).click()
+  await expect(b.getByRole("listitem", { name: "Alliance 1" })).toContainText(
+    "3000"
+  )
+
+  await devices[1]?.setOffline(true)
+  await expect(
+    b.getByRole("button", { name: "Record Pick", exact: true })
+  ).toBeDisabled()
+  await expect(b.getByText("Connect to record picks")).toBeVisible()
+  for (const c of contexts) await c.close()
+})
+
+test("chat: a message sent on one device arrives on the other", async ({
+  browser,
+}) => {
+  test.setTimeout(90_000)
+  seedBackend()
+  const { contexts, pages } = await twoDevices(browser)
+  const [a, b] = pages
+  if (!a || !b) throw new Error("no pages")
+  await signIn(a, "/scout")
+  // Messages is the round center tab (FX-14)
+  await a
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: /^Messages/ })
+    .click()
+  await expect(
+    a.getByRole("heading", { level: 1, name: "Messages" })
+  ).toBeVisible()
+  // the notifications pre-prompt may open on the first visit (push-notifications.md §2.2)
+  const notNow = a.getByRole("button", { name: "Not Now" })
+  await notNow.waitFor({ timeout: 1500 }).then(
+    () => notNow.click(),
+    () => undefined
+  )
+  await a.getByRole("link", { name: /Everyone/ }).click()
+  await expect(a.getByLabel("Message", { exact: true })).toBeVisible()
+  await a
+    .getByLabel("Message", { exact: true })
+    .fill("Q14 queue moved to field 2")
+  await a.getByRole("button", { name: "Send" }).click()
+  await expect(a.getByRole("list", { name: "Messages" })).toContainText(
+    "Q14 queue moved"
+  )
+  await expect.poll(() => serverRecords("message").length).toBe(1)
+
+  await signIn(b, "/scout")
+  await syncNow(b)
+  await b
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: /^Messages/ })
+    .click()
+  await expect(b.getByRole("list", { name: "Conversations" })).toContainText(
+    "Q14 queue moved"
+  )
+  for (const c of contexts) await c.close()
+})
+
+test("strategy: a briefing lists opponents first, with the game's sections", async ({
+  page,
+  context,
+}) => {
+  seedBackend()
+  await useBackend(context)
+  await signIn(page, "/scout")
+  // the Needs Scouting card grows once it loads; let it settle before tapping below it
+  await expect(
+    page.getByRole("button", { name: /^Start Scouting/ })
+  ).toBeVisible()
+  await page.getByRole("link", { name: "Strategy" }).click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Strategy" })
+  ).toBeVisible()
+  await page.getByRole("main").getByRole("link").first().click()
+  await expect(page.getByRole("article").first()).toBeVisible()
+  expect(await page.getByRole("article").count()).toBe(6)
+})
+
+test("guests: Messages shows announcements only, and a chat says no access", async ({
+  page,
+  context,
+}) => {
+  seedBackend("guest")
+  await useBackend(context)
+  await page.goto("/login")
+  await page.getByRole("button", { name: "Continue as Guest" }).click()
+  await page.getByLabel(/code/i).fill("K7M2QX")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Home" })
+  ).toBeVisible()
+  await page
+    .getByRole("navigation", { name: "Tabs" })
+    .getByRole("link", { name: /^Messages/ })
+    .click()
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Messages" })
+  ).toBeVisible()
+  await expect(page.getByText(/Chat is for team members/)).toBeVisible()
+  await expect(page.getByRole("list", { name: "Conversations" })).toHaveCount(0)
+  // an old link to the chat moved with it, and still says no access
+  await page.evaluate(() => {
+    history.pushState({}, "", "/scout/messages/event:2026casj")
+    dispatchEvent(new PopStateEvent("popstate"))
+  })
+  await expect(page).toHaveURL(/\/messages\/event(:|%3A)2026casj$/)
+  await expect(
+    page.getByText("You don't have access", { exact: false })
+  ).toBeVisible()
+})
+
+test("notifications: a teammate's message rings the bell, and opening it reads it", async ({
+  page,
+  context,
+}) => {
+  seedBackend()
+  await useBackend(context)
+  await signIn(page, "/scout")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Scout" })
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Notifications", exact: true })
+  ).toBeVisible()
+  // a message from someone else, newer than when this device started watching
+  const at = iso(60_000)
+  const message = {
+    id: "01900000-0000-7000-8000-0000000d0001",
+    rev: 1,
+    updatedAt: at,
+    createdAt: at,
+    eventKey: "2026casj",
+    authorId: "01900000-0000-7000-8000-000000009999",
+    channelId: "event:2026casj",
+    kind: "message",
+    priority: "normal",
+    body: "Q14 queue moved to field 2",
+  }
+  backend.records.set(`message:${message.id}`, message)
+  backend.append("event:2026casj", "message", {
+    v: 1,
+    entity: "message",
+    op: "upsert",
+    id: message.id,
+    rev: 1,
+    eventKey: "2026casj",
+    ts: at,
+    data: message,
+  })
+  await syncNow(page)
+  // our team's match coming up may notify too: any unread count
+  await page
+    .getByRole("button", { name: /^Notifications, \d+ unread$/ })
+    .click()
+  await page
+    .getByRole("button", { name: /^Unread\. Messages: .* in #2026casj$/ })
+    .click()
+  await expect(page).toHaveURL(/\/messages\/event(:|%3A)2026casj$/)
+  await expect(page.getByRole("list", { name: "Messages" })).toContainText(
+    "Q14 queue moved"
+  )
+  // Back returns to the tab it was opened from (the bell on Scout), and the message is read
+  await page.getByRole("banner").getByRole("button", { name: /^Back/ }).click()
+  await page.getByRole("button", { name: /^Notifications/ }).click()
+  await expect(
+    page.getByRole("button", { name: /^Messages: .* in #2026casj$/ })
+  ).toBeVisible()
+})

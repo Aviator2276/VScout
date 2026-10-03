@@ -14,3 +14,10 @@ todos.json
 
 # typescript
 *.tsbuildinfo
+.sw-build
+playwright-report
+test-results
+coverage
+
+# the dev mock API's saved state (pnpm mock:reset clears it)
+dev-stack/mock-api/.state.json

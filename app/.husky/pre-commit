@@ -1,0 +1,6 @@
+# Runs from the git root (husky v9). The npm package lives in app/.
+# Formats and lints only the staged files under app/ (config: app/package.json "lint-staged").
+# Binaries are called directly (husky puts ./node_modules/.bin on PATH, which resolves inside
+# app/ after the cd) so the hook never triggers a pnpm auto-install mid-commit.
+cd app
+lint-staged
