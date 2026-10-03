@@ -4,6 +4,7 @@ import {
   POLICIES,
   ROLE_PERMISSIONS,
   can,
+  canWrite,
   requirePermission,
   ForbiddenError,
 } from "../authorization"
@@ -137,5 +138,50 @@ describe("policies", () => {
       ForbiddenError
     )
     expect(() => requirePermission(admin, "admin:access")).not.toThrow()
+  })
+})
+
+describe("canWrite: the outbox write check", () => {
+  const mine = { authorId: "s" }
+  const theirs = { authorId: "x" }
+
+  it.each(["scoutEntry", "comment", "picklist", "picklistEntry"])(
+    "%s: anyone but a guest creates; only the author or an admin edits",
+    (entity) => {
+      expect(canWrite(scouter, "create", entity, {})).toBe(true)
+      expect(canWrite(guest, "create", entity, {})).toBe(false)
+      expect(canWrite(scouter, "update", entity, mine)).toBe(true)
+      expect(canWrite(scouter, "delete", entity, theirs)).toBe(false)
+      expect(canWrite(admin, "delete", entity, theirs)).toBe(true)
+    }
+  )
+
+  it("messages: scouters send and delete their own; announcements are admin-only", () => {
+    expect(canWrite(scouter, "create", "message", { kind: "chat" })).toBe(true)
+    expect(canWrite(scouter, "delete", "message", mine)).toBe(true)
+    expect(canWrite(scouter, "delete", "message", theirs)).toBe(false)
+    const ann = { kind: "announcement", authorId: "s" }
+    expect(canWrite(scouter, "create", "message", ann)).toBe(false)
+    expect(canWrite(admin, "create", "message", ann)).toBe(true)
+    expect(canWrite(admin, "update", "message", ann)).toBe(true)
+  })
+
+  it("reactions: guests react to announcements only; admins never delete inside a DM", () => {
+    const onMsg = { targetType: "message" }
+    expect(canWrite(guest, "create", "reaction", onMsg)).toBe(false)
+    expect(canWrite(scouter, "create", "reaction", onMsg)).toBe(true)
+    expect(
+      canWrite(guest, "create", "reaction", { targetType: "announcement" })
+    ).toBe(true)
+    expect(canWrite(scouter, "delete", "reaction", mine)).toBe(true)
+    expect(canWrite(admin, "delete", "reaction", theirs)).toBe(true)
+    expect(
+      canWrite(admin, "delete", "reaction", { ...theirs, inDm: true })
+    ).toBe(false)
+  })
+
+  it("unknown entities and signed-out sessions are refused", () => {
+    expect(canWrite(admin, "create", "eventSettings", {})).toBe(false)
+    expect(canWrite(null, "create", "comment", {})).toBe(false)
   })
 })
