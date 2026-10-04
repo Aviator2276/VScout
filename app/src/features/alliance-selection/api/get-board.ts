@@ -1,6 +1,7 @@
 // The shared live alliance board (scout-tab.md B, ADR-032): one per event, read from Dexie like
 // everything else; it changes through online-only actions (actions.ts), never the outbox.
 import { useMemo } from "react"
+import { followedPicklistId } from "@/lib/db/followed-picklist"
 import { useDataRuntime } from "@/lib/db/react/data-runtime"
 import { useLiveOr, useRecordState } from "@/lib/db/react/data-state-hooks"
 import type { DataState } from "@/lib/db/react/data-state"
@@ -74,7 +75,7 @@ export function useFollowedOrder(
   const { db } = useDataRuntime()
   return useLiveOr(
     async () => {
-      const id = (await db.eventSettings.get(eventKey))?.followedPicklistId
+      const id = await followedPicklistId(db, eventKey)
       if (!id) return null
       const entries = await db.picklistEntries
         .where("[picklistId+rank]")

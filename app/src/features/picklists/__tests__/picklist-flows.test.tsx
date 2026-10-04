@@ -141,6 +141,8 @@ describe("picklists (scout-tab.md A)", () => {
       ownerName: mine ? "You" : "Sam",
       mine,
       followed: false,
+      master: false,
+      ballot: false,
       rows: [
         {
           id: "a",

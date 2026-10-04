@@ -3,7 +3,7 @@ import { decodeMeta } from "@/lib/api/adapters/meta-adapter"
 import { decodeSession } from "@/lib/api/adapters/session-adapter"
 import { decodeSyncChanges } from "@/lib/api/adapters/sync-changes-adapter"
 import { resetIds, testId } from "../../factories/ids"
-import { wireEnvelope, wireMatch } from "../../factories/wire"
+import { wireEnvelope, wireMatch, wirePicklist } from "../../factories/wire"
 import { MOCK_CREDENTIALS, MOCK_GUEST_CODE, mockBackend } from "../mock-backend"
 
 const API = "http://localhost/api/v1"
@@ -85,5 +85,17 @@ describe("MSW handlers answer with contract-valid bodies", () => {
     const second = await get(first.cursors)
     expect(second.changes.map((c) => c.id)).toEqual(["2026casj_qm3"])
     expect(second.hasMore).toBe(false)
+  })
+
+  it("only admins make master picklists (ADR-080)", async () => {
+    const send = (id: string, key: string) =>
+      fetch(`${API}/events/2026casj/picklists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+        body: JSON.stringify(wirePicklist({ id, master: true })),
+      })
+    expect((await send(testId(1), "k1")).status).toBe(403)
+    mockBackend.role = "admin"
+    expect((await send(testId(2), "k2")).status).toBe(201)
   })
 })

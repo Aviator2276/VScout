@@ -35,6 +35,7 @@ const TABLE: Record<
   "picklist:update": [true, true, false],
   "picklist:delete": [true, true, false],
   "picklist:follow": [true, false, false],
+  "picklist:master": [true, false, false],
   "alliance-board:record": [true, true, false],
   "alliance-board:lock": [true, false, false],
   "alliance-board:undo-any": [true, false, false],
@@ -155,6 +156,16 @@ describe("canWrite: the outbox write check", () => {
       expect(canWrite(admin, "delete", entity, theirs)).toBe(true)
     }
   )
+
+  it("master picklists are admin-only, even the author's own (ADR-080)", () => {
+    const master = { master: true, authorId: "s" }
+    expect(canWrite(scouter, "create", "picklist", master)).toBe(false)
+    expect(canWrite(scouter, "update", "picklist", master)).toBe(false)
+    expect(canWrite(admin, "create", "picklist", master)).toBe(true)
+    expect(
+      canWrite(admin, "update", "picklist", { ...master, authorId: "x" })
+    ).toBe(true)
+  })
 
   it("messages: scouters send and delete their own; announcements are admin-only", () => {
     expect(canWrite(scouter, "create", "message", { kind: "chat" })).toBe(true)

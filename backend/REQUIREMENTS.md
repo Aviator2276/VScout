@@ -283,7 +283,7 @@ can detect drift between the server and the app.
 | `comment` | event | author | yes | id | client. `visibility: 'team' \| 'private'` |
 | `message` | event | author | yes | id | client. Channel `event:{eventKey}` or DM `dm:{userA}:{userB}`. `kind: 'message' \| 'announcement'`, `priority?: 'urgent'` (admin) |
 | `reaction` | event | author | yes (guests: announcements only) | (targetType, targetId, authorId, emoji) | client. Section 5.8 |
-| `picklist` | event | author | yes | id | client. **Per user**; there are no shared picklists |
+| `picklist` | event | author | yes | id | client. **Per user**, plus two optional flags (ADR-080): `ballot: true` marks the owner's vote for its purpose (`first`/`second`; the client clears it on their other lists of that purpose), and `master: true` marks the team's master list for its purpose. **Only admins** may create a picklist with `master: true` or set it (`403 forbidden` otherwise); any admin may edit a master list and its entries |
 | `picklistEntry` | event | picklist author | yes | (picklistId, teamNumber) | client. Ordered with a fractional-index string, plus a `reason` |
 | `eventSettings` | event | admin | yes (admin) | eventKey | client. Server creates rev 1 when an event is set up |
 | `allianceBoard` | event | shared | **actions endpoint only, online** | eventKey | client. Server creates it per event |
@@ -307,7 +307,7 @@ Records holding season data (`scoutEntry`, `pitScouting`, `postScouting`, `allia
 ### 5.3 Event settings (admin singleton per event)
 
 Includes:
-- `followedPicklistId`: one user's picklist that the team follows. It's a pointer, not a copy.
+- `followedPicklistId`: one user's picklist that the team follows. It's a pointer, not a copy. Since ADR-080 the oldest picklist with `master: true` and purpose `first` takes priority over it; the pointer only applies while no master list exists.
 - `recommender`: constants for the "needs scouting" recommendations.
 - `gameOverrides`: per-event overrides of game constants, e.g. ranking-point thresholds at offseason
   events. Validated by the game module's schema.

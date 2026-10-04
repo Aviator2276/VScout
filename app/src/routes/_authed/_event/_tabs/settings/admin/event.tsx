@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { z } from "zod"
 import { Button } from "@/components/controls/button"
 import { DataView } from "@/components/data-view/data-view"
-import { Check } from "@/components/icons/icon"
 import { NavBackButton } from "@/components/layout/nav-back-button"
 import { StackPage } from "@/components/layout/stack-page"
 import { List } from "@/components/list/list"
-import { Sheet } from "@/components/overlays/sheet"
 import { useEventSettings } from "@/features/admin/api/get-admin"
 import { usePicklists } from "@/features/picklists/api/get-picklists"
 import { useOnline } from "@/hooks/use-online"
@@ -16,18 +13,13 @@ import type { EventSettingsRecord } from "@/lib/db/types"
 export const Route = createFileRoute(
   "/_authed/_event/_tabs/settings/admin/event"
 )({
-  validateSearch: z.object({
-    sheet: z.enum(["followed-picklist"]).optional().catch(undefined),
-  }),
   component: EventSetup,
 })
 
-// AD3: scouting open, followed picklist, post-scouting early. Saved as one queued eventSettings
+// AD3: scouting open, the master picklist (ADR-080), post-scouting early. Saved as one queued eventSettings
 // write with baseRev; a concurrent admin edit opens the conflict sheet (Settings → Sync Conflicts).
 function EventSetup() {
   const { event } = Route.useRouteContext()
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
   const settings = useEventSettings(event.key)
   const admin = useAdminActions()
   const online = useOnline()
@@ -58,7 +50,9 @@ function EventSetup() {
         <DataView.Error title="Couldn’t load event settings." />
         <DataView.Success>
           {(s: EventSettingsRecord) => {
-            const followed = lists.find((p) => p.id === s.followedPicklistId)
+            const master = lists.find((p) => p.master && p.purpose === "first")
+            // the old admin pointer (before ADR-080): still honored until a master list exists
+            const legacy = lists.find((p) => p.id === s.followedPicklistId)
             return (
               <>
                 <List.Section title="Event">
@@ -82,69 +76,37 @@ function EventSetup() {
                     }
                   />
                 </List.Section>
-                <List.Section footer="The followed picklist shows first for everyone.">
-                  <List.Row
-                    title="Followed picklist"
-                    detail={
-                      online ? (followed?.name ?? "None") : "Needs connection"
-                    }
-                    {...(online
-                      ? {
-                          onSelect: () =>
-                            void navigate({
-                              search: { sheet: "followed-picklist" },
-                            }),
-                        }
-                      : {})}
-                  />
-                </List.Section>
-                <Sheet
-                  open={search.sheet === "followed-picklist"}
-                  onOpenChange={(o) =>
-                    o ? undefined : void navigate({ search: {}, replace: true })
+                <List.Section
+                  footer={
+                    master
+                      ? "The master first-pick list is followed by everyone and used at alliance selection."
+                      : "Build the master list from everyone’s votes. Once it exists, the team follows it."
                   }
                 >
-                  <Sheet.Content title="Followed Picklist" closeLabel="Done">
-                    {lists.length === 0 ? (
-                      <p className="py-6 text-center text-muted-foreground">
-                        No picklists yet.
-                      </p>
-                    ) : (
-                      <List.Section>
-                        <List.Row
-                          title="None"
-                          detail={
-                            s.followedPicklistId ? undefined : (
-                              <Check aria-label="Selected" size={18} />
-                            )
-                          }
-                          onSelect={() =>
-                            void admin.patchEventSettings(event.key, {
-                              followedPicklistId: null,
-                            })
-                          }
-                        />
-                        {lists.map((p) => (
-                          <List.Row
-                            key={p.id}
-                            title={p.name}
-                            subtitle={`${p.ownerName} · ${p.teamCount} teams`}
-                            detail={
-                              p.id === s.followedPicklistId ? (
-                                <Check aria-label="Selected" size={18} />
-                              ) : undefined
-                            }
-                            onSelect={() =>
+                  <List.Row
+                    title="Master picklist"
+                    detail={
+                      master
+                        ? `${master.teamCount} ${master.teamCount === 1 ? "team" : "teams"}`
+                        : "Not started"
+                    }
+                    href="/scout/picklists/vote"
+                  />
+                  {!master && legacy ? (
+                    <List.Row
+                      title={`Stop Following “${legacy.name}”`}
+                      detail={online ? undefined : "Needs connection"}
+                      {...(online
+                        ? {
+                            onSelect: () =>
                               void admin.patchEventSettings(event.key, {
-                                followedPicklistId: p.id,
-                              })
-                            }
-                          />
-                        ))}
-                      </List.Section>
-                    )}
-                  </Sheet.Content>
-                </Sheet>
+                                followedPicklistId: null,
+                              }),
+                          }
+                        : {})}
+                    />
+                  ) : null}
+                </List.Section>
               </>
             )
           }}

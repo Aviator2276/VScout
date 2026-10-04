@@ -382,28 +382,34 @@ export function createDemoEvent(
     "urgent"
   )
 
-  // the admin's own first-pick list: the strongest robots, in order
-  const listId = nextId("picklist")
-  put(
-    `event:${ek}`,
-    "picklist",
-    {
-      ...owned(listId, admin.userId),
-      ownerId: admin.userId,
-      name: "First Pick (Demo)",
-      purpose: "first",
-    },
-    ek
-  )
-  ;[...teams]
-    .sort((a, b) => (skill.get(b) ?? 0) - (skill.get(a) ?? 0))
-    .slice(0, 12)
-    .forEach((t, i) =>
+  // picklists: the admin and up to three scouters each vote with a first-pick and a second-pick list
+  // (their own noisy read of the robots), and one scouter keeps a do-not-pick list (ADR-080)
+  const list = (
+    owner: string,
+    name: string,
+    purpose: "first" | "second" | "dnp",
+    teamsInOrder: ReadonlyArray<number>,
+    ballot: boolean
+  ) => {
+    const listId = nextId("picklist")
+    put(
+      `event:${ek}`,
+      "picklist",
+      {
+        ...owned(listId, owner),
+        ownerId: owner,
+        name,
+        purpose,
+        ...(ballot ? { ballot: true } : {}),
+      },
+      ek
+    )
+    teamsInOrder.forEach((t, i) =>
       put(
         `event:${ek}`,
         "picklistEntry",
         {
-          ...owned(nextId("pick"), admin.userId),
+          ...owned(nextId("pick"), owner),
           picklistId: listId,
           teamNumber: t,
           rank: `a${String(i).padStart(2, "0")}`,
@@ -411,7 +417,36 @@ export function createDemoEvent(
         ek
       )
     )
-  count("picklists")
+    count("picklists")
+  }
+  const voters = [
+    admin.userId,
+    ...scouters.filter((s) => s !== admin.userId),
+  ].slice(0, 4)
+  voters.forEach((v, i) => {
+    const seen = [...teams]
+      .map((t) => [t, (skill.get(t) ?? 0) + rng() * 0.35] as const)
+      .sort((a, b) => b[1] - a[1])
+      .map(([t]) => t)
+    list(
+      v,
+      i === 0 ? "First Pick (Demo)" : "My First Pick",
+      "first",
+      seen.slice(0, 10),
+      true
+    )
+    list(v, "Second Pick", "second", seen.slice(6, 18), true)
+  })
+  const weakest = [...teams].sort(
+    (a, b) => (skill.get(a) ?? 0) - (skill.get(b) ?? 0)
+  )
+  list(
+    voters.at(-1) ?? admin.userId,
+    "Do Not Pick",
+    "dnp",
+    weakest.slice(0, 2),
+    false
+  )
 
   return { eventKey: ek, counts }
 }

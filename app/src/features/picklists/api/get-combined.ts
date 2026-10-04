@@ -1,4 +1,5 @@
 // Inputs for the combined picklist (P3): every list's team order, reasons and owner, read live.
+import { followedPicklistId } from "@/lib/db/followed-picklist"
 import { useDataRuntime, useViewer } from "@/lib/db/react/data-runtime"
 import { useLiveOr } from "@/lib/db/react/data-state-hooks"
 import type { SourceList } from "../utils/combine"
@@ -15,10 +16,10 @@ export function useCombineSources(eventKey: string): Sources {
   const userId = useViewer()?.userId ?? null
   return useLiveOr(
     async () => {
-      const [lists, entries, settings] = await Promise.all([
+      const [lists, entries, followedId] = await Promise.all([
         db.picklists.where("eventKey").equals(eventKey).toArray(),
         db.picklistEntries.where("eventKey").equals(eventKey).toArray(),
-        db.eventSettings.get(eventKey),
+        followedPicklistId(db, eventKey),
       ])
       const users = await db.users.bulkGet([
         ...new Set(lists.map((l) => l.ownerId)),
@@ -44,7 +45,7 @@ export function useCombineSources(eventKey: string): Sources {
                 ? "You"
                 : (names.get(l.ownerId) ?? "Someone"),
             purpose: l.purpose,
-            followed: settings?.followedPicklistId === l.id,
+            followed: followedId === l.id,
             teams: mine.map((e) => e.teamNumber),
             reasons: new Map(
               mine.flatMap((e) =>
