@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   PREPAINT_SCRIPT,
   applyTheme,
+  rememberBackground,
   rememberTheme,
   resolveDark,
 } from "../theme"
@@ -9,6 +10,8 @@ import {
 afterEach(() => {
   document.documentElement.className = ""
   delete document.documentElement.dataset.surfaces
+  delete document.documentElement.dataset.splashDims
+  document.documentElement.style.removeProperty("--splash-bg")
   document.head.innerHTML = ""
   localStorage.clear()
   vi.unstubAllGlobals()
@@ -66,5 +69,66 @@ describe("theme", () => {
       },
     } as unknown as Storage
     expect(() => rememberTheme(blocked, "dark", false)).not.toThrow()
+  })
+
+  describe("the splash shows the chosen background (owner, 2026-10-03)", () => {
+    const runPrepaint = () => {
+      vi.stubGlobal("matchMedia", () => ({ matches: false }))
+      ;(new Function(PREPAINT_SCRIPT) as () => void)()
+    }
+    const root = document.documentElement
+
+    it("Given a gradient was chosen, when the app launches, then the splash paints it before React runs", () => {
+      rememberBackground(localStorage, {
+        image: "var(--app-bg-aurora)",
+        dims: false,
+      })
+      runPrepaint()
+      expect(root.style.getPropertyValue("--splash-bg")).toBe(
+        "var(--app-bg-aurora)"
+      )
+      expect(root.dataset.splashDims).toBeUndefined()
+    })
+
+    it("Given artwork was chosen, then the splash gets it and dims it in dark mode like the backdrop", () => {
+      rememberBackground(localStorage, {
+        image: 'url("/assets/waves-abc123.svg")',
+        dims: true,
+      })
+      runPrepaint()
+      expect(root.style.getPropertyValue("--splash-bg")).toBe(
+        'url("/assets/waves-abc123.svg")'
+      )
+      expect(root.dataset.splashDims).toBe("")
+    })
+
+    it("Given no background (or it was turned off), then the splash stays plain", () => {
+      rememberBackground(localStorage, {
+        image: "var(--app-bg-ocean)",
+        dims: false,
+      })
+      rememberBackground(localStorage, null)
+      expect(localStorage.getItem("vscout.splashBg")).toBeNull()
+      runPrepaint()
+      expect(root.style.getPropertyValue("--splash-bg")).toBe("")
+    })
+
+    it("Given a damaged saved value or blocked storage, then the splash stays plain and nothing throws", () => {
+      localStorage.setItem("vscout.splashBg", "{not json")
+      runPrepaint()
+      expect(root.style.getPropertyValue("--splash-bg")).toBe("")
+      expect(root.className).toBe("k-ios")
+      const blocked = {
+        setItem: () => {
+          throw new Error("blocked")
+        },
+        removeItem: () => {
+          throw new Error("blocked")
+        },
+      } as unknown as Storage
+      expect(() =>
+        rememberBackground(blocked, { image: "x", dims: false })
+      ).not.toThrow()
+    })
   })
 })

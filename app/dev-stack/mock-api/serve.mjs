@@ -7,9 +7,12 @@ import { createServer as createHttpServer } from "node:http"
 import { resolve } from "node:path"
 import { createServer as createViteServer } from "vite"
 import { getResponse } from "msw"
+import { startMqttBridge } from "./mqtt-bridge.mjs"
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 8787)
 const ORIGIN = process.env.MOCK_API_CORS_ORIGIN ?? "http://localhost:3000"
+// the local broker's TCP listener (dev-stack/mosquitto); MOCK_MQTT_URL=off turns the bridge off
+const MQTT_URL = process.env.MOCK_MQTT_URL ?? "mqtt://localhost:1883"
 
 const vite = await createViteServer({
   configFile: "vite.config.ts",
@@ -119,6 +122,29 @@ function serveStream(req, res, url) {
   })
 }
 
+// The one request pipeline: HTTP requests and MQTT RPC requests (mqtt-bridge.mjs) both go through it,
+// so statuses, idempotency and saving are identical on both transports (mqtt-contract §10.2 rule 3).
+async function dispatch(request) {
+  let response
+  if (request.method === "OPTIONS")
+    response = new Response(null, { status: 204 })
+  else {
+    // reloaded per request, so editing a handler needs no restart
+    response =
+      (await getResponse(await loadHandlers(), request)) ??
+      Response.json(
+        {
+          code: "not_mocked",
+          message: `No mock handler for ${request.method} ${new URL(request.url).pathname}`,
+        },
+        { status: 404 }
+      )
+  }
+  // sign-ins, sessions and writes change state without a change-log entry
+  if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) scheduleSave()
+  return response
+}
+
 createHttpServer(async (req, res) => {
   const streamUrl = new URL(req.url ?? "/", `http://localhost:${PORT}`)
   if (req.method === "GET" && streamUrl.pathname === "/api/v1/sync/stream") {
@@ -135,23 +161,7 @@ createHttpServer(async (req, res) => {
       ? undefined
       : Buffer.concat(chunks),
   })
-
-  let response
-  if (req.method === "OPTIONS") response = new Response(null, { status: 204 })
-  else {
-    // reloaded per request, so editing a handler needs no restart
-    response =
-      (await getResponse(await loadHandlers(), request)) ??
-      Response.json(
-        {
-          code: "not_mocked",
-          message: `No mock handler for ${req.method} ${url.pathname}`,
-        },
-        { status: 404 }
-      )
-  }
-  // sign-ins, sessions and writes change state without a change-log entry
-  if (!["GET", "HEAD", "OPTIONS"].includes(req.method ?? "GET")) scheduleSave()
+  const response = await dispatch(request)
   const headers = cors(new Headers(response.headers))
   res.writeHead(response.status, Object.fromEntries(headers))
   res.end(Buffer.from(await response.arrayBuffer()))
@@ -160,3 +170,16 @@ createHttpServer(async (req, res) => {
     `[mock-api] http://localhost:${PORT} (MSW handlers, CORS for ${ORIGIN})`
   )
 })
+
+if (MQTT_URL !== "off") {
+  const { planFanout } = await vite.ssrLoadModule(
+    "/src/testing/mocks/mqtt-fanout.ts"
+  )
+  startMqttBridge({
+    url: MQTT_URL,
+    mockBackend,
+    planFanout,
+    dispatch,
+    apiBase: `http://localhost:${PORT}/api/v1`,
+  })
+}

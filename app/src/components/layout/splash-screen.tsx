@@ -1,5 +1,7 @@
 // The launch screen (FX-7, HIG Launching): the logo on the app background, part of the prerendered
-// shell so it paints before any JavaScript runs. It fades out once the first route has resolved,
+// shell so it paints before any JavaScript runs. With a background chosen (Settings → Appearance), the
+// pre-paint script (lib/theme.ts) sets --splash-bg and the splash shows it, dimmed in dark mode like
+// AppBackdrop. It fades out once the first route has resolved,
 // instead of the app opening on a skeleton. Hidden through a class on <html>, so hydration never
 // sees a changed element.
 import { useRouter } from "@tanstack/react-router"
@@ -16,6 +18,7 @@ export function SplashScreen() {
       aria-hidden
       className="pointer-events-none fixed inset-0 z-100 flex items-center justify-center bg-background transition-opacity duration-300 [.app-ready_&]:invisible [.app-ready_&]:opacity-0"
     >
+      <div className="absolute inset-0 bg-(image:--splash-bg) bg-cover bg-center [.dark[data-splash-dims]_&]:brightness-[0.32] [.dark[data-splash-dims]_&]:saturate-[1.15]" />
       <img
         src="/icons/logo-256.png"
         width={112}
@@ -23,7 +26,7 @@ export function SplashScreen() {
         alt=""
         draggable={false}
         fetchPriority="high"
-        className="select-none"
+        className="relative select-none"
       />
     </div>
   )

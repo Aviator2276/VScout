@@ -12,7 +12,7 @@ API_PORT ?= 8787
 WEB_PORT ?= 3000
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev phone mock mock-reset web broker broker-down stack preview check e2e
+.PHONY: help install dev phone mock mock-reset web broker broker-down broker-native stack preview check e2e
 
 help: ## List the targets
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36mmake %-12s\033[0m %s\n", $$1, $$2}'
@@ -49,6 +49,11 @@ broker: ## Start the local MQTT broker (Docker, :1883 / ws :9001)
 
 broker-down: ## Stop the local MQTT broker
 	$(PNPM) stack:down
+
+# Same broker without Docker (apt install mosquitto). The mock API finds it on :1883 by itself and
+# then publishes fan-out and answers RPC (FX-61); MOCK_MQTT_URL=off turns that off.
+broker-native: ## Local MQTT broker without Docker (needs the mosquitto binary)
+	mosquitto -c $(APP)/dev-stack/mosquitto/mosquitto.conf
 
 stack: broker dev ## Broker + mock API + dev server
 
