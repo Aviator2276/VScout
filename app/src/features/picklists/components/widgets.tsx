@@ -1,7 +1,9 @@
-// The Followed Picklist widget (features/home.md H5): the top of the list the admin follows.
+// The Followed Picklist widget (features/home.md H5): the top of the list the team follows
+// (the master first-pick list, ADR-080).
 import { DataView } from "@/components/data-view/data-view"
 import { WidgetCard } from "@/components/grid/widget-card"
 import { ClipboardList } from "@/components/icons/icon"
+import { followedPicklistId } from "@/lib/db/followed-picklist"
 import { useDataRuntime } from "@/lib/db/react/data-runtime"
 import { useLiveOr } from "@/lib/db/react/data-state-hooks"
 import type { DataState } from "@/lib/db/react/data-state"
@@ -12,8 +14,7 @@ import type { PicklistDetail } from "../api/get-picklists"
 export function FollowedPicklistWidget({ eventKey, h }: WidgetProps) {
   const { db } = useDataRuntime()
   const followedId = useLiveOr(
-    async () =>
-      (await db.eventSettings.get(eventKey))?.followedPicklistId ?? null,
+    () => followedPicklistId(db, eventKey),
     [eventKey],
     null
   )

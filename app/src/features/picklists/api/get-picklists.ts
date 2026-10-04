@@ -1,5 +1,6 @@
-// Picklists (scout-tab.md A, ADR-004/025/042): everyone reads every list with its owner's name;
-// only the owner edits. The admin-followed list (eventSettings.followedPicklistId) is pinned.
+// Picklists (scout-tab.md A, ADR-004/025/042/080): everyone reads every list with its owner's name;
+// only the owner edits (admins also edit master lists). The master lists are pinned on top, then the
+// followed one; each person's vote is marked.
 import { useCallback } from "react"
 import {
   useDataRuntime,
@@ -11,12 +12,20 @@ import {
   useLiveOr,
   useRecordState,
 } from "@/lib/db/react/data-state-hooks"
+import { followedPicklistId, masterOf } from "@/lib/db/followed-picklist"
 import type { DataState } from "@/lib/db/react/data-state"
 import type { PicklistEntryRecord, PicklistRecord } from "@/lib/db/types"
 import { createRecord, deleteRecord, updateRecord } from "@/lib/sync/mutate"
 import { keyBetween, keysAfter } from "../utils/ranks"
 
 export type Purpose = PicklistRecord["purpose"]
+
+const PURPOSE_ORDER: Record<Purpose, number> = {
+  first: 0,
+  second: 1,
+  dnp: 2,
+  custom: 3,
+}
 
 export interface PicklistSummary {
   id: string
@@ -26,6 +35,10 @@ export interface PicklistSummary {
   ownerName: string
   mine: boolean
   followed: boolean
+  /** the team's master list for its purpose (ADR-080) */
+  master: boolean
+  /** the owner's vote for its purpose */
+  ballot: boolean
   teamCount: number
   updatedAt: number
   syncState: PicklistRecord["syncState"]
@@ -56,13 +69,18 @@ export function usePicklists(
     source: scope(eventKey),
     deps: [eventKey, userId],
     share: (p) =>
-      `${p.id}:${p.updatedAt}:${p.teamCount}:${p.followed}:${p.syncState}`,
+      `${p.id}:${p.updatedAt}:${p.teamCount}:${p.followed}:${p.master}:${p.ballot}:${p.syncState}`,
     query: async () => {
-      const [lists, entries, settings] = await Promise.all([
+      const [lists, entries, followedId] = await Promise.all([
         db.picklists.where("eventKey").equals(eventKey).toArray(),
         db.picklistEntries.where("eventKey").equals(eventKey).toArray(),
-        db.eventSettings.get(eventKey),
+        followedPicklistId(db, eventKey),
       ])
+      const masters = new Set(
+        (["first", "second"] as const).flatMap(
+          (p) => masterOf(lists, p)?.id ?? []
+        )
+      )
       const who = await names(
         db,
         lists.map((l) => l.ownerId)
@@ -70,7 +88,6 @@ export function usePicklists(
       const counts = new Map<string, number>()
       for (const e of entries)
         counts.set(e.picklistId, (counts.get(e.picklistId) ?? 0) + 1)
-      const followedId = settings?.followedPicklistId ?? null
       return lists
         .map((l): PicklistSummary => ({
           id: l.id,
@@ -81,13 +98,20 @@ export function usePicklists(
             l.ownerId === userId ? "You" : (who.get(l.ownerId) ?? "Someone"),
           mine: l.ownerId === userId,
           followed: l.id === followedId,
+          master: masters.has(l.id),
+          ballot: !!l.ballot && !l.master,
           teamCount: counts.get(l.id) ?? 0,
           updatedAt: l.localUpdatedAt,
           syncState: l.syncState,
         }))
         .sort(
           (a, b) =>
-            Number(b.followed) - Number(a.followed) || b.updatedAt - a.updatedAt
+            Number(b.master) - Number(a.master) ||
+            Number(b.followed) - Number(a.followed) ||
+            (a.master
+              ? PURPOSE_ORDER[a.purpose] - PURPOSE_ORDER[b.purpose]
+              : 0) ||
+            b.updatedAt - a.updatedAt
         )
     },
   })
@@ -107,6 +131,10 @@ export interface PicklistDetail {
   ownerName: string
   mine: boolean
   followed: boolean
+  /** the team's master list for its purpose (ADR-080) */
+  master: boolean
+  /** the owner's vote for its purpose */
+  ballot: boolean
   rows: ReadonlyArray<PicklistRow>
 }
 
@@ -124,13 +152,14 @@ export function usePicklist(
     query: async () => {
       const list = await db.picklists.get(id)
       if (!list) return undefined
-      const [entries, settings, who] = await Promise.all([
+      const [entries, followedId, who, lists] = await Promise.all([
         db.picklistEntries
           .where("[picklistId+rank]")
           .between([id, ""], [id, "￿"])
           .toArray(),
-        db.eventSettings.get(eventKey),
+        followedPicklistId(db, eventKey),
         names(db, [list.ownerId]),
+        db.picklists.where("eventKey").equals(eventKey).toArray(),
       ])
       const teams = await db.teams.bulkGet(entries.map((e) => e.teamNumber))
       return {
@@ -140,7 +169,12 @@ export function usePicklist(
             ? "You"
             : (who.get(list.ownerId) ?? "Someone"),
         mine: list.ownerId === userId,
-        followed: settings?.followedPicklistId === id,
+        followed: followedId === id,
+        master:
+          list.purpose !== "dnp" &&
+          list.purpose !== "custom" &&
+          masterOf(lists, list.purpose)?.id === id,
+        ballot: !!list.ballot && !list.master,
         rows: entries.map((e, i) => ({
           id: e.id,
           teamNumber: e.teamNumber,
@@ -180,6 +214,7 @@ export function useEventTeamNames(
 
 /** All the writes the editor makes; each is an ordinary outbox write (offline OK). */
 export function usePicklistWrites(eventKey: string) {
+  const { db } = useDataRuntime()
   const writer = useWriter()
   const userId = useViewer()?.userId ?? ""
 
@@ -189,6 +224,8 @@ export function usePicklistWrites(eventKey: string) {
       purpose: Purpose
       teams?: ReadonlyArray<number>
       reasons?: ReadonlyMap<number, string>
+      /** an admin's master list (ADR-080) */
+      master?: boolean
     }) =>
       (async () => {
         const list = await createRecord(writer, "picklist", {
@@ -196,6 +233,7 @@ export function usePicklistWrites(eventKey: string) {
           ownerId: userId,
           name: input.name.trim(),
           purpose: input.purpose,
+          ...(input.master ? { master: true } : {}),
         })
         const teams = input.teams ?? []
         const keys = keysAfter(null, teams.length)
@@ -275,5 +313,28 @@ export function usePicklistWrites(eventKey: string) {
     [writer]
   )
 
-  return { create, addTeams, move, setReason, remove, deleteList }
+  /**
+   * Make one of my lists my vote for its purpose, or (null) withdraw my vote. Clears the mark on my
+   * other lists of that purpose so each person has one ballot (ADR-080).
+   */
+  const setBallot = useCallback(
+    async (purpose: "first" | "second", listId: string | null) => {
+      const mine = await db.picklists
+        .where("[eventKey+ownerId]")
+        .equals([eventKey, userId])
+        .toArray()
+      for (const l of mine) {
+        if (l.purpose !== purpose || l.master) continue
+        const want = l.id === listId
+        if (!!l.ballot === want) continue
+        await updateRecord(writer, "picklist", l.id, (cur) => {
+          const { ballot: _old, ...rest } = cur
+          return want ? { ...rest, ballot: true } : rest
+        })
+      }
+    },
+    [db, writer, eventKey, userId]
+  )
+
+  return { create, addTeams, move, setReason, remove, deleteList, setBallot }
 }

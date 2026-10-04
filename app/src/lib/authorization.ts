@@ -19,6 +19,8 @@ export const PERMISSIONS = [
   "picklist:update",
   "picklist:delete",
   "picklist:follow",
+  /** build the master lists from the vote (ADR-080) */
+  "picklist:master",
   "alliance-board:record",
   "alliance-board:lock",
   "alliance-board:undo-any",
@@ -189,6 +191,13 @@ export function canWrite(
         : can(session, `comment:${action}`, r)
     case "picklist":
     case "picklistEntry":
+      // master lists are an admin's (ADR-080)
+      if (
+        entity === "picklist" &&
+        r.master === true &&
+        !can(session, "picklist:master")
+      )
+        return false
       return action === "create"
         ? can(session, "picklist:create")
         : can(session, `picklist:${action}`, r)

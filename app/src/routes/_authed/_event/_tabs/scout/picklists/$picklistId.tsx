@@ -54,11 +54,24 @@ function PicklistRoute() {
   const teams = useEventTeamNames(event.key)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const detail = state.status === "success" ? state.data : null
+  // admins edit the master lists whoever made them (ADR-080); the editor's "mine" means "can edit"
+  const loaded = state.status === "success" ? state.data : null
+  const editable =
+    !!loaded &&
+    (loaded.mine || (loaded.master && can(session, "picklist:master")))
+  const detail = loaded ? { ...loaded, mine: editable } : null
+  const editorState: typeof state =
+    state.status === "success" && detail ? { ...state, data: detail } : state
+  const votePurpose =
+    loaded?.mine &&
+    !loaded.master &&
+    (loaded.list.purpose === "first" || loaded.list.purpose === "second")
+      ? loaded.list.purpose
+      : null
   const rows = detail?.rows ?? []
   const chips = useMemo(
-    () => picklistChips(detail?.list.purpose ?? "first", metrics.byTeam),
-    [detail?.list.purpose, metrics.byTeam]
+    () => picklistChips(loaded?.list.purpose ?? "first", metrics.byTeam),
+    [loaded?.list.purpose, metrics.byTeam]
   )
   const deltas =
     search.compare && other.status === "success"
@@ -119,6 +132,37 @@ function PicklistRoute() {
                   },
                 ]
               : []),
+            ...(votePurpose && loaded
+              ? [
+                  {
+                    label: loaded.ballot ? "Remove My Vote" : "Use as My Vote",
+                    onSelect: () =>
+                      void writes
+                        .setBallot(
+                          votePurpose,
+                          loaded.ballot ? null : loaded.list.id
+                        )
+                        .then(() =>
+                          toast.show({
+                            title: loaded.ballot
+                              ? "Vote removed"
+                              : `${loaded.list.name} is now your ${votePurpose === "first" ? "first" : "second"} pick vote`,
+                          })
+                        ),
+                  },
+                  {
+                    label: "See Vote Results",
+                    onSelect: () =>
+                      void go({
+                        to: "/scout/picklists/vote",
+                        search: {
+                          purpose:
+                            votePurpose === "first" ? undefined : votePurpose,
+                        },
+                      }),
+                  },
+                ]
+              : []),
             ...(detail?.mine
               ? [
                   {
@@ -133,7 +177,7 @@ function PicklistRoute() {
       }
     >
       <PicklistEditor
-        state={state}
+        state={editorState}
         chips={chips}
         deltas={deltas}
         picked={picked}

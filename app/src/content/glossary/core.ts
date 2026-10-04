@@ -364,9 +364,29 @@ export const coreGlossary: ReadonlyArray<GlossaryTerm> = [
     id: "followed-picklist",
     term: "Followed picklist",
     short:
-      "The picklist an admin chose for the team. It shows first for everyone.",
+      "The picklist the team follows: the master first-pick list an admin builds from the vote.",
     category: "vscout",
-    related: ["picklist"],
+    related: ["picklist", "master-picklist"],
+    seeAlsoGuide: "picklists",
+  }),
+  core({
+    id: "master-picklist",
+    term: "Master picklist",
+    aliases: ["master list", "master picklists", "master lists"],
+    short:
+      "The team's first- or second-pick list, built by an admin from everyone's votes. It shows above every other list.",
+    category: "vscout",
+    related: ["picklist", "ranked-choice"],
+    seeAlsoGuide: "picklists",
+  }),
+  core({
+    id: "ranked-choice",
+    term: "Ranked choice",
+    aliases: ["ranked-choice", "instant runoff", "picklist vote"],
+    short:
+      "How the picklist vote is counted: the team with the fewest votes drops out and its ballots move on until one team has a majority.",
+    category: "vscout",
+    related: ["master-picklist"],
     seeAlsoGuide: "picklists",
   }),
   core({

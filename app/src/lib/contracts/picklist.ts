@@ -1,4 +1,4 @@
-// Per-user picklists (ADR-004/025). Entry rank is a fractional index string.
+// Per-user picklists (ADR-004/025), votes and the admin's master lists (ADR-080). Entry rank is a fractional index string.
 import { z } from "zod"
 import { recordId, teamNumber, wireOwnedMeta } from "./primitives"
 
@@ -8,6 +8,10 @@ export const wirePicklist = z.looseObject({
   name: z.string().min(1).max(80),
   purpose: z.enum(["first", "second", "dnp", "custom"]).catch("custom"),
   notes: z.string().max(2000).optional(),
+  /** the owner's vote for this purpose (first/second): the list's order is their ballot (ADR-080) */
+  ballot: z.boolean().optional(),
+  /** the team's master list for this purpose, built by an admin from the vote (ADR-080) */
+  master: z.boolean().optional(),
 })
 export type WirePicklist = z.infer<typeof wirePicklist>
 

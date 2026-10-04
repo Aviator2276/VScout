@@ -51,6 +51,7 @@ import { Route as AuthedEventTabsScoutMessagesChannelIdRouteImport } from './rou
 import { Route as AuthedEventTabsScoutPicklistsIndexRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/index'
 import { Route as AuthedEventTabsScoutPicklistsPicklistIdRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/$picklistId'
 import { Route as AuthedEventTabsScoutPicklistsCombinedRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/combined'
+import { Route as AuthedEventTabsScoutPicklistsVoteRouteImport } from './routes/_authed/_event/_tabs/scout/picklists/vote'
 import { Route as AuthedEventTabsScoutStrategyIndexRouteImport } from './routes/_authed/_event/_tabs/scout/strategy/index'
 import { Route as AuthedEventTabsScoutStrategyMatchKeyRouteImport } from './routes/_authed/_event/_tabs/scout/strategy/$matchKey'
 import { Route as AuthedEventTabsSettingsAdminIndexRouteImport } from './routes/_authed/_event/_tabs/settings/admin/index'
@@ -310,6 +311,12 @@ const AuthedEventTabsScoutPicklistsCombinedRoute =
     path: '/scout/picklists/combined',
     getParentRoute: () => AuthedEventTabsRoute,
   } as any)
+const AuthedEventTabsScoutPicklistsVoteRoute =
+  AuthedEventTabsScoutPicklistsVoteRouteImport.update({
+    id: '/scout/picklists/vote',
+    path: '/scout/picklists/vote',
+    getParentRoute: () => AuthedEventTabsRoute,
+  } as any)
 const AuthedEventTabsScoutStrategyIndexRoute =
   AuthedEventTabsScoutStrategyIndexRouteImport.update({
     id: '/scout/strategy/',
@@ -451,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
   '/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
   '/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/scout/picklists/vote': typeof AuthedEventTabsScoutPicklistsVoteRoute
   '/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
   '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
@@ -508,6 +516,7 @@ export interface FileRoutesByTo {
   '/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
   '/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
   '/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/scout/picklists/vote': typeof AuthedEventTabsScoutPicklistsVoteRoute
   '/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
   '/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
@@ -570,6 +579,7 @@ export interface FileRoutesById {
   '/_authed/_event/_tabs/scout/messages/$channelId': typeof AuthedEventTabsScoutMessagesChannelIdRoute
   '/_authed/_event/_tabs/scout/picklists/$picklistId': typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
   '/_authed/_event/_tabs/scout/picklists/combined': typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  '/_authed/_event/_tabs/scout/picklists/vote': typeof AuthedEventTabsScoutPicklistsVoteRoute
   '/_authed/_event/_tabs/scout/strategy/$matchKey': typeof AuthedEventTabsScoutStrategyMatchKeyRoute
   '/_authed/_event/_tabs/settings/admin/alliance-board': typeof AuthedEventTabsSettingsAdminAllianceBoardRoute
   '/_authed/_event/_tabs/settings/admin/announcements': typeof AuthedEventTabsSettingsAdminAnnouncementsRoute
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/scout/messages/$channelId'
     | '/scout/picklists/$picklistId'
     | '/scout/picklists/combined'
+    | '/scout/picklists/vote'
     | '/scout/strategy/$matchKey'
     | '/settings/admin/alliance-board'
     | '/settings/admin/announcements'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/scout/messages/$channelId'
     | '/scout/picklists/$picklistId'
     | '/scout/picklists/combined'
+    | '/scout/picklists/vote'
     | '/scout/strategy/$matchKey'
     | '/settings/admin/alliance-board'
     | '/settings/admin/announcements'
@@ -748,6 +760,7 @@ export interface FileRouteTypes {
     | '/_authed/_event/_tabs/scout/messages/$channelId'
     | '/_authed/_event/_tabs/scout/picklists/$picklistId'
     | '/_authed/_event/_tabs/scout/picklists/combined'
+    | '/_authed/_event/_tabs/scout/picklists/vote'
     | '/_authed/_event/_tabs/scout/strategy/$matchKey'
     | '/_authed/_event/_tabs/settings/admin/alliance-board'
     | '/_authed/_event/_tabs/settings/admin/announcements'
@@ -1071,6 +1084,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventTabsScoutPicklistsCombinedRouteImport
       parentRoute: typeof AuthedEventTabsRoute
     }
+    '/_authed/_event/_tabs/scout/picklists/vote': {
+      id: '/_authed/_event/_tabs/scout/picklists/vote'
+      path: '/scout/picklists/vote'
+      fullPath: '/scout/picklists/vote'
+      preLoaderRoute: typeof AuthedEventTabsScoutPicklistsVoteRouteImport
+      parentRoute: typeof AuthedEventTabsRoute
+    }
     '/_authed/_event/_tabs/scout/strategy/': {
       id: '/_authed/_event/_tabs/scout/strategy/'
       path: '/scout/strategy'
@@ -1301,6 +1321,7 @@ interface AuthedEventTabsRouteChildren {
   AuthedEventTabsScoutMessagesChannelIdRoute: typeof AuthedEventTabsScoutMessagesChannelIdRoute
   AuthedEventTabsScoutPicklistsPicklistIdRoute: typeof AuthedEventTabsScoutPicklistsPicklistIdRoute
   AuthedEventTabsScoutPicklistsCombinedRoute: typeof AuthedEventTabsScoutPicklistsCombinedRoute
+  AuthedEventTabsScoutPicklistsVoteRoute: typeof AuthedEventTabsScoutPicklistsVoteRoute
   AuthedEventTabsScoutStrategyMatchKeyRoute: typeof AuthedEventTabsScoutStrategyMatchKeyRoute
   AuthedEventTabsScoutMessagesIndexRoute: typeof AuthedEventTabsScoutMessagesIndexRoute
   AuthedEventTabsScoutPicklistsIndexRoute: typeof AuthedEventTabsScoutPicklistsIndexRoute
@@ -1350,6 +1371,8 @@ const AuthedEventTabsRouteChildren: AuthedEventTabsRouteChildren = {
     AuthedEventTabsScoutPicklistsPicklistIdRoute,
   AuthedEventTabsScoutPicklistsCombinedRoute:
     AuthedEventTabsScoutPicklistsCombinedRoute,
+  AuthedEventTabsScoutPicklistsVoteRoute:
+    AuthedEventTabsScoutPicklistsVoteRoute,
   AuthedEventTabsScoutStrategyMatchKeyRoute:
     AuthedEventTabsScoutStrategyMatchKeyRoute,
   AuthedEventTabsScoutMessagesIndexRoute:

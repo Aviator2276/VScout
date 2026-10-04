@@ -1,4 +1,5 @@
-// P1 (scout-tab.md A): every picklist with its owner, the followed one pinned on top, All · Mine,
+// P1 (scout-tab.md A): every picklist with its owner, the master lists (ADR-080) and then the
+// followed one pinned on top, each person's vote marked, All · Mine,
 // search by list or owner name, and a New Picklist sheet for scouters and admins.
 import { use, useState } from "react"
 import { Button } from "@/components/controls/button"
@@ -123,9 +124,18 @@ export function PicklistsView({
                       )}
                     </span>
                   </div>
-                  {p.followed ? (
+                  {p.master ? (
+                    <span className="rounded-full bg-primary px-2 text-caption-1 font-semibold text-primary-foreground">
+                      Master
+                    </span>
+                  ) : p.followed ? (
                     <span className="rounded-full bg-primary px-2 text-caption-1 font-semibold text-primary-foreground">
                       Followed
+                    </span>
+                  ) : null}
+                  {p.ballot ? (
+                    <span className="rounded-full bg-secondary px-2 text-caption-1 font-semibold text-secondary-foreground">
+                      {p.mine ? "Your vote" : "Vote"}
                     </span>
                   ) : null}
                   <SyncBadge state={p.syncState} />

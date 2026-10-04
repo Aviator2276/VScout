@@ -52,6 +52,10 @@ function Picklists() {
         ) : undefined
       }
     >
+      <List.Section footer="Vote with one of your lists; an admin builds the master list from the results.">
+        <List.Row title="Picklist Vote" href="/scout/picklists/vote" />
+        <List.Row title="Combined Picklist" href="/scout/picklists/combined" />
+      </List.Section>
       <PicklistsView
         state={state}
         owner={canCreate ? (search.owner ?? "all") : "all"}
@@ -67,9 +71,6 @@ function Picklists() {
         canCreate={canCreate}
         now={now}
       />
-      <List.Section>
-        <List.Row title="Combined Picklist" href="/scout/picklists/combined" />
-      </List.Section>
       {canCreate ? (
         <NewPicklistSheet
           open={search.sheet === "new"}

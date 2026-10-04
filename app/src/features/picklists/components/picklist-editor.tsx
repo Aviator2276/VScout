@@ -84,8 +84,10 @@ export function PicklistEditor(p: PicklistEditorProps) {
         {(d: PicklistDetail) => (
           <div className="flex flex-col gap-3">
             <p className="text-subhead text-muted-foreground">
-              {PURPOSE_LABEL[d.list.purpose]} · {d.ownerName}
+              {PURPOSE_LABEL[d.list.purpose]} ·{" "}
+              {d.master ? "Master list" : d.ownerName}
               {d.followed ? " · Followed by the team" : ""}
+              {d.ballot ? (d.mine ? " · Your vote" : " · Their vote") : ""}
             </p>
             {d.rows.length === 0 ? (
               <div

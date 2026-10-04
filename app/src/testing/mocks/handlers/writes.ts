@@ -24,6 +24,15 @@ const COLLECTIONS: Record<string, EntityName> = {
 
 type Reply = { status: number; body: unknown }
 
+/** only admins make master picklists (backend REQUIREMENTS §5.1, ADR-080) */
+const masterByNonAdmin = (
+  entity: EntityName,
+  record: Record<string, unknown>
+) =>
+  entity === "picklist" &&
+  record.master === true &&
+  mockBackend.role !== "admin"
+
 /** Idempotency-Key replay (§4.1): same key + same body → the stored response. */
 export async function idempotent(
   request: Request,
@@ -277,6 +286,7 @@ export const writeHandlers = [
       if (existing) return problem(409, "already_exists", { current: existing })
       const dup = naturalDuplicate(entity, body)
       if (dup) return problem(409, "duplicate", { current: dup })
+      if (masterByNonAdmin(entity, body)) return problem(403, "forbidden")
       // a pit entry may only reference uploaded photos (§5.2)
       const photos = Array.isArray(body.photos)
         ? (body.photos as Array<string>)
@@ -325,6 +335,8 @@ export const writeHandlers = [
         current.authorId !== mockBackend.userId
       )
         return problem(403, "not_author")
+      if (masterByNonAdmin(entity, body.record))
+        return problem(403, "forbidden")
       if (body.baseRev !== current.rev)
         return problem(409, "rev_conflict", { current })
       const record: MockRecord = {
